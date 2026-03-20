@@ -2,52 +2,59 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Modération Pro</title>
+    <title>Console Admin - Collège Social</title>
     <style>
-        body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
-        .section { background: #2c2c2c; padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #444; }
-        h1, h2 { color: #e74c3c; margin-top: 0; }
-        h2 { color: #4a90e2; font-size: 1.2rem; border-bottom: 1px solid #444; padding-bottom: 10px; }
+        body { font-family: 'Consolas', 'Monaco', monospace; background: #0a0c10; color: #39ff14; padding: 20px; padding-bottom: 100px; line-height: 1.5; }
+        .section { background: #161b22; padding: 15px; border-radius: 5px; margin-bottom: 20px; border: 1px solid #30363d; color: #c9d1d9; }
+        h2 { color: #58a6ff; font-size: 1rem; border-bottom: 1px solid #333; padding-bottom: 5px; text-transform: uppercase; }
         
-        .post, .banned-item { 
-            background: #1e1e1e; padding: 12px; border-radius: 8px; 
-            margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
-            border-left: 4px solid #444;
-        }
-        .post { border-left-color: #e74c3c; }
-        .banned-item { border-left-color: #6c5ce7; }
+        /* Liste style Log */
+        .log-entry { font-size: 0.9rem; margin-bottom: 5px; border-bottom: 1px opacity 0.1 solid #333; display: flex; justify-content: space-between; }
+        .log-entry b { color: #ff7b72; }
+        .btn-mini { background: #21262d; border: 1px solid #30363d; color: #8b949e; cursor: pointer; font-size: 0.7rem; padding: 2px 5px; border-radius: 3px; }
+        .btn-mini:hover { border-color: #58a6ff; color: white; }
 
-        .btn { border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; margin-left: 5px; }
-        .del { background: #e74c3c; } 
-        .ban { background: #6c5ce7; }
-        .unban { background: #2ecc71; }
-        button:hover { opacity: 0.8; transform: scale(1.02); }
-        
-        .controls { margin-bottom: 15px; font-size: 0.9rem; color: #bbb; }
+        /* TERMINAL STYLE */
+        .terminal-wrapper { position: fixed; bottom: 0; left: 0; width: 100%; background: #010409; border-top: 2px solid #39ff14; padding: 10px 20px; box-sizing: border-box; }
+        .terminal-input-row { display: flex; align-items: center; gap: 10px; }
+        .prompt { color: #39ff14; font-weight: bold; }
+        #termInput { background: transparent; border: none; color: #39ff14; flex: 1; font-family: inherit; font-size: 1.1rem; outline: none; }
+        .hint { font-size: 0.7rem; color: #8b949e; margin-top: 5px; }
     </style>
 </head>
 <body>
 
-    <div style="max-width: 800px; margin: 0 auto;">
-        <h1>🛡️ Modération Cloud</h1>
+    <div style="max-width: 1000px; margin: 0 auto;">
+        <h1 style="color: #39ff14;">>_ ROOT_ACCESS: COLLEGE_SOCIAL</h1>
 
         <div class="section">
-            <h2>💬 Messages en temps réel</h2>
-            <div class="controls">
-                <label><input type="checkbox" id="fastMode"> ⚡ Mode Rapide (Pas de confirmation)</label>
+            <h2>💬 Flux Messages (Live)</h2>
+            <div id="admin-feed">Attente de données...</div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="section">
+                <h2>🚫 Database: Banned_Users</h2>
+                <div id="banned-list">Aucun banni.</div>
             </div>
-            <div id="admin-feed">Chargement des messages...</div>
+            <div class="section">
+                <h2>📜 Logs: Débannissements</h2>
+                <div id="history-list">Historique vide.</div>
+            </div>
         </div>
+    </div>
 
-        <div class="section">
-            <h2>🚫 Liste des membres bannis</h2>
-            <div id="banned-list">Aucun banni pour le moment.</div>
+    <div class="terminal-wrapper">
+        <div class="terminal-input-row">
+            <span class="prompt">admin@social:~$</span>
+            <input type="text" id="termInput" placeholder="Tapez /ban [nom], /unban [nom] ou /help" autofocus>
         </div>
+        <div class="hint">Commandes : /ban [nom] | /unban [nom] | /clear</div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc, setDoc, serverTimestamp, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAXIryKruq3g7JtdM8jgv8IDGjserqY3IY",
@@ -61,54 +68,64 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- GESTION DES MESSAGES ---
+        // --- AFFICHAGE LIVE ---
         onSnapshot(query(collection(db, "messages"), orderBy("date", "desc")), (snaps) => {
             const feed = document.getElementById('admin-feed'); feed.innerHTML = "";
             snaps.forEach(d => {
                 const data = d.data();
-                const div = document.createElement('div'); div.className = 'post';
-                div.innerHTML = `<span><b>${data.auteur}</b>: ${data.texte}</span>
-                <div>
-                    <button class="btn del" onclick="supprimer('${d.id}')">EFFACER</button>
-                    <button class="btn ban" onclick="bannir('${data.auteur}', '${d.id}')">BAN</button>
-                </div>`;
-                feed.appendChild(div);
+                feed.innerHTML += `<div class="log-entry"><span>[MSG] <b>${data.auteur}</b>: ${data.texte}</span> <button class="btn-mini" onclick="deleteMsg('${d.id}')">DEL</button></div>`;
             });
         });
 
-        // --- GESTION DES BANNIS (DEBAN) ---
         onSnapshot(collection(db, "BannedUsers"), (snaps) => {
-            const list = document.getElementById('banned-list');
-            if(snaps.empty) { list.innerHTML = "Personne n'est banni."; return; }
-            list.innerHTML = "";
+            const list = document.getElementById('banned-list'); list.innerHTML = "";
             snaps.forEach(d => {
-                const div = document.createElement('div'); div.className = 'banned-item';
-                div.innerHTML = `<span>👤 <b>${d.id}</b></span>
-                <button class="btn unban" onclick="deban('${d.id}')">DÉBANNIR</button>`;
-                list.appendChild(div);
+                list.innerHTML += `<div class="log-entry"><span>[BAN] ${d.id}</span></div>`;
             });
         });
 
-        // --- ACTIONS ---
-        window.supprimer = async (id) => {
-            if(document.getElementById('fastMode').checked || confirm("Supprimer ce message ?")) {
-                await deleteDoc(doc(db, "messages", id));
-            }
-        };
+        onSnapshot(query(collection(db, "HistoriqueDeban"), orderBy("date", "desc")), (snaps) => {
+            const hist = document.getElementById('history-list'); hist.innerHTML = "";
+            snaps.forEach(d => {
+                hist.innerHTML += `<div style="font-size:0.8rem; color:#8b949e;">[OK] ${d.data().nom} rétabli</div>`;
+            });
+        });
 
-        window.bannir = async (nom, id) => {
-            if(confirm("Bannir " + nom + " ?")) {
-                await setDoc(doc(db, "BannedUsers", nom), { date: serverTimestamp() });
-                await deleteDoc(doc(db, "messages", id));
-            }
-        };
+        // --- LOGIQUE DU TERMINAL ---
+        const termInput = document.getElementById('termInput');
 
-        window.deban = async (nom) => {
-            if(confirm("Redonner la parole à " + nom + " ?")) {
-                await deleteDoc(doc(db, "BannedUsers", nom));
-                alert(nom + " peut à nouveau publier !");
+        termInput.addEventListener('keydown', async (e) => {
+            if (e.key === 'Enter') {
+                const cmdLine = termInput.value.trim();
+                termInput.value = ""; // Vide l'input
+                
+                if (cmdLine.startsWith('/ban ')) {
+                    const name = cmdLine.replace('/ban ', '').trim();
+                    if(name) {
+                        await setDoc(doc(db, "BannedUsers", name), { date: serverTimestamp() });
+                        console.log("Banni: " + name);
+                    }
+                } 
+                else if (cmdLine.startsWith('/unban ')) {
+                    const name = cmdLine.replace('/unban ', '').trim();
+                    if(name) {
+                        await deleteDoc(doc(db, "BannedUsers", name));
+                        await addDoc(collection(db, "HistoriqueDeban"), { nom: name, date: serverTimestamp() });
+                        console.log("Débanni: " + name);
+                    }
+                }
+                else if (cmdLine === '/help') {
+                    alert("AIDE TERMINAL :\n/ban [Nom] - Bannit l'utilisateur\n/unban [Nom] - Débannit l'utilisateur\n/clear - Nettoie l'écran");
+                }
+                else {
+                    console.warn("Commande inconnue");
+                }
             }
-        };
+        });
+
+        // --- ACTIONS BOUTONS ---
+        window.deleteMsg = async (id) => { await deleteDoc(doc(db, "messages", id)); };
+
     </script>
 </body>
 </html>
