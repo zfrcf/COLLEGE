@@ -2,291 +2,237 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Modération - Collège Social Connect</title>
+    <title>Système de Contrôle - Admin Terminal</title>
     <style>
-        :root {
-            --primary: #007bff;
-            --danger: #dc3545;
-            --success: #28a745;
-            --warning: #ffc107;
-            --dark: #343a40;
-            --light: #f8f9fa;
-            --border: #dee2e6;
-        }
-
+        /* --- STYLE TERMINAL RETRO --- */
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            background-color: #05070a;
+            color: #39ff14;
             margin: 0;
-            padding: 0;
-            background-color: var(--light);
-            color: var(--dark);
-            padding-bottom: 90px; /* Espace pour la console en bas */
+            padding: 20px;
+            padding-bottom: 100px;
+            text-shadow: 0 0 5px rgba(57, 255, 20, 0.5);
         }
 
-        /* --- HEADER --- */
-        header {
-            background-color: white;
-            padding: 15px 30px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        header h1 { margin: 0; font-size: 1.25rem; color: var(--primary); }
-        .status { font-size: 0.8rem; color: #28a745; }
+        h1 { font-size: 1.2rem; border-bottom: 1px solid #39ff14; padding-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; }
+        h2 { font-size: 0.9rem; color: #58a6ff; margin-top: 0; text-transform: uppercase; }
 
-        /* --- MAIN CONTAINER --- */
-        .container {
-            max-width: 1200px;
-            margin: 30px auto;
-            padding: 0 15px;
-        }
+        .container { max-width: 1400px; margin: 0 auto; }
 
+        /* --- SECTIONS --- */
         .section {
-            background-color: white;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            margin-bottom: 25px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            background: rgba(16, 20, 25, 0.8);
+            border: 1px solid #1f242b;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
         }
-        .section-header {
-            padding: 15px 20px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .section-header h2 { margin: 0; font-size: 1rem; text-transform: uppercase; color: #6c757d; }
 
-        .section-body { padding: 15px 20px; }
+        .grid { display: grid; grid-template-columns: 1.2fr 1fr 0.8fr; gap: 20px; }
 
-        /* --- STYLES DE LISTE --- */
-        .list-box { max-height: 250px; overflow-y: auto; }
+        /* --- LISTES ET LOGS --- */
+        .scroll-box { height: 300px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #1f242b #05070a; }
         
         .entry {
+            font-size: 0.85rem;
+            padding: 8px;
+            border-bottom: 1px solid #161b22;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-            border-left: 3px solid transparent;
         }
-        .entry:last-child { border-bottom: none; }
-        .entry:hover { background-color: #fafafa; }
-        .entry b { color: var(--primary); }
-        .entry-live { border-left-color: var(--primary); }
-        .entry-banned { border-left-color: var(--dark); }
-        .entry-del { color: var(--danger); font-style: italic; font-size: 0.85rem; }
+        .entry:hover { background: rgba(57, 255, 20, 0.05); }
 
-        /* --- BOUTONS --- */
+        .user-tag { color: #58a6ff; font-weight: bold; }
+        .del-text { color: #ff7b72; font-style: italic; }
+
+        /* --- BOUTONS TERMINAL --- */
         .btn {
-            border: 1px solid transparent;
-            padding: 5px 12px;
-            border-radius: 4px;
+            background: transparent;
+            border: 1px solid #39ff14;
+            color: #39ff14;
+            font-family: inherit;
+            font-size: 0.7rem;
             cursor: pointer;
-            font-size: 0.8rem;
-            font-weight: 500;
-            transition: 0.15s;
+            padding: 3px 8px;
+            text-transform: uppercase;
+            transition: 0.2s;
         }
-        .btn-sm { padding: 2px 6px; font-size: 0.75rem; }
-        
-        .btn-danger { color: var(--danger); border-color: var(--danger); background: transparent; }
-        .btn-danger:hover { color: white; background-color: var(--danger); }
-        
-        .btn-success { color: var(--success); border-color: var(--success); background: transparent; }
-        .btn-success:hover { color: white; background-color: var(--success); }
+        .btn:hover { background: #39ff14; color: #05070a; box-shadow: 0 0 10px #39ff14; }
+        .btn-restore { border-color: #238636; color: #238636; }
+        .btn-restore:hover { background: #238636; color: white; box-shadow: 0 0 10px #238636; }
 
-        /* --- CONSOLE / TERMINAL WEB EN BAS --- */
-        #terminal {
+        /* --- CONSOLE FIXE --- */
+        .console-wrapper {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            background-color: white;
-            border-top: 1px solid var(--border);
+            background: #010409;
+            border-top: 2px solid #39ff14;
             padding: 15px 30px;
             box-sizing: border-box;
-            z-index: 1000;
             display: flex;
             align-items: center;
             gap: 15px;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.5);
         }
-        #terminal-label { color: #6c757d; font-weight: bold; font-size: 0.9rem; white-space: nowrap; }
+        .prompt { color: #39ff14; font-weight: bold; font-size: 1.1rem; }
         #termInput {
             flex: 1;
-            padding: 10px;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
+            background: transparent;
+            border: none;
+            color: #39ff14;
             font-family: inherit;
-            font-size: 1rem;
+            font-size: 1.2rem;
             outline: none;
+            caret-color: #39ff14;
         }
-        #termInput:focus { border-color: var(--primary); box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.15); }
 
+        /* --- EFFET SCANLINE --- */
+        body::before {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 9999;
+            pointer-events: none;
+            background-size: 100% 2px, 3px 100%;
+        }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>Collège Social Connect <span class="status">● Actif</span></h1>
-        <div style="font-size:0.8rem; color:#6c757d;">Interface de Modération v3.1</div>
-    </header>
+<div class="container">
+    <h1>>_ ADMIN_CONSOLE / ACCESS_LEVEL: ROOT</h1>
 
-    <div class="container">
-        
+    <div class="section">
+        <h2>[LIVE_STREAM] - Messages du Cloud</h2>
+        <div id="admin-feed" class="scroll-box">Initialisation du flux...</div>
+    </div>
+
+    <div class="grid">
         <div class="section">
-            <div class="section-header">
-                <h2>Flux de Discussion Actuel</h2>
-            </div>
-            <div class="section-body">
-                <div id="admin-feed" class="list-box">Connexion en cours...</div>
-            </div>
+            <h2>[RECOVERY_LOGS] - Suppressions</h2>
+            <div id="del-logs" class="scroll-box" style="color: #8b949e;">Aucun log détecté.</div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1.3fr 0.8fr 0.9fr; gap: 20px;">
-            
-            <div class="section">
-                <div class="section-header">
-                    <h2>Historique des Suppressions</h2>
-                </div>
-                <div class="section-body">
-                    <div id="del-logs" class="list-box" style="color: #6c757d; font-size: 0.9rem;">Aucune action dans cette session.</div>
-                </div>
-            </div>
+        <div class="section">
+            <h2>[BANNED_DB] - Utilisateurs Bloqués</h2>
+            <div id="banned-list" class="scroll-box">Base de données vide.</div>
+        </div>
 
-            <div class="section">
-                <div class="section-header">
-                    <h2>Membres Bannis</h2>
-                </div>
-                <div class="section-body">
-                    <div id="banned-list" class="list-box">Liste vide.</div>
-                </div>
-            </div>
-
-            <div class="section">
-                <div class="section-header">
-                    <h2>Historique des Grâces</h2>
-                </div>
-                <div class="section-body">
-                    <div id="history-list" class="list-box" style="font-size:0.85rem; color:#6c757d;">Vide.</div>
-                </div>
-            </div>
-
+        <div class="section">
+            <h2>[HISTORY_LOGS] - Grâces</h2>
+            <div id="history-list" class="scroll-box">Aucun événement.</div>
         </div>
     </div>
+</div>
 
-    <div id="terminal">
-        <span id="terminal-label">Console de Commande</span>
-        <input type="text" id="termInput" placeholder="Tapez /ban Nom, /unban Nom pour agir directement..." autofocus>
-    </div>
+<div class="console-wrapper">
+    <span class="prompt">admin@college_social:~$</span>
+    <input type="text" id="termInput" placeholder="Tapez /ban Nom ou /unban Nom..." autofocus autocomplete="off">
+</div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc, setDoc, serverTimestamp, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc, setDoc, serverTimestamp, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // COPIE-COLLE TA CONFIG ICI
-        const firebaseConfig = {
-            apiKey: "AIzaSyAXIryKruq3g7JtdM8jgv8IDGjserqY3IY",
-            authDomain: "college-social-cloud.firebaseapp.com",
-            projectId: "college-social-cloud",
-            storageBucket: "college-social-cloud.firebasestorage.app",
-            messagingSenderId: "757988289620",
-            appId: "1:757988289620:web:6054829b97a73d28ce91c1"
-        };
+    // --- CONFIGURATION FIREBASE ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyAXIryKruq3g7JtdM8jgv8IDGjserqY3IY",
+        authDomain: "college-social-cloud.firebaseapp.com",
+        projectId: "college-social-cloud",
+        storageBucket: "college-social-cloud.firebasestorage.app",
+        messagingSenderId: "757988289620",
+        appId: "1:757988289620:web:6054829b97a73d28ce91c1"
+    };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-        // --- FLUX LIVE ---
-        onSnapshot(query(collection(db, "messages"), orderBy("date", "desc")), (snaps) => {
-            const feed = document.getElementById('admin-feed'); feed.innerHTML = "";
-            if(snaps.empty) feed.innerHTML = "Aucun message sur le Cloud.";
-            snaps.forEach(d => {
-                const data = d.data();
-                const div = document.createElement('div');
-                div.className = 'entry entry-live';
-                
-                // Sécurisation
-                const safeAuteur = data.auteur.replace(/'/g, "\\'");
-                const safeTexte = data.texte.replace(/'/g, "\\'");
-                
-                div.innerHTML = `<span><b>${data.auteur}</b> : ${data.texte}</span> 
-                <button class="btn btn-sm btn-danger" onclick="processDelete('${d.id}', '${safeAuteur}', '${safeTexte}')">Supprimer</button>`;
-                feed.appendChild(div);
-            });
-        });
-
-        // --- SUPPRESSION AVEC SAUVEGARDE DANS LE LOG ---
-        window.processDelete = async (id, auteur, texte) => {
-            const logBox = document.getElementById('del-logs');
-            if(logBox.innerHTML.includes("Aucune action")) logBox.innerHTML = "";
-            
+    // --- CHARGEMENT DU FLUX LIVE ---
+    onSnapshot(query(collection(db, "messages"), orderBy("date", "desc")), (snaps) => {
+        const feed = document.getElementById('admin-feed'); feed.innerHTML = "";
+        snaps.forEach(d => {
+            const data = d.data();
             const div = document.createElement('div');
-            div.className = 'entry entry-del';
+            div.className = 'entry';
             
-            // Sécurisation pour la fonction restaurerMsg
-            const safeAuteur = auteur.replace(/'/g, "\\'");
-            const safeTexte = texte.replace(/'/g, "\\'");
-
-            div.innerHTML = `<span>Supprimé : ${auteur} - ${texte}</span>
-                             <button class="btn btn-sm btn-success btn-restore" onclick="restaurerMsg('${safeAuteur}', '${safeTexte}', this)">Remettre</button>`;
-            logBox.prepend(div);
-
-            await deleteDoc(doc(db, "messages", id));
-        };
-
-        // --- RESTAURATION DEPUIS LE LOG ---
-        window.restaurerMsg = async (auteur, texte, btnElement) => {
-            try {
-                await addDoc(collection(db, "messages"), {
-                    auteur: auteur,
-                    texte: texte,
-                    date: serverTimestamp()
-                });
-                // Enlever du log visuel une fois remis
-                btnElement.parentElement.remove();
-            } catch (e) {
-                alert("Erreur technique lors de la restauration.");
-            }
-        };
-
-        // --- DATABASE & LOGS SECONDAIRES ---
-        onSnapshot(collection(db, "BannedUsers"), (snaps) => {
-            const list = document.getElementById('banned-list'); list.innerHTML = "";
-            snaps.forEach(d => {
-                list.innerHTML += `<div class="entry entry-banned" style="padding: 5px 10px; font-size:0.9rem;"><span>${d.id}</span></div>`;
-            });
+            const sAuteur = data.auteur.replace(/'/g, "\\'");
+            const sTexte = data.texte.replace(/'/g, "\\'");
+            
+            div.innerHTML = `<span>[OK] <span class="user-tag">${data.auteur}</span>: ${data.texte}</span> 
+            <button class="btn" onclick="handleDelete('${d.id}', '${sAuteur}', '${sTexte}')">DEL</button>`;
+            feed.appendChild(div);
         });
+    });
 
-        onSnapshot(query(collection(db, "HistoriqueDeban"), orderBy("date", "desc")), (snaps) => {
-            const hist = document.getElementById('history-list'); hist.innerHTML = "";
-            snaps.forEach(d => {
-                hist.innerHTML += `<div style="margin-bottom: 5px;">Utilisateur <b>${d.data().nom}</b> réhabilité</div>`;
-            });
+    // --- ACTION : SUPPRESSION + SAUVEGARDE TEMPORAIRE ---
+    window.handleDelete = async (id, auteur, texte) => {
+        const logBox = document.getElementById('del-logs');
+        if(logBox.innerHTML.includes("Aucun log")) logBox.innerHTML = "";
+        
+        const div = document.createElement('div');
+        div.className = 'entry';
+        div.innerHTML = `<span class="del-text">[SUPPR] ${auteur}: ${texte}</span>
+                         <button class="btn btn-restore" onclick="undoDelete('${auteur.replace(/'/g, "\\'")}', '${texte.replace(/'/g, "\\'")}', this)">RESTORE</button>`;
+        logBox.prepend(div);
+
+        await deleteDoc(doc(db, "messages", id));
+    };
+
+    // --- ACTION : RESTAURATION (UNDO) ---
+    window.undoDelete = async (auteur, texte, btn) => {
+        await addDoc(collection(db, "messages"), {
+            auteur: auteur,
+            texte: texte,
+            date: serverTimestamp()
         });
+        btn.parentElement.remove();
+    };
 
-        // --- CONSOLE DE COMMANDE INTELLIGENTE ---
-        const termInput = document.getElementById('termInput');
-        termInput.addEventListener('keydown', async (e) => {
-            if (e.key === 'Enter') {
-                const cmd = termInput.value.trim();
-                termInput.value = "";
-                
-                if (cmd.startsWith('/ban ')) {
-                    const name = cmd.replace('/ban ', '').trim();
-                    if(name) await setDoc(doc(db, "BannedUsers", name), { date: serverTimestamp() });
-                } 
-                else if (cmd.startsWith('/unban ')) {
-                    const name = cmd.replace('/unban ', '').trim();
-                    if(name) {
-                        await deleteDoc(doc(db, "BannedUsers", name));
-                        await addDoc(collection(db, "HistoriqueDeban"), { nom: name, date: serverTimestamp() });
-                    }
+    // --- DATABASE BANNIS ---
+    onSnapshot(collection(db, "BannedUsers"), (snaps) => {
+        const list = document.getElementById('banned-list'); list.innerHTML = "";
+        snaps.forEach(d => {
+            list.innerHTML += `<div class="entry"><span>[BLOCKED] ${d.id}</span></div>`;
+        });
+    });
+
+    // --- LOGS DEBAN ---
+    onSnapshot(query(collection(db, "HistoriqueDeban"), orderBy("date", "desc")), (snaps) => {
+        const hist = document.getElementById('history-list'); hist.innerHTML = "";
+        snaps.forEach(d => {
+            hist.innerHTML += `<div class="entry" style="color:#8b949e;">[DEBAN] ${d.data().nom}</div>`;
+        });
+    });
+
+    // --- TERMINAL DE COMMANDE ---
+    const termInput = document.getElementById('termInput');
+    termInput.addEventListener('keydown', async (e) => {
+        if (e.key === 'Enter') {
+            const cmd = termInput.value.trim();
+            termInput.value = "";
+            
+            if (cmd.startsWith('/ban ')) {
+                const name = cmd.replace('/ban ', '').trim();
+                if(name) await setDoc(doc(db, "BannedUsers", name), { date: serverTimestamp() });
+            } 
+            else if (cmd.startsWith('/unban ')) {
+                const name = cmd.replace('/unban ', '').trim();
+                if(name) {
+                    await deleteDoc(doc(db, "BannedUsers", name));
+                    await addDoc(collection(db, "HistoriqueDeban"), { nom: name, date: serverTimestamp() });
                 }
             }
-        });
-    </script>
+            else if (cmd === '/clear') {
+                document.getElementById('del-logs').innerHTML = "Logs nettoyés.";
+            }
+        }
+    });
+</script>
 </body>
 </html>
