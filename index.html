@@ -2,43 +2,45 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Console Admin v2 - Collège Social</title>
+    <title>Console Admin v3 - Collège Social</title>
     <style>
         body { font-family: 'Consolas', 'Monaco', monospace; background: #0a0c10; color: #39ff14; padding: 20px; padding-bottom: 120px; line-height: 1.5; }
         .section { background: #161b22; padding: 15px; border-radius: 5px; margin-bottom: 20px; border: 1px solid #30363d; color: #c9d1d9; }
         h2 { color: #58a6ff; font-size: 0.9rem; border-bottom: 1px solid #333; padding-bottom: 5px; text-transform: uppercase; margin-top: 0; }
         
-        /* Liste style Log */
-        .log-entry { font-size: 0.85rem; margin-bottom: 5px; display: flex; justify-content: space-between; border-bottom: 1px solid #21262d; padding: 4px 0; }
+        .log-entry { font-size: 0.85rem; margin-bottom: 5px; display: flex; justify-content: space-between; border-bottom: 1px solid #21262d; padding: 4px 0; align-items: center; }
         .log-entry b { color: #58a6ff; }
-        .deleted-log { color: #ffa657; font-style: italic; border-left: 2px solid #da3633; padding-left: 8px; margin-bottom: 5px; font-size: 0.8rem; }
+        
+        /* Style spécial pour les logs de suppression */
+        .deleted-log { color: #ffa657; font-size: 0.8rem; display: flex; justify-content: space-between; align-items: center; background: rgba(218, 54, 51, 0.1); padding: 5px; border-radius: 4px; margin-bottom: 5px; }
         
         .btn-mini { background: #21262d; border: 1px solid #30363d; color: #f85149; cursor: pointer; font-size: 0.7rem; padding: 2px 6px; border-radius: 3px; }
         .btn-mini:hover { background: #da3633; color: white; }
+        .btn-restore { background: #238636; color: white; border: none; padding: 2px 8px; border-radius: 3px; cursor: pointer; font-size: 0.7rem; margin-left: 10px; }
+        .btn-restore:hover { background: #2ea043; }
 
-        /* TERMINAL STYLE */
         .terminal-wrapper { position: fixed; bottom: 0; left: 0; width: 100%; background: #010409; border-top: 2px solid #39ff14; padding: 10px 20px; box-sizing: border-box; z-index: 1000; }
         .terminal-input-row { display: flex; align-items: center; gap: 10px; }
         .prompt { color: #39ff14; font-weight: bold; }
         #termInput { background: transparent; border: none; color: #39ff14; flex: 1; font-family: inherit; font-size: 1.1rem; outline: none; }
         
-        .scroll-box { max-height: 200px; overflow-y: auto; scrollbar-width: thin; }
+        .scroll-box { max-height: 250px; overflow-y: auto; scrollbar-width: thin; }
     </style>
 </head>
 <body>
 
     <div style="max-width: 1200px; margin: 0 auto;">
-        <h1 style="color: #39ff14; font-size: 1.2rem;">>_ TERMINAL_MODERATION [BÊTA_V2]</h1>
+        <h1 style="color: #39ff14; font-size: 1.2rem;">>_ TERMINAL_MODERATION [RESTORATION_SYSTEM]</h1>
 
         <div class="section">
-            <h2>💬 FLUX_LIVE (Messages Actuels)</h2>
-            <div id="admin-feed" class="scroll-box">Attente de données...</div>
+            <h2>💬 FLUX_LIVE (Messages sur le site)</h2>
+            <div id="admin-feed" class="scroll-box">Connexion au Cloud...</div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+        <div style="display: grid; grid-template-columns: 1.2fr 1fr 0.8fr; gap: 15px;">
             <div class="section">
-                <h2>🗑️ LOGS_SUPPRESSIONS (Historique)</h2>
-                <div id="del-logs" class="scroll-box" style="color: #8b949e;">Aucune suppression...</div>
+                <h2>🗑️ LOGS_SUPPRESSIONS (Restauration possible)</h2>
+                <div id="del-logs" class="scroll-box">Aucun message supprimé cette session.</div>
             </div>
             <div class="section">
                 <h2>🚫 DATABASE: BANNED</h2>
@@ -54,7 +56,7 @@
     <div class="terminal-wrapper">
         <div class="terminal-input-row">
             <span class="prompt">admin@social:~$</span>
-            <input type="text" id="termInput" placeholder="Ex: /ban Jean ou /unban Jean" autofocus>
+            <input type="text" id="termInput" placeholder="Commandes : /ban [nom], /unban [nom]" autofocus>
         </div>
     </div>
 
@@ -74,55 +76,71 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- GESTION DU FLUX LIVE ---
+        // --- FLUX LIVE ---
         onSnapshot(query(collection(db, "messages"), orderBy("date", "desc")), (snaps) => {
             const feed = document.getElementById('admin-feed'); feed.innerHTML = "";
             snaps.forEach(d => {
                 const data = d.data();
                 const div = document.createElement('div');
                 div.className = 'log-entry';
+                // Sécurisation des textes pour les guillemets
+                const safeAuteur = data.auteur.replace(/'/g, "\\'");
+                const safeTexte = data.texte.replace(/'/g, "\\'");
+                
                 div.innerHTML = `<span>[OK] <b>${data.auteur}</b>: ${data.texte}</span> 
-                <button class="btn-mini" onclick="processDelete('${d.id}', '${data.auteur.replace(/'/g, "\\'")}', '${data.texte.replace(/'/g, "\\'")}')">DEL</button>`;
+                <button class="btn-mini" onclick="processDelete('${d.id}', '${safeAuteur}', '${safeTexte}')">DEL</button>`;
                 feed.appendChild(div);
             });
         });
 
-        // --- GESTION DES BANNIS ---
-        onSnapshot(collection(db, "BannedUsers"), (snaps) => {
-            const list = document.getElementById('banned-list'); list.innerHTML = "";
-            snaps.forEach(d => {
-                list.innerHTML += `<div class="log-entry"><span>[BAN] ${d.id}</span></div>`;
-            });
-        });
-
-        // --- GESTION DE L'HISTORIQUE DEBAN ---
-        onSnapshot(query(collection(db, "HistoriqueDeban"), orderBy("date", "desc")), (snaps) => {
-            const hist = document.getElementById('history-list'); hist.innerHTML = "";
-            snaps.forEach(d => {
-                hist.innerHTML += `<div style="font-size:0.75rem;">[GRÂCE] ${d.data().nom}</div>`;
-            });
-        });
-
-        // --- LOGIQUE SUPPRESSION + LOG ---
+        // --- ACTION : SUPPRIMER ET LOGUER ---
         window.processDelete = async (id, auteur, texte) => {
             const logBox = document.getElementById('del-logs');
-            if(logBox.innerHTML.includes("Aucune suppression")) logBox.innerHTML = "";
+            if(logBox.innerHTML.includes("Aucun message")) logBox.innerHTML = "";
             
-            // On ajoute visuellement aux logs avant de supprimer
-            const logEntry = document.createElement('div');
-            logEntry.className = 'deleted-log';
-            logEntry.innerHTML = `[SUPPR] ${auteur}: ${texte}`;
-            logBox.prepend(logEntry);
+            const div = document.createElement('div');
+            div.className = 'deleted-log';
+            const safeAuteur = auteur.replace(/'/g, "\\'");
+            const safeTexte = texte.replace(/'/g, "\\'");
+
+            div.innerHTML = `<span>${auteur}: ${texte}</span>
+                             <button class="btn-restore" onclick="restaurerMsg('${safeAuteur}', '${safeTexte}', this)">REMETTRE</button>`;
+            logBox.prepend(div);
 
             await deleteDoc(doc(db, "messages", id));
         };
+
+        // --- ACTION : RESTAURER ---
+        window.restaurerMsg = async (auteur, texte, btnElement) => {
+            try {
+                await addDoc(collection(db, "messages"), {
+                    auteur: auteur,
+                    texte: texte,
+                    date: serverTimestamp()
+                });
+                // Une fois remis, on enlève la ligne du log
+                btnElement.parentElement.remove();
+            } catch (e) {
+                alert("Erreur lors de la restauration.");
+            }
+        };
+
+        // --- BANNIS & GRÂCES ---
+        onSnapshot(collection(db, "BannedUsers"), (snaps) => {
+            const list = document.getElementById('banned-list'); list.innerHTML = "";
+            snaps.forEach(d => { list.innerHTML += `<div class="log-entry"><span>[BAN] ${d.id}</span></div>`; });
+        });
+
+        onSnapshot(query(collection(db, "HistoriqueDeban"), orderBy("date", "desc")), (snaps) => {
+            const hist = document.getElementById('history-list'); hist.innerHTML = "";
+            snaps.forEach(d => { hist.innerHTML += `<div style="font-size:0.75rem;">[GRÂCE] ${d.data().nom}</div>`; });
+        });
 
         // --- TERMINAL ---
         document.getElementById('termInput').addEventListener('keydown', async (e) => {
             if (e.key === 'Enter') {
                 const cmd = termInput.value.trim();
                 termInput.value = "";
-                
                 if (cmd.startsWith('/ban ')) {
                     const name = cmd.replace('/ban ', '').trim();
                     await setDoc(doc(db, "BannedUsers", name), { date: serverTimestamp() });
