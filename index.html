@@ -2,11 +2,10 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Système de Contrôle - Admin Terminal</title>
+    <title>ROOT_CONSOLE - Cloud Archiving System</title>
     <style>
-        /* --- STYLE TERMINAL RETRO --- */
         body {
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-family: 'Consolas', 'Monaco', monospace;
             background-color: #05070a;
             color: #39ff14;
             margin: 0;
@@ -16,11 +15,10 @@
         }
 
         h1 { font-size: 1.2rem; border-bottom: 1px solid #39ff14; padding-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; }
-        h2 { font-size: 0.9rem; color: #58a6ff; margin-top: 0; text-transform: uppercase; }
+        h2 { font-size: 0.9rem; color: #58a6ff; margin-top: 0; text-transform: uppercase; border-bottom: 1px solid #1f242b; padding-bottom: 5px; }
 
         .container { max-width: 1400px; margin: 0 auto; }
 
-        /* --- SECTIONS --- */
         .section {
             background: rgba(16, 20, 25, 0.8);
             border: 1px solid #1f242b;
@@ -31,8 +29,7 @@
 
         .grid { display: grid; grid-template-columns: 1.2fr 1fr 0.8fr; gap: 20px; }
 
-        /* --- LISTES ET LOGS --- */
-        .scroll-box { height: 300px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #1f242b #05070a; }
+        .scroll-box { height: 350px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #1f242b #05070a; }
         
         .entry {
             font-size: 0.85rem;
@@ -47,7 +44,6 @@
         .user-tag { color: #58a6ff; font-weight: bold; }
         .del-text { color: #ff7b72; font-style: italic; }
 
-        /* --- BOUTONS TERMINAL --- */
         .btn {
             background: transparent;
             border: 1px solid #39ff14;
@@ -63,12 +59,9 @@
         .btn-restore { border-color: #238636; color: #238636; }
         .btn-restore:hover { background: #238636; color: white; box-shadow: 0 0 10px #238636; }
 
-        /* --- CONSOLE FIXE --- */
         .console-wrapper {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
+            bottom: 0; left: 0; width: 100%;
             background: #010409;
             border-top: 2px solid #39ff14;
             padding: 15px 30px;
@@ -76,9 +69,9 @@
             display: flex;
             align-items: center;
             gap: 15px;
-            box-shadow: 0 -5px 15px rgba(0,0,0,0.5);
+            z-index: 1000;
         }
-        .prompt { color: #39ff14; font-weight: bold; font-size: 1.1rem; }
+        .prompt { color: #39ff14; font-weight: bold; }
         #termInput {
             flex: 1;
             background: transparent;
@@ -87,60 +80,53 @@
             font-family: inherit;
             font-size: 1.2rem;
             outline: none;
-            caret-color: #39ff14;
         }
 
-        /* --- EFFET SCANLINE --- */
         body::before {
-            content: " ";
-            display: block;
-            position: fixed;
+            content: " "; display: block; position: fixed;
             top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            z-index: 9999;
-            pointer-events: none;
-            background-size: 100% 2px, 3px 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            z-index: 9999; pointer-events: none; background-size: 100% 2px, 3px 100%;
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>>_ ADMIN_CONSOLE / ACCESS_LEVEL: ROOT</h1>
+    <h1>>_ CLOUD_ADMIN_TERMINAL / DATABASE_SYNC_ENABLED</h1>
 
     <div class="section">
-        <h2>[LIVE_STREAM] - Messages du Cloud</h2>
-        <div id="admin-feed" class="scroll-box">Initialisation du flux...</div>
+        <h2>[LIVE_MESSAGES] - Flux Actuel</h2>
+        <div id="admin-feed" class="scroll-box">Initialisation...</div>
     </div>
 
     <div class="grid">
         <div class="section">
-            <h2>[RECOVERY_LOGS] - Suppressions</h2>
-            <div id="del-logs" class="scroll-box" style="color: #8b949e;">Aucun log détecté.</div>
+            <h2>[CLOUD_ARCHIVES] - Messages Supprimés</h2>
+            <div id="del-logs" class="scroll-box">Aucune archive sur le Cloud.</div>
         </div>
 
         <div class="section">
-            <h2>[BANNED_DB] - Utilisateurs Bloqués</h2>
-            <div id="banned-list" class="scroll-box">Base de données vide.</div>
+            <h2>[BANNED_USERS] - Liste Noire</h2>
+            <div id="banned-list" class="scroll-box">Chargement...</div>
         </div>
 
         <div class="section">
-            <h2>[HISTORY_LOGS] - Grâces</h2>
-            <div id="history-list" class="scroll-box">Aucun événement.</div>
+            <h2>[HISTORY] - Dernières Grâces</h2>
+            <div id="history-list" class="scroll-box">Vidé.</div>
         </div>
     </div>
 </div>
 
 <div class="console-wrapper">
-    <span class="prompt">admin@college_social:~$</span>
-    <input type="text" id="termInput" placeholder="Tapez /ban Nom ou /unban Nom..." autofocus autocomplete="off">
+    <span class="prompt">admin@cloud:~$</span>
+    <input type="text" id="termInput" placeholder="Commandes: /ban [nom], /unban [nom]" autofocus autocomplete="off">
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc, setDoc, serverTimestamp, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // --- CONFIGURATION FIREBASE ---
     const firebaseConfig = {
         apiKey: "AIzaSyAXIryKruq3g7JtdM8jgv8IDGjserqY3IY",
         authDomain: "college-social-cloud.firebaseapp.com",
@@ -153,83 +139,85 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // --- CHARGEMENT DU FLUX LIVE ---
+    // --- 1. FLUX DES MESSAGES ACTIFS ---
     onSnapshot(query(collection(db, "messages"), orderBy("date", "desc")), (snaps) => {
         const feed = document.getElementById('admin-feed'); feed.innerHTML = "";
         snaps.forEach(d => {
             const data = d.data();
             const div = document.createElement('div');
             div.className = 'entry';
-            
             const sAuteur = data.auteur.replace(/'/g, "\\'");
             const sTexte = data.texte.replace(/'/g, "\\'");
-            
             div.innerHTML = `<span>[OK] <span class="user-tag">${data.auteur}</span>: ${data.texte}</span> 
-            <button class="btn" onclick="handleDelete('${d.id}', '${sAuteur}', '${sTexte}')">DEL</button>`;
+            <button class="btn" onclick="archiveAndDelete('${d.id}', '${sAuteur}', '${sTexte}')">DEL</button>`;
             feed.appendChild(div);
         });
     });
 
-    // --- ACTION : SUPPRESSION + SAUVEGARDE TEMPORAIRE ---
-    window.handleDelete = async (id, auteur, texte) => {
+    // --- 2. FLUX DES ARCHIVES (MESSAGES SUPPRIMÉS) ---
+    onSnapshot(query(collection(db, "MessagesSupprimes"), orderBy("dateSuppr", "desc")), (snaps) => {
         const logBox = document.getElementById('del-logs');
-        if(logBox.innerHTML.includes("Aucun log")) logBox.innerHTML = "";
-        
-        const div = document.createElement('div');
-        div.className = 'entry';
-        div.innerHTML = `<span class="del-text">[SUPPR] ${auteur}: ${texte}</span>
-                         <button class="btn btn-restore" onclick="undoDelete('${auteur.replace(/'/g, "\\'")}', '${texte.replace(/'/g, "\\'")}', this)">RESTORE</button>`;
-        logBox.prepend(div);
+        if(snaps.empty) { logBox.innerHTML = "Archives vides."; return; }
+        logBox.innerHTML = "";
+        snaps.forEach(d => {
+            const data = d.data();
+            const div = document.createElement('div');
+            div.className = 'entry';
+            const sAuteur = data.auteur.replace(/'/g, "\\'");
+            const sTexte = data.texte.replace(/'/g, "\\'");
+            div.innerHTML = `<span class="del-text">[ARCHIVE] ${data.auteur}: ${data.texte}</span>
+                             <button class="btn btn-restore" onclick="restoreFromCloud('${d.id}', '${sAuteur}', '${sTexte}')">RESTORE</button>`;
+            logBox.appendChild(div);
+        });
+    });
 
+    // --- ACTION : SUPPRIMER ET ENVOYER AU CLOUD ---
+    window.archiveAndDelete = async (id, auteur, texte) => {
+        // Ajouter à la collection des supprimés
+        await addDoc(collection(db, "MessagesSupprimes"), {
+            auteur: auteur,
+            texte: texte,
+            dateSuppr: serverTimestamp()
+        });
+        // Supprimer du flux principal
         await deleteDoc(doc(db, "messages", id));
     };
 
-    // --- ACTION : RESTAURATION (UNDO) ---
-    window.undoDelete = async (auteur, texte, btn) => {
+    // --- ACTION : RESTAURER DU CLOUD ---
+    window.restoreFromCloud = async (docId, auteur, texte) => {
+        // Remettre dans le flux principal
         await addDoc(collection(db, "messages"), {
             auteur: auteur,
             texte: texte,
             date: serverTimestamp()
         });
-        btn.parentElement.remove();
+        // Supprimer de l'archive Cloud
+        await deleteDoc(doc(db, "MessagesSupprimes", docId));
     };
 
-    // --- DATABASE BANNIS ---
+    // --- BANNIS & HISTORIQUE ---
     onSnapshot(collection(db, "BannedUsers"), (snaps) => {
         const list = document.getElementById('banned-list'); list.innerHTML = "";
-        snaps.forEach(d => {
-            list.innerHTML += `<div class="entry"><span>[BLOCKED] ${d.id}</span></div>`;
-        });
+        snaps.forEach(d => { list.innerHTML += `<div class="entry"><span>[BLOCKED] ${d.id}</span></div>`; });
     });
 
-    // --- LOGS DEBAN ---
     onSnapshot(query(collection(db, "HistoriqueDeban"), orderBy("date", "desc")), (snaps) => {
         const hist = document.getElementById('history-list'); hist.innerHTML = "";
-        snaps.forEach(d => {
-            hist.innerHTML += `<div class="entry" style="color:#8b949e;">[DEBAN] ${d.data().nom}</div>`;
-        });
+        snaps.forEach(d => { hist.innerHTML += `<div class="entry" style="color:#8b949e;">[DEBAN] ${d.data().nom}</div>`; });
     });
 
-    // --- TERMINAL DE COMMANDE ---
-    const termInput = document.getElementById('termInput');
-    termInput.addEventListener('keydown', async (e) => {
+    // --- TERMINAL ---
+    document.getElementById('termInput').addEventListener('keydown', async (e) => {
         if (e.key === 'Enter') {
             const cmd = termInput.value.trim();
             termInput.value = "";
-            
             if (cmd.startsWith('/ban ')) {
                 const name = cmd.replace('/ban ', '').trim();
-                if(name) await setDoc(doc(db, "BannedUsers", name), { date: serverTimestamp() });
-            } 
-            else if (cmd.startsWith('/unban ')) {
+                await setDoc(doc(db, "BannedUsers", name), { date: serverTimestamp() });
+            } else if (cmd.startsWith('/unban ')) {
                 const name = cmd.replace('/unban ', '').trim();
-                if(name) {
-                    await deleteDoc(doc(db, "BannedUsers", name));
-                    await addDoc(collection(db, "HistoriqueDeban"), { nom: name, date: serverTimestamp() });
-                }
-            }
-            else if (cmd === '/clear') {
-                document.getElementById('del-logs').innerHTML = "Logs nettoyés.";
+                await deleteDoc(doc(db, "BannedUsers", name));
+                await addDoc(collection(db, "HistoriqueDeban"), { nom: name, date: serverTimestamp() });
             }
         }
     });
