@@ -2,134 +2,83 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>ROOT_CONSOLE - Advanced Edit & Restore</title>
+    <title>ROOT_CONSOLE - Image Mod & Archive</title>
     <style>
         body {
             font-family: 'Consolas', 'Monaco', monospace;
-            background-color: #05070a;
-            color: #39ff14;
-            margin: 0;
-            padding: 20px;
-            padding-bottom: 100px;
-            text-shadow: 0 0 5px rgba(57, 255, 20, 0.5);
+            background-color: #05070a; color: #39ff14;
+            margin: 0; padding: 20px; padding-bottom: 100px;
         }
-
-        h1 { font-size: 1.2rem; border-bottom: 1px solid #39ff14; padding-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; }
-        h2 { font-size: 0.9rem; color: #58a6ff; margin-top: 0; text-transform: uppercase; border-bottom: 1px solid #1f242b; padding-bottom: 5px; }
+        h1 { font-size: 1.1rem; border-bottom: 1px solid #39ff14; padding-bottom: 8px; text-transform: uppercase; }
+        h2 { font-size: 0.85rem; color: #58a6ff; margin-top: 0; border-bottom: 1px solid #1f242b; }
 
         .container { max-width: 1400px; margin: 0 auto; }
-
-        .section {
-            background: rgba(16, 20, 25, 0.8);
-            border: 1px solid #1f242b;
-            border-radius: 4px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-
+        .section { background: rgba(16, 20, 25, 0.9); border: 1px solid #1f242b; padding: 15px; margin-bottom: 20px; border-radius: 4px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .scroll-box { height: 350px; overflow-y: auto; }
 
-        .scroll-box { height: 350px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #1f242b #05070a; }
-        
+        /* --- STYLE DES MESSAGES --- */
         .entry {
-            font-size: 0.85rem;
-            padding: 10px;
-            border-bottom: 1px solid #161b22;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
+            font-size: 0.85rem; padding: 10px; border-bottom: 1px solid #161b22;
+            display: flex; justify-content: space-between; align-items: center; gap: 15px;
         }
-        .entry:hover { background: rgba(57, 255, 20, 0.05); }
+        .user-tag { color: #58a6ff; font-weight: bold; min-width: 80px; }
+        
+        /* --- STYLE DES IMAGES DANS L'ADMIN --- */
+        .entry img { 
+            max-height: 50px; border-radius: 3px; border: 1px solid #39ff14; 
+            cursor: pointer; transition: 0.2s; 
+        }
+        .entry img:hover { max-height: 250px; position: relative; z-index: 100; }
 
-        /* Style spécifique pour l'édition dans l'archive */
         .edit-input {
-            background: #0d1117;
-            border: 1px solid #30363d;
-            color: #ffa657;
-            padding: 5px;
-            border-radius: 3px;
-            flex: 1;
-            font-family: inherit;
-            font-size: 0.8rem;
+            background: #0d1117; border: 1px solid #30363d; color: #ffa657;
+            padding: 5px; border-radius: 3px; flex: 1; font-family: inherit;
         }
-        .edit-input:focus { border-color: #58a6ff; outline: none; }
-
-        .user-tag { color: #58a6ff; font-weight: bold; min-width: 100px; }
 
         .btn {
-            background: transparent;
-            border: 1px solid #39ff14;
-            color: #39ff14;
-            font-family: inherit;
-            font-size: 0.7rem;
-            cursor: pointer;
-            padding: 4px 10px;
-            text-transform: uppercase;
-            white-space: nowrap;
+            background: transparent; border: 1px solid #39ff14; color: #39ff14;
+            font-size: 0.7rem; cursor: pointer; padding: 4px 8px; text-transform: uppercase;
         }
-        .btn:hover { background: #39ff14; color: #05070a; box-shadow: 0 0 10px #39ff14; }
+        .btn:hover { background: #39ff14; color: #05070a; }
         .btn-restore { border-color: #238636; color: #238636; }
         .btn-restore:hover { background: #238636; color: white; }
 
-        .console-wrapper {
-            position: fixed;
-            bottom: 0; left: 0; width: 100%;
-            background: #010409;
-            border-top: 2px solid #39ff14;
-            padding: 15px 30px;
-            box-sizing: border-box;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            z-index: 1000;
+        .console-bar {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: #010409; border-top: 2px solid #39ff14;
+            padding: 15px 30px; box-sizing: border-box; display: flex; gap: 10px;
         }
-        #termInput {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: #39ff14;
-            font-family: inherit;
-            font-size: 1.2rem;
-            outline: none;
-        }
-
-        body::before {
-            content: " "; display: block; position: fixed;
-            top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
-            z-index: 9999; pointer-events: none; background-size: 100% 2px;
-        }
+        #termInput { flex: 1; background: transparent; border: none; color: #39ff14; font-size: 1.1rem; outline: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>>_ CLOUD_MODERATION / EDIT_AND_RESTORE_MODE</h1>
+    <h1>>_ ADMIN_TERMINAL [IMAGE_SYNC_ENABLED]</h1>
 
     <div class="section">
-        <h2>[LIVE_MESSAGES] - Flux en Direct</h2>
+        <h2>[LIVE_CHAT] - Flux avec Images</h2>
         <div id="admin-feed" class="scroll-box">Connexion...</div>
     </div>
 
     <div class="grid">
         <div class="section">
-            <h2>[CLOUD_ARCHIVES] - Modifier & Restaurer</h2>
-            <div id="del-logs" class="scroll-box">Aucune archive.</div>
+            <h2>[CLOUD_ARCHIVES] - Éditer & Restaurer</h2>
+            <div id="del-logs" class="scroll-box">Archives vides.</div>
         </div>
-
         <div class="section">
             <h2>[BANNED_USERS] - Liste Noire</h2>
-            <div id="banned-list" class="scroll-box" style="height: 150px;">Chargement...</div>
+            <div id="banned-list" style="height: 150px; overflow-y:auto;"></div>
             <h2 style="margin-top:20px;">[HISTORY] - Grâces</h2>
-            <div id="history-list" class="scroll-box" style="height: 150px;">Vide.</div>
+            <div id="history-list" style="height: 150px; overflow-y:auto;"></div>
         </div>
     </div>
 </div>
 
-<div class="console-wrapper">
-    <span style="color:#39ff14; font-weight:bold;">admin@cloud:~$</span>
-    <input type="text" id="termInput" placeholder="Commandes: /ban [nom], /unban [nom]" autofocus autocomplete="off">
+<div class="console-bar">
+    <span style="color:#39ff14;">admin@cloud:~$</span>
+    <input type="text" id="termInput" placeholder="/ban [nom] | /unban [nom]" autofocus autocomplete="off">
 </div>
 
 <script type="module">
@@ -148,15 +97,19 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // --- 1. MESSAGES ACTIFS ---
+    // --- 1. LIVE FEED AVEC PREVIEW IMAGES ---
     onSnapshot(query(collection(db, "messages"), orderBy("date", "desc")), (snaps) => {
         const feed = document.getElementById('admin-feed'); feed.innerHTML = "";
         snaps.forEach(d => {
             const data = d.data();
+            let text = data.texte;
+            const imgRegex = /(https?:\/\/.*\.(?:png|jpg|jpeg|gif|webp))/i;
+            if(imgRegex.test(text)) text = text.replace(imgRegex, (url) => `<br><img src="${url}">`);
+
             const div = document.createElement('div');
             div.className = 'entry';
-            div.innerHTML = `<span>[LIVE] <span class="user-tag">${data.auteur}</span>: ${data.texte}</span> 
-            <button class="btn" onclick="moveToArchive('${d.id}', '${data.auteur.replace(/'/g, "\\'")}', '${data.texte.replace(/'/g, "\\'")}')">ARCHIVER (DEL)</button>`;
+            div.innerHTML = `<span><span class="user-tag">${data.auteur}</span>: ${text}</span> 
+            <button class="btn" onclick="moveToArchive('${d.id}', '${data.auteur.replace(/'/g, "\\'")}', '${data.texte.replace(/'/g, "\\'")}')">ARCHIVE</button>`;
             feed.appendChild(div);
         });
     });
@@ -164,57 +117,31 @@
     // --- 2. ARCHIVES AVEC ÉDITION ---
     onSnapshot(query(collection(db, "MessagesSupprimes"), orderBy("dateSuppr", "desc")), (snaps) => {
         const logBox = document.getElementById('del-logs');
-        if(snaps.empty) { logBox.innerHTML = "Archives vides."; return; }
-        logBox.innerHTML = "";
+        logBox.innerHTML = snaps.empty ? "Archives vides." : "";
         snaps.forEach(d => {
             const data = d.data();
             const div = document.createElement('div');
             div.className = 'entry';
-            div.innerHTML = `
-                <span class="user-tag">${data.auteur}</span>
+            div.innerHTML = `<span class="user-tag">${data.auteur}</span>
                 <input type="text" class="edit-input" id="edit-${d.id}" value="${data.texte}">
-                <button class="btn btn-restore" onclick="restoreModified('${d.id}', '${data.auteur.replace(/'/g, "\\'")}')">RESTORE</button>
-            `;
+                <button class="btn btn-restore" onclick="restoreCloud('${d.id}', '${data.auteur.replace(/'/g, "\\'")}')">RESTORE</button>`;
             logBox.appendChild(div);
         });
     });
 
-    // --- ACTION : ARCHIVER ---
+    // --- ACTIONS ---
     window.moveToArchive = async (id, auteur, texte) => {
-        await addDoc(collection(db, "MessagesSupprimes"), {
-            auteur: auteur,
-            texte: texte,
-            dateSuppr: serverTimestamp()
-        });
+        await addDoc(collection(db, "MessagesSupprimes"), { auteur, texte, dateSuppr: serverTimestamp() });
         await deleteDoc(doc(db, "messages", id));
     };
 
-    // --- ACTION : RESTAURER AVEC MODIFICATION ---
-    window.restoreModified = async (docId, auteur) => {
-        // On récupère la valeur actuelle de l'input au moment du clic
-        const newText = document.getElementById(`edit-${docId}`).value;
-        
-        await addDoc(collection(db, "messages"), {
-            auteur: auteur,
-            texte: newText, // On envoie le texte modifié
-            date: serverTimestamp()
-        });
-        
-        // Supprimer de l'archive Cloud
-        await deleteDoc(doc(db, "MessagesSupprimes", docId));
+    window.restoreCloud = async (id, auteur) => {
+        const newText = document.getElementById(`edit-${id}`).value;
+        await addDoc(collection(db, "messages"), { auteur, texte: newText, date: serverTimestamp() });
+        await deleteDoc(doc(db, "MessagesSupprimes", id));
     };
 
-    // --- AUTRES FONCTIONS ---
-    onSnapshot(collection(db, "BannedUsers"), (snaps) => {
-        const list = document.getElementById('banned-list'); list.innerHTML = "";
-        snaps.forEach(d => { list.innerHTML += `<div class="entry"><span>[BLOCKED] ${d.id}</span></div>`; });
-    });
-
-    onSnapshot(query(collection(db, "HistoriqueDeban"), orderBy("date", "desc")), (snaps) => {
-        const hist = document.getElementById('history-list'); hist.innerHTML = "";
-        snaps.forEach(d => { hist.innerHTML += `<div class="entry" style="color:#8b949e; font-size:0.7rem;">[DEBAN] ${d.data().nom}</div>`; });
-    });
-
+    // --- COMMANDES TERMINAL ---
     document.getElementById('termInput').addEventListener('keydown', async (e) => {
         if (e.key === 'Enter') {
             const cmd = termInput.value.trim();
@@ -228,6 +155,12 @@
                 await addDoc(collection(db, "HistoriqueDeban"), { nom: name, date: serverTimestamp() });
             }
         }
+    });
+
+    // BANNIS & LOGS
+    onSnapshot(collection(db, "BannedUsers"), s => {
+        document.getElementById('banned-list').innerHTML = "";
+        s.forEach(d => document.getElementById('banned-list').innerHTML += `<div class="entry">[BAN] ${d.id}</div>`);
     });
 </script>
 </body>
