@@ -9,6 +9,8 @@
         .container { max-width: 800px; margin: 0 auto; }
         h1 { border-bottom: 2px solid #e74c3c; padding-bottom: 10px; color: #e74c3c; }
         
+        .controls { background: #2c2c2c; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #444; }
+
         .post { 
             background: #2c2c2c; padding: 15px; border-radius: 8px; 
             margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
@@ -16,30 +18,33 @@
         }
         .post-info { flex: 1; }
         .post-info b { color: #4a90e2; }
-        .post-info i { color: #888; font-size: 0.8rem; }
         
-        .del-btn { 
-            background: #e74c3c; color: white; border: none; 
-            padding: 10px 15px; border-radius: 5px; cursor: pointer; 
-            font-weight: bold; margin-left: 10px;
-        }
-        .del-btn:hover { background: #c0392b; }
+        .btn-group { display: flex; gap: 10px; }
+        .del-btn { background: #e74c3c; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .ban-btn { background: #6c5ce7; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { opacity: 0.8; }
     </style>
 </head>
 <body>
 
     <div class="container">
         <h1>🛠️ Panel de Modération</h1>
-        <p>Tous les messages du Cloud s'affichent ici. Action irréversible.</p>
+        
+        <div class="controls">
+            <label style="cursor: pointer;">
+                <input type="checkbox" id="noConfirm"> ⚡ **Mode Rapide** (Supprimer sans demander confirmation)
+            </label>
+        </div>
+
         <div id="admin-feed">Chargement des messages...</div>
     </div>
 
     <script type="module">
+        // Importations obligatoires
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc } 
+        import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc, setDoc, serverTimestamp } 
         from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // CONFIGURATION (La même que ton app principale)
         const firebaseConfig = {
             apiKey: "AIzaSyAXIryKruq3g7JtdM8jgv8IDGjserqY3IY",
             authDomain: "college-social-cloud.firebaseapp.com",
@@ -51,10 +56,9 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const postsCol = collection(db, "messages");
 
         // CHARGER LES MESSAGES
-        const q = query(postsCol, orderBy("date", "desc"));
+        const q = query(collection(db, "messages"), orderBy("date", "desc"));
         onSnapshot(q, (snapshot) => {
             const feed = document.getElementById('admin-feed');
             feed.innerHTML = "";
@@ -65,10 +69,13 @@
                 div.className = 'post';
                 div.innerHTML = `
                     <div class="post-info">
-                        <b>${data.auteur}</b> (${data.college})<br>
+                        <b>${data.auteur}</b><br>
                         <span>${data.texte}</span>
                     </div>
-                    <button class="del-btn" onclick="supprimer('${d.id}')">SUPPRIMER</button>
+                    <div class="btn-group">
+                        <button class="del-btn" onclick="supprimer('${d.id}')">SUPPRIMER</button>
+                        <button class="ban-btn" onclick="bannir('${data.auteur}', '${d.id}')">BANNIR</button>
+                    </div>
                 `;
                 feed.appendChild(div);
             });
@@ -76,12 +83,23 @@
 
         // FONCTION SUPPRIMER
         window.supprimer = async (id) => {
-            if(confirm("Supprimer ce message pour TOUT LE MONDE ?")) {
-                try {
-                    await deleteDoc(doc(db, "messages", id));
-                } catch (e) {
-                    alert("Erreur : Vérifie que tes règles Firestore autorisent la suppression !");
-                }
+            const skip = document.getElementById('noConfirm').checked;
+            if(skip || confirm("Supprimer ce message ?")) {
+                await deleteDoc(doc(db, "messages", id));
+            }
+        };
+
+        // FONCTION BANNIR
+        window.bannir = async (nom, msgId) => {
+            if(confirm("Bannir " + nom + " ?")) {
+                // Ajout à la liste noire
+                await setDoc(doc(db, "BannedUsers", nom), {
+                    date: serverTimestamp(),
+                    raison: "Modération Panel"
+                });
+                // Suppression du message
+                await deleteDoc(doc(db, "messages", msgId));
+                alert(nom + " a été banni.");
             }
         };
     </script>
