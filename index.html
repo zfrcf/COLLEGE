@@ -2,138 +2,119 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>ROOT_CONSOLE - Advanced Photo Mod</title>
+    <title>ROOT_CONSOLE - System Admin</title>
     <style>
-        body {
-            font-family: 'Consolas', 'Monaco', monospace; background-color: #05070a; color: #39ff14;
-            margin: 0; padding: 20px; padding-bottom: 120px; text-shadow: 0 0 5px rgba(57, 255, 20, 0.5);
-        }
-        h1 { font-size: 1.1rem; border-bottom: 1px solid #39ff14; padding-bottom: 8px; text-transform: uppercase; }
-        h2 { font-size: 0.85rem; color: #58a6ff; margin-top: 0; border-bottom: 1px solid #1f242b; }
-        .container { max-width: 1400px; margin: 0 auto; }
-        .section { background: rgba(16, 20, 25, 0.9); border: 1px solid #1f242b; padding: 15px; margin-bottom: 20px; border-radius: 4px; }
+        body { font-family: 'Consolas', monospace; background: #05070a; color: #39ff14; padding: 20px; padding-bottom: 100px; }
+        .section { background: rgba(16, 20, 25, 0.9); border: 1px solid #1f242b; padding: 15px; margin-bottom: 20px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .scroll-box { height: 350px; overflow-y: auto; }
-        .entry { font-size: 0.85rem; padding: 10px; border-bottom: 1px solid #161b22; display: flex; justify-content: space-between; align-items: center; gap: 15px; }
-        .user-tag { color: #58a6ff; font-weight: bold; min-width: 80px; }
-        
-        /* --- STYLE DES IMAGES DANS L'ADMIN (PREVIEW AU SURVOL) --- */
-        .entry img { max-height: 50px; border-radius: 3px; border: 1px solid #39ff14; cursor: pointer; transition: 0.2s; }
-        .entry img:hover { max-height: 250px; position: relative; z-index: 100; }
-
-        .edit-input { background: #0d1117; border: 1px solid #30363d; color: #ffa657; padding: 5px; border-radius: 3px; flex: 1; font-family: inherit; }
-        .btn { background: transparent; border: 1px solid #39ff14; color: #39ff14; font-size: 0.7rem; cursor: pointer; padding: 4px 8px; text-transform: uppercase; }
-        .btn:hover { background: #39ff14; color: #05070a; }
-        .btn-restore { border-color: #238636; color: #238636; }
-        .btn-restore:hover { background: #238636; color: white; }
-        .console-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #010409; border-top: 2px solid #39ff14; padding: 15px 30px; box-sizing: border-box; display: flex; gap: 10px; }
-        #termInput { flex: 1; background: transparent; border: none; color: #39ff14; font-size: 1.1rem; outline: none; }
-        body::before { content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%); z-index: 9999; pointer-events: none; background-size: 100% 2px; }
+        .scroll-box { height: 300px; overflow-y: auto; border: 1px solid #161b22; }
+        .entry { padding: 10px; border-bottom: 1px solid #161b22; display: flex; align-items: center; justify-content: space-between; }
+        .entry img { max-height: 40px; cursor: pointer; border: 1px solid #39ff14; }
+        .entry img:hover { max-height: 200px; position: absolute; z-index: 10; }
+        .edit-input { background: #000; border: 1px solid #39ff14; color: #ffa657; padding: 5px; flex: 1; margin: 0 10px; }
+        .btn { background: none; border: 1px solid #39ff14; color: #39ff14; cursor: pointer; padding: 5px; font-size: 10px; }
+        .btn:hover { background: #39ff14; color: #000; }
+        .console { position: fixed; bottom: 0; left: 0; width: 100%; background: #000; border-top: 2px solid #39ff14; padding: 20px; box-sizing: border-box; display: flex; }
+        #termInput { flex: 1; background: none; border: none; color: #39ff14; font-size: 1.2rem; outline: none; }
     </style>
 </head>
 <body>
-<div class="container">
-    <h1>>_ ADMIN_TERMINAL [PHOTO_MOD_ACTIVE]</h1>
+
+    <h1>>_ ADMIN_TERMINAL [SYNC_CLOUD_OK]</h1>
+
     <div class="section">
-        <h2>[LIVE_CHAT] - Flux avec Images (Passe la souris pour zoomer)</h2>
-        <div id="admin-feed" class="scroll-box">Connexion...</div>
+        <h2>[LIVE_FEED]</h2>
+        <div id="admin-feed" class="scroll-box"></div>
     </div>
+
     <div class="grid">
         <div class="section">
-            <h2>[CLOUD_ARCHIVES] - Éditer & Restaurer</h2>
-            <div id="del-logs" class="scroll-box">Archives vides.</div>
+            <h2>[CLOUD_ARCHIVES] - Supprimés (Modifiables)</h2>
+            <div id="del-logs" class="scroll-box"></div>
         </div>
         <div class="section">
-            <h2>[BANNED_USERS] - Liste Noire</h2>
-            <div id="banned-list" style="height: 150px; overflow-y:auto;"></div>
-            <h2 style="margin-top:20px;">[HISTORY] - Grâces</h2>
-            <div id="history-list" style="height: 150px; overflow-y:auto;"></div>
+            <h2>[BANNED_USERS]</h2>
+            <div id="banned-list" class="scroll-box"></div>
         </div>
     </div>
-</div>
-<div class="console-bar">
-    <span style="color:#39ff14;">admin@cloud:~$</span>
-    <input type="text" id="termInput" placeholder="/ban [nom] | /unban [nom]" autofocus autocomplete="off">
-</div>
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc, setDoc, serverTimestamp, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    // Pas besoin de Storage ici, on lit juste des URL.
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyAXIryKruq3g7JtdM8jgv8IDGjserqY3IY",
-        authDomain: "college-social-cloud.firebaseapp.com",
-        projectId: "college-social-cloud",
-        storageBucket: "college-social-cloud.firebasestorage.app",
-        messagingSenderId: "757988289620",
-        appId: "1:757988289620:web:6054829b97a73d28ce91c1"
-    };
+    <div class="console">
+        <span>admin@root:~$ </span>
+        <input type="text" id="termInput" placeholder="/ban [nom] | /unban [nom]" autofocus>
+    </div>
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc, setDoc, serverTimestamp, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // --- 1. LIVE FEED AVEC PREVIEW IMAGES ---
-    onSnapshot(query(collection(db, "messages"), orderBy("date", "desc")), (snaps) => {
-        const feed = document.getElementById('admin-feed'); feed.innerHTML = "";
-        snaps.forEach(d => {
-            const data = d.data();
-            let contenu = `<span>${data.texte || '[Pas de texte]'}</span>`;
-            if(data.image) contenu += `<br><img src="${data.image}" title="Passe la souris pour zoomer">`;
+        const firebaseConfig = {
+            apiKey: "AIzaSyAXIryKruq3g7JtdM8jgv8IDGjserqY3IY",
+            authDomain: "college-social-cloud.firebaseapp.com",
+            projectId: "college-social-cloud",
+            storageBucket: "college-social-cloud.firebasestorage.app",
+            messagingSenderId: "757988289620",
+            appId: "1:757988289620:web:6054829b97a73d28ce91c1"
+        };
 
-            const div = document.createElement('div');
-            div.className = 'entry';
-            div.innerHTML = `<span><span class="user-tag">${data.auteur}</span>: ${contenu}</span> 
-            <button class="btn" onclick="moveToArchive('${d.id}', '${data.auteur.replace(/'/g, "\\'")}', '${data.texte ? data.texte.replace(/'/g, "\\'") : ''}', '${data.image || ''}')">ARCHIVE</button>`;
-            feed.appendChild(div);
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // FLUX LIVE
+        onSnapshot(query(collection(db, "messages"), orderBy("date", "desc")), (snaps) => {
+            const feed = document.getElementById('admin-feed'); feed.innerHTML = "";
+            snaps.forEach(d => {
+                const data = d.data();
+                const img = data.image ? `<img src="${data.image}">` : "";
+                const div = document.createElement('div');
+                div.className = 'entry';
+                div.innerHTML = `<span><b>${data.auteur}</b>: ${data.texte} ${img}</span> 
+                <button class="btn" onclick="archive('${d.id}', '${data.auteur}', '${data.texte || ""}', '${data.image || ""}')">ARCHIVE</button>`;
+                feed.appendChild(div);
+            });
         });
-    });
 
-    // --- 2. ARCHIVES AVEC ÉDITION ---
-    onSnapshot(query(collection(db, "MessagesSupprimes"), orderBy("dateSuppr", "desc")), (snaps) => {
-        const logBox = document.getElementById('del-logs');
-        logBox.innerHTML = snaps.empty ? "Archives vides." : "";
-        snaps.forEach(d => {
-            const data = d.data();
-            const div = document.createElement('div');
-            div.className = 'entry';
-            div.innerHTML = `<span class="user-tag">${data.auteur}</span>
-                <input type="text" class="edit-input" id="edit-${d.id}" value="${data.texte}">
-                <button class="btn btn-restore" onclick="restoreCloud('${d.id}', '${data.auteur.replace(/'/g, "\\'")}', '${data.image || ''}')">RESTORE</button>`;
-            logBox.appendChild(div);
+        // ARCHIVES
+        onSnapshot(query(collection(db, "MessagesSupprimes"), orderBy("dateSuppr", "desc")), (snaps) => {
+            const box = document.getElementById('del-logs'); box.innerHTML = "";
+            snaps.forEach(d => {
+                const data = d.data();
+                box.innerHTML += `<div class="entry">
+                    <b>${data.auteur}</b>
+                    <input type="text" class="edit-input" id="edit-${d.id}" value="${data.texte}">
+                    <button class="btn" onclick="restore('${d.id}', '${data.auteur}', '${data.image || ""}')">RESTORE</button>
+                </div>`;
+            });
         });
-    });
 
-    // --- ACTIONS (Adaptées pour les URL d'images) ---
-    window.moveToArchive = async (id, auteur, texte, imageUrl) => {
-        await addDoc(collection(db, "MessagesSupprimes"), { auteur, texte, dateSuppr: serverTimestamp(), image: imageUrl });
-        await deleteDoc(doc(db, "messages", id));
-    };
+        window.archive = async (id, auteur, texte, image) => {
+            await addDoc(collection(db, "MessagesSupprimes"), { auteur, texte, image, dateSuppr: serverTimestamp() });
+            await deleteDoc(doc(db, "messages", id));
+        };
 
-    window.restoreCloud = async (id, auteur, imageUrl) => {
-        const newText = document.getElementById(`edit-${id}`).value;
-        await addDoc(collection(db, "messages"), { auteur, texte: newText, date: serverTimestamp(), image: imageUrl });
-        await deleteDoc(doc(db, "MessagesSupprimes", id));
-    };
+        window.restore = async (id, auteur, image) => {
+            const newText = document.getElementById('edit-'+id).value;
+            await addDoc(collection(db, "messages"), { auteur, texte: newText, image, date: serverTimestamp() });
+            await deleteDoc(doc(db, "MessagesSupprimes", id));
+        };
 
-    // --- COMMANDES TERMINAL / BANNIS ---
-    document.getElementById('termInput').addEventListener('keydown', async (e) => {
-        if (e.key === 'Enter') {
-            const cmd = termInput.value.trim(); termInput.value = "";
-            if (cmd.startsWith('/ban ')) {
-                const name = cmd.replace('/ban ', '').trim();
-                await setDoc(doc(db, "BannedUsers", name), { date: serverTimestamp() });
-            } else if (cmd.startsWith('/unban ')) {
-                const name = cmd.replace('/unban ', '').trim();
-                await deleteDoc(doc(db, "BannedUsers", name));
-                await addDoc(collection(db, "HistoriqueDeban"), { nom: name, date: serverTimestamp() });
+        // TERMINAL (BAN/UNBAN)
+        document.getElementById('termInput').addEventListener('keydown', async (e) => {
+            if (e.key === 'Enter') {
+                const cmd = termInput.value.trim(); termInput.value = "";
+                if (cmd.startsWith('/ban ')) {
+                    const n = cmd.replace('/ban ', '');
+                    await setDoc(doc(db, "BannedUsers", n), { date: serverTimestamp() });
+                } else if (cmd.startsWith('/unban ')) {
+                    const n = cmd.replace('/unban ', '');
+                    await deleteDoc(doc(db, "BannedUsers", n));
+                }
             }
-        }
-    });
+        });
 
-    onSnapshot(collection(db, "BannedUsers"), s => {
-        document.getElementById('banned-list').innerHTML = "";
-        s.forEach(d => document.getElementById('banned-list').innerHTML += `<div class="entry">[BAN] ${d.id}</div>`);
-    });
-</script>
+        onSnapshot(collection(db, "BannedUsers"), s => {
+            document.getElementById('banned-list').innerHTML = "";
+            s.forEach(d => document.getElementById('banned-list').innerHTML += `<div class="entry">Banni: ${d.id}</div>`);
+        });
+    </script>
 </body>
 </html>
