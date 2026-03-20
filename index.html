@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>ROOT_CONSOLE - Cloud Archiving System</title>
+    <title>ROOT_CONSOLE - Advanced Edit & Restore</title>
     <style>
         body {
             font-family: 'Consolas', 'Monaco', monospace;
@@ -27,22 +27,35 @@
             margin-bottom: 20px;
         }
 
-        .grid { display: grid; grid-template-columns: 1.2fr 1fr 0.8fr; gap: 20px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 
         .scroll-box { height: 350px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #1f242b #05070a; }
         
         .entry {
             font-size: 0.85rem;
-            padding: 8px;
+            padding: 10px;
             border-bottom: 1px solid #161b22;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 10px;
         }
         .entry:hover { background: rgba(57, 255, 20, 0.05); }
 
-        .user-tag { color: #58a6ff; font-weight: bold; }
-        .del-text { color: #ff7b72; font-style: italic; }
+        /* Style spécifique pour l'édition dans l'archive */
+        .edit-input {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            color: #ffa657;
+            padding: 5px;
+            border-radius: 3px;
+            flex: 1;
+            font-family: inherit;
+            font-size: 0.8rem;
+        }
+        .edit-input:focus { border-color: #58a6ff; outline: none; }
+
+        .user-tag { color: #58a6ff; font-weight: bold; min-width: 100px; }
 
         .btn {
             background: transparent;
@@ -51,13 +64,13 @@
             font-family: inherit;
             font-size: 0.7rem;
             cursor: pointer;
-            padding: 3px 8px;
+            padding: 4px 10px;
             text-transform: uppercase;
-            transition: 0.2s;
+            white-space: nowrap;
         }
         .btn:hover { background: #39ff14; color: #05070a; box-shadow: 0 0 10px #39ff14; }
         .btn-restore { border-color: #238636; color: #238636; }
-        .btn-restore:hover { background: #238636; color: white; box-shadow: 0 0 10px #238636; }
+        .btn-restore:hover { background: #238636; color: white; }
 
         .console-wrapper {
             position: fixed;
@@ -71,7 +84,6 @@
             gap: 15px;
             z-index: 1000;
         }
-        .prompt { color: #39ff14; font-weight: bold; }
         #termInput {
             flex: 1;
             background: transparent;
@@ -85,41 +97,38 @@
         body::before {
             content: " "; display: block; position: fixed;
             top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-            z-index: 9999; pointer-events: none; background-size: 100% 2px, 3px 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
+            z-index: 9999; pointer-events: none; background-size: 100% 2px;
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>>_ CLOUD_ADMIN_TERMINAL / DATABASE_SYNC_ENABLED</h1>
+    <h1>>_ CLOUD_MODERATION / EDIT_AND_RESTORE_MODE</h1>
 
     <div class="section">
-        <h2>[LIVE_MESSAGES] - Flux Actuel</h2>
-        <div id="admin-feed" class="scroll-box">Initialisation...</div>
+        <h2>[LIVE_MESSAGES] - Flux en Direct</h2>
+        <div id="admin-feed" class="scroll-box">Connexion...</div>
     </div>
 
     <div class="grid">
         <div class="section">
-            <h2>[CLOUD_ARCHIVES] - Messages Supprimés</h2>
-            <div id="del-logs" class="scroll-box">Aucune archive sur le Cloud.</div>
+            <h2>[CLOUD_ARCHIVES] - Modifier & Restaurer</h2>
+            <div id="del-logs" class="scroll-box">Aucune archive.</div>
         </div>
 
         <div class="section">
             <h2>[BANNED_USERS] - Liste Noire</h2>
-            <div id="banned-list" class="scroll-box">Chargement...</div>
-        </div>
-
-        <div class="section">
-            <h2>[HISTORY] - Dernières Grâces</h2>
-            <div id="history-list" class="scroll-box">Vidé.</div>
+            <div id="banned-list" class="scroll-box" style="height: 150px;">Chargement...</div>
+            <h2 style="margin-top:20px;">[HISTORY] - Grâces</h2>
+            <div id="history-list" class="scroll-box" style="height: 150px;">Vide.</div>
         </div>
     </div>
 </div>
 
 <div class="console-wrapper">
-    <span class="prompt">admin@cloud:~$</span>
+    <span style="color:#39ff14; font-weight:bold;">admin@cloud:~$</span>
     <input type="text" id="termInput" placeholder="Commandes: /ban [nom], /unban [nom]" autofocus autocomplete="off">
 </div>
 
@@ -139,22 +148,20 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // --- 1. FLUX DES MESSAGES ACTIFS ---
+    // --- 1. MESSAGES ACTIFS ---
     onSnapshot(query(collection(db, "messages"), orderBy("date", "desc")), (snaps) => {
         const feed = document.getElementById('admin-feed'); feed.innerHTML = "";
         snaps.forEach(d => {
             const data = d.data();
             const div = document.createElement('div');
             div.className = 'entry';
-            const sAuteur = data.auteur.replace(/'/g, "\\'");
-            const sTexte = data.texte.replace(/'/g, "\\'");
-            div.innerHTML = `<span>[OK] <span class="user-tag">${data.auteur}</span>: ${data.texte}</span> 
-            <button class="btn" onclick="archiveAndDelete('${d.id}', '${sAuteur}', '${sTexte}')">DEL</button>`;
+            div.innerHTML = `<span>[LIVE] <span class="user-tag">${data.auteur}</span>: ${data.texte}</span> 
+            <button class="btn" onclick="moveToArchive('${d.id}', '${data.auteur.replace(/'/g, "\\'")}', '${data.texte.replace(/'/g, "\\'")}')">ARCHIVER (DEL)</button>`;
             feed.appendChild(div);
         });
     });
 
-    // --- 2. FLUX DES ARCHIVES (MESSAGES SUPPRIMÉS) ---
+    // --- 2. ARCHIVES AVEC ÉDITION ---
     onSnapshot(query(collection(db, "MessagesSupprimes"), orderBy("dateSuppr", "desc")), (snaps) => {
         const logBox = document.getElementById('del-logs');
         if(snaps.empty) { logBox.innerHTML = "Archives vides."; return; }
@@ -163,39 +170,41 @@
             const data = d.data();
             const div = document.createElement('div');
             div.className = 'entry';
-            const sAuteur = data.auteur.replace(/'/g, "\\'");
-            const sTexte = data.texte.replace(/'/g, "\\'");
-            div.innerHTML = `<span class="del-text">[ARCHIVE] ${data.auteur}: ${data.texte}</span>
-                             <button class="btn btn-restore" onclick="restoreFromCloud('${d.id}', '${sAuteur}', '${sTexte}')">RESTORE</button>`;
+            div.innerHTML = `
+                <span class="user-tag">${data.auteur}</span>
+                <input type="text" class="edit-input" id="edit-${d.id}" value="${data.texte}">
+                <button class="btn btn-restore" onclick="restoreModified('${d.id}', '${data.auteur.replace(/'/g, "\\'")}')">RESTORE</button>
+            `;
             logBox.appendChild(div);
         });
     });
 
-    // --- ACTION : SUPPRIMER ET ENVOYER AU CLOUD ---
-    window.archiveAndDelete = async (id, auteur, texte) => {
-        // Ajouter à la collection des supprimés
+    // --- ACTION : ARCHIVER ---
+    window.moveToArchive = async (id, auteur, texte) => {
         await addDoc(collection(db, "MessagesSupprimes"), {
             auteur: auteur,
             texte: texte,
             dateSuppr: serverTimestamp()
         });
-        // Supprimer du flux principal
         await deleteDoc(doc(db, "messages", id));
     };
 
-    // --- ACTION : RESTAURER DU CLOUD ---
-    window.restoreFromCloud = async (docId, auteur, texte) => {
-        // Remettre dans le flux principal
+    // --- ACTION : RESTAURER AVEC MODIFICATION ---
+    window.restoreModified = async (docId, auteur) => {
+        // On récupère la valeur actuelle de l'input au moment du clic
+        const newText = document.getElementById(`edit-${docId}`).value;
+        
         await addDoc(collection(db, "messages"), {
             auteur: auteur,
-            texte: texte,
+            texte: newText, // On envoie le texte modifié
             date: serverTimestamp()
         });
+        
         // Supprimer de l'archive Cloud
         await deleteDoc(doc(db, "MessagesSupprimes", docId));
     };
 
-    // --- BANNIS & HISTORIQUE ---
+    // --- AUTRES FONCTIONS ---
     onSnapshot(collection(db, "BannedUsers"), (snaps) => {
         const list = document.getElementById('banned-list'); list.innerHTML = "";
         snaps.forEach(d => { list.innerHTML += `<div class="entry"><span>[BLOCKED] ${d.id}</span></div>`; });
@@ -203,10 +212,9 @@
 
     onSnapshot(query(collection(db, "HistoriqueDeban"), orderBy("date", "desc")), (snaps) => {
         const hist = document.getElementById('history-list'); hist.innerHTML = "";
-        snaps.forEach(d => { hist.innerHTML += `<div class="entry" style="color:#8b949e;">[DEBAN] ${d.data().nom}</div>`; });
+        snaps.forEach(d => { hist.innerHTML += `<div class="entry" style="color:#8b949e; font-size:0.7rem;">[DEBAN] ${d.data().nom}</div>`; });
     });
 
-    // --- TERMINAL ---
     document.getElementById('termInput').addEventListener('keydown', async (e) => {
         if (e.key === 'Enter') {
             const cmd = termInput.value.trim();
