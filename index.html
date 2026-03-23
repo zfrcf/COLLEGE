@@ -7,33 +7,37 @@
         body { font-family: 'Consolas', monospace; background: #05070a; color: #39ff14; padding: 20px; padding-bottom: 100px; }
         .section { background: rgba(16, 20, 25, 0.9); border: 1px solid #1f242b; padding: 15px; margin-bottom: 20px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .scroll-box { height: 300px; overflow-y: auto; border: 1px solid #161b22; }
-        .entry { padding: 10px; border-bottom: 1px solid #161b22; display: flex; align-items: center; justify-content: space-between; }
-        .entry img { max-height: 40px; cursor: pointer; border: 1px solid #39ff14; }
-        .entry img:hover { max-height: 200px; position: absolute; z-index: 10; }
-        .edit-input { background: #000; border: 1px solid #39ff14; color: #ffa657; padding: 5px; flex: 1; margin: 0 10px; }
+        .scroll-box { height: 250px; overflow-y: auto; border: 1px solid #161b22; background: #000; }
+        .entry { padding: 10px; border-bottom: 1px solid #161b22; display: flex; align-items: center; justify-content: space-between; font-size: 13px; }
         .btn { background: none; border: 1px solid #39ff14; color: #39ff14; cursor: pointer; padding: 5px; font-size: 10px; }
         .btn:hover { background: #39ff14; color: #000; }
+        .edit-input { background: #000; border: 1px solid #39ff14; color: #ffa657; padding: 5px; flex: 1; margin: 0 10px; }
         .console { position: fixed; bottom: 0; left: 0; width: 100%; background: #000; border-top: 2px solid #39ff14; padding: 20px; box-sizing: border-box; display: flex; }
         #termInput { flex: 1; background: none; border: none; color: #39ff14; font-size: 1.2rem; outline: none; }
     </style>
 </head>
 <body>
 
-    <h1>>_ ADMIN_TERMINAL [SYNC_CLOUD_OK]</h1>
+    <h1>>_ ADMIN_CONSOLE [NO_MEDIA_MODE]</h1>
 
-    <div class="section">
-        <h2>[LIVE_FEED]</h2>
-        <div id="admin-feed" class="scroll-box"></div>
+    <div class="grid">
+        <div class="section">
+            <h2>[LIVE_FEED]</h2>
+            <div id="admin-feed" class="scroll-box"></div>
+        </div>
+        <div class="section">
+            <h2>[ONLINE_USERS] (<span id="count">0</span>)</h2>
+            <div id="online-list" class="scroll-box"></div>
+        </div>
     </div>
 
     <div class="grid">
         <div class="section">
-            <h2>[CLOUD_ARCHIVES] - Supprimés (Modifiables)</h2>
+            <h2>[ARCHIVES] (Supprimés)</h2>
             <div id="del-logs" class="scroll-box"></div>
         </div>
         <div class="section">
-            <h2>[BANNED_USERS]</h2>
+            <h2>[BANNED_DB]</h2>
             <div id="banned-list" class="scroll-box"></div>
         </div>
     </div>
@@ -59,21 +63,24 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // FLUX LIVE
+        // Feed Live
         onSnapshot(query(collection(db, "messages"), orderBy("date", "desc")), (snaps) => {
             const feed = document.getElementById('admin-feed'); feed.innerHTML = "";
             snaps.forEach(d => {
                 const data = d.data();
-                const img = data.image ? `<img src="${data.image}">` : "";
-                const div = document.createElement('div');
-                div.className = 'entry';
-                div.innerHTML = `<span><b>${data.auteur}</b>: ${data.texte} ${img}</span> 
-                <button class="btn" onclick="archive('${d.id}', '${data.auteur}', '${data.texte || ""}', '${data.image || ""}')">ARCHIVE</button>`;
-                feed.appendChild(div);
+                feed.innerHTML += `<div class="entry"><span><b>${data.auteur}</b>: ${data.texte}</span> 
+                <button class="btn" onclick="archive('${d.id}', '${data.auteur}', '${data.texte}')">ARCHIVE</button></div>`;
             });
         });
 
-        // ARCHIVES
+        // Online Count
+        onSnapshot(collection(db, "OnlineUsers"), (snap) => {
+            document.getElementById('count').innerText = snap.size;
+            const list = document.getElementById('online-list'); list.innerHTML = "";
+            snap.forEach(d => { list.innerHTML += `<div class="entry">${d.id} <button class="btn" onclick="kick('${d.id}')">KICK</button></div>`; });
+        });
+
+        // Archives
         onSnapshot(query(collection(db, "MessagesSupprimes"), orderBy("dateSuppr", "desc")), (snaps) => {
             const box = document.getElementById('del-logs'); box.innerHTML = "";
             snaps.forEach(d => {
@@ -81,23 +88,24 @@
                 box.innerHTML += `<div class="entry">
                     <b>${data.auteur}</b>
                     <input type="text" class="edit-input" id="edit-${d.id}" value="${data.texte}">
-                    <button class="btn" onclick="restore('${d.id}', '${data.auteur}', '${data.image || ""}')">RESTORE</button>
+                    <button class="btn" onclick="restore('${d.id}', '${data.auteur}')">RESTORE</button>
                 </div>`;
             });
         });
 
-        window.archive = async (id, auteur, texte, image) => {
-            await addDoc(collection(db, "MessagesSupprimes"), { auteur, texte, image, dateSuppr: serverTimestamp() });
+        window.archive = async (id, auteur, texte) => {
+            await addDoc(collection(db, "MessagesSupprimes"), { auteur, texte, dateSuppr: serverTimestamp() });
             await deleteDoc(doc(db, "messages", id));
         };
 
-        window.restore = async (id, auteur, image) => {
+        window.restore = async (id, auteur) => {
             const newText = document.getElementById('edit-'+id).value;
-            await addDoc(collection(db, "messages"), { auteur, texte: newText, image, date: serverTimestamp() });
+            await addDoc(collection(db, "messages"), { auteur, texte: newText, date: serverTimestamp() });
             await deleteDoc(doc(db, "MessagesSupprimes", id));
         };
 
-        // TERMINAL (BAN/UNBAN)
+        window.kick = async (n) => { await deleteDoc(doc(db, "OnlineUsers", n)); };
+
         document.getElementById('termInput').addEventListener('keydown', async (e) => {
             if (e.key === 'Enter') {
                 const cmd = termInput.value.trim(); termInput.value = "";
