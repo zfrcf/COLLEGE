@@ -1,0 +1,14 @@
+{
+  "pack": {
+    "pack_format": 88,
+    "min_format": [
+      88,
+      0
+    ],
+    "max_format": [
+      88,
+      2147483647
+    ],
+    "description": "§cSans feu §7| §6Vision dans la lave §7| §9Netherite bleue\n§7Minecraft 26.2 (Fabric compatible)"
+  }
+}
