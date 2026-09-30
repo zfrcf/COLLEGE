@@ -1,0 +1,17 @@
+{
+	"required": true,
+	"package": "fr.antoine.ecransansfeu.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+		"HudMixin",
+		"LavaFogEnvironmentMixin",
+		"PowderedSnowFogEnvironmentMixin",
+		"ScreenEffectRendererMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}

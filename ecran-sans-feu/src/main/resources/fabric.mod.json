@@ -1,0 +1,31 @@
+{
+	"schemaVersion": 1,
+	"id": "ecransansfeu",
+	"version": "${version}",
+	"name": "Écran Sans Feu",
+	"description": "Supprime le feu affiché à l'écran et le brouillard de lave / poudreuse pour voir clairement. Mod client uniquement.",
+	"authors": [
+		"Antoine"
+	],
+	"contact": {},
+	"license": "MIT",
+	"icon": "assets/ecransansfeu/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"fr.antoine.ecransansfeu.EcranSansFeuClient"
+		]
+	},
+	"mixins": [
+		{
+			"config": "ecransansfeu.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.2",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}

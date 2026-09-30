@@ -1,0 +1,12 @@
+{
+	"key.category.ecransansfeu.touches": "Écran Sans Feu",
+	"key.ecransansfeu.basculer": "Toggle the mod",
+	"key.ecransansfeu.basculer_feu": "Toggle: fire on screen",
+	"key.ecransansfeu.basculer_lave": "Toggle: see through lava",
+	"message.ecransansfeu.mod_active": "Écran Sans Feu: enabled",
+	"message.ecransansfeu.mod_inactif": "Écran Sans Feu: disabled",
+	"message.ecransansfeu.feu_masque": "Fire on screen: hidden",
+	"message.ecransansfeu.feu_visible": "Fire on screen: visible",
+	"message.ecransansfeu.lave_claire": "Lava vision: clear",
+	"message.ecransansfeu.lave_normale": "Lava vision: normal"
+}

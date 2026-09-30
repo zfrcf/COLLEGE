@@ -1,0 +1,12 @@
+{
+	"key.category.ecransansfeu.touches": "Écran Sans Feu",
+	"key.ecransansfeu.basculer": "Activer / désactiver le mod",
+	"key.ecransansfeu.basculer_feu": "Basculer : feu à l'écran",
+	"key.ecransansfeu.basculer_lave": "Basculer : vision dans la lave",
+	"message.ecransansfeu.mod_active": "Écran Sans Feu : activé",
+	"message.ecransansfeu.mod_inactif": "Écran Sans Feu : désactivé",
+	"message.ecransansfeu.feu_masque": "Feu à l'écran : masqué",
+	"message.ecransansfeu.feu_visible": "Feu à l'écran : visible",
+	"message.ecransansfeu.lave_claire": "Vision dans la lave : claire",
+	"message.ecransansfeu.lave_normale": "Vision dans la lave : normale"
+}
