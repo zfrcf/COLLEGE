@@ -577,9 +577,14 @@ class Cible:
 
 
 def ecrire_sb3(projet, chemin):
+    """Écrit le .sb3 de façon atomique (fichier temporaire puis remplacement) : un lecteur
+    concurrent voit toujours un fichier complet."""
+    import os
     data = projet.to_json()
-    with zipfile.ZipFile(chemin, "w", zipfile.ZIP_DEFLATED) as z:
+    temporaire = chemin + ".tmp.%d" % os.getpid()
+    with zipfile.ZipFile(temporaire, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr("project.json", json.dumps(data, ensure_ascii=False, separators=(",", ":")))
         for nom, contenu in projet.assets.items():
             z.writestr(nom, contenu)
+    os.replace(temporaire, chemin)
     return data

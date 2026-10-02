@@ -521,8 +521,10 @@ def exporter_json(chemin=None):
         "partiePos": PARTIE_POS, "globales": list(GLOBALES.keys()), "listes": list(LISTES.keys()),
         "evenements": EVENEMENTS, "sons": SONS, "chatRapide": CHAT_RAPIDE, "emotes": EMOTES,
     }
-    with open(chemin, "w", encoding="utf-8") as f:
+    temporaire = chemin + ".tmp.%d" % os.getpid()
+    with open(temporaire, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=1)
+    os.replace(temporaire, chemin)
     return chemin
 
 

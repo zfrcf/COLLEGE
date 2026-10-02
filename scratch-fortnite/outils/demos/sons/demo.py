@@ -55,7 +55,7 @@ def carte(nom, ech, rate):
 def scene():
     legende = ""
     for i, (cat, coul) in enumerate(COULEURS.items()):
-        legende += '<circle cx="%d" cy="330" r="6" fill="%s"/><text x="%d" y="335" font-family="Sans Serif" font-size="13" fill="#c8d3f5">%s</text>' % (
+        legende += '<circle cx="%d" cy="343" r="6" fill="%s"/><text x="%d" y="348" font-family="Sans Serif" font-size="13" fill="#c8d3f5">%s</text>' % (
             40 + i * 110, coul, 52 + i * 110, cat)
     return svg(480, 360, (
         '<rect width="480" height="360" fill="#0b1021"/>'
@@ -82,7 +82,7 @@ def construire(chemin):
     for cat, coul in COULEURS.items():
         D.costumes.append(P.costume("point_" + cat, svg_cercle(12, coul, 1.0, "#ffffff", 1), 6, 6))
 
-    corps = [effacer(), cacher(), effacer_effets(), costume("vide"), taille(100), aller(0, 28),
+    corps = [effacer(), cacher(), effacer_effets(), costume("vide"), taille(100), aller(0, 8),
              setv("ecran", "salon"), setv("son_volume", 100), setv("son_pan", 0),
              diffuser("demarrer"), montrer(), dire("ecran = salon : la musique démarre"), attendre(0.8)]
     for k, nom in enumerate(contrat.SONS):
@@ -90,8 +90,8 @@ def construire(chemin):
         vol = 60 if k % 4 == 3 else 100
         corps += [
             setv("son_pan", pan), setv("son_volume", vol), diffuser("son " + nom),
-            costume("point_" + sons.categorie(nom)), aller(-216 + 16 * k, -150), tampon(),
-            costume(nom), aller(0, 28), dire("%d/28 · pan %d · volume %d" % (k + 1, pan, vol)),
+            costume("point_" + sons.categorie(nom)), aller(-216 + 16 * k, -128), tampon(),
+            costume(nom), aller(0, 8), dire("%d/28 · pan %d · volume %d" % (k + 1, pan, vol)),
             attendre(0.6),
         ]
     corps += [

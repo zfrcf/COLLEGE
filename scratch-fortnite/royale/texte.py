@@ -31,12 +31,33 @@ Conventions :
   - txt_ombre (variable locale, 1 par défaut) : ombre noire décalée de (+1, −1) × taille/20.
   - txt_espacement (variable locale, 0 par défaut) : interlettrage en px à la taille 40.
   - Caractère inconnu → ignoré. L'espace avance de 0.3 × taille.
-  - Coût : 1 tampon par glyphe et par passe (2 passes avec ombre).
-  - Les effets graphiques du sprite sont remis à zéro après chaque écriture.
+  - Coût : 1 tampon par glyphe et par passe (2 passes avec ombre) ; mesuré dans
+    Chromium : 80 caractères ombrés = 128 tampons (64 non-espaces × 2), ~9 ms par
+    image en OpenGL logiciel.
+  - Les effets graphiques du sprite sont remis à zéro après chaque écriture ; son
+    costume et sa taille sont modifiés (le sprite est censé rester caché).
+  - txt_largeur est écrasée par toute écriture : lire sa valeur juste après
+    « largeur texte » (ou l'évaluer dans l'argument de l'écriture suivante).
+
+Limites connues :
+  - Les images SVG des costumes se chargent de façon asynchrone après le chargement
+    du projet : un tampon fait dans la toute première image après le drapeau peut
+    être vide (attendre ~0.5 s ou redessiner l'écran).
+  - La clôture de scène de Scratch empêche un glyphe de sortir de la scène de plus
+    de ~15 px : un texte qui dépasse le bord voit ses derniers glyphes s'empiler sur
+    le bord (utiliser « ecrire tronque »).
+  - `lettre de` travaille en unités UTF-16 : les émojis hors BMP sont reconnus par
+    paire de substitution (👍 seulement dans le jeu de glyphes).
+  - Les blocs personnalisés ne sont appelables que depuis leur sprite : chaque
+    sprite qui écrit du texte doit appeler installer() (163 costumes, SVG partagés
+    dans le .sb3).
+  - Polices : seule « Sans Serif » couvre tout le jeu de caractères ; « Scratch »
+    n'a pas d'accents, « Pixel »/« Marker »/« Handwriting » ignorent ² (et –, ×).
 
 Remarque DSL : `Cible.proc` écrit tous les arguments non booléens « %s » dans le
 proccode Scratch (pas de %n) ; l'appel se fait par le nom seul, ce qui n'a
-aucune incidence.
+aucune incidence. Un sprite doit avoir `layer >= 1` (layerOrder) pour que le .sb3
+soit valide.
 """
 import math
 from xml.sax.saxutils import escape
@@ -344,13 +365,22 @@ def _fleche(mx, cy, direction):
 
 
 def _pouce(mx, base):
-    # pouce levé : poignet, paume arrondie et pouce dressé (environ 28 px)
+    """Pouce levé (silhouette 👍, environ 28 px) : manchette, poing à trois doigts, pouce dressé."""
     x = mx
-    y = base - 28
-    return ('<rect x="%d" y="%d" width="7" height="17" rx="2" fill="#ff0000"/>'
-            '<path d="M%d %d h11 a3 3 0 0 1 3 3 v2 a3 3 0 0 1 -3 3 h1 a3 3 0 0 1 0 6 h-1 a3 3 0 0 1 0 5 h-1 a3 3 0 0 1 -1 5 h-9 z" fill="#ff0000"/>'
-            '<path d="M%d %d c0 -5 2 -9 4 -11 c2 -2 5 -1 5 3 l0 8 z" fill="#ff0000"/>'
-            % (x + 1, y + 11, x + 9, y + 11, x + 9, y + 11)), 30
+    y = base - 27
+    return ('<rect x="%d" y="%d" width="6" height="15" rx="1.5" fill="#ff0000"/>'                  # manchette
+            '<rect x="%d" y="%d" width="9" height="15" rx="2" fill="#ff0000"/>'                    # paume
+            '<rect x="%d" y="%d" width="20" height="4.4" rx="2.2" fill="#ff0000"/>'                # doigt 1
+            '<rect x="%d" y="%.1f" width="19" height="4.4" rx="2.2" fill="#ff0000"/>'              # doigt 2
+            '<rect x="%d" y="%.1f" width="17" height="4.4" rx="2.2" fill="#ff0000"/>'              # doigt 3
+            '<path d="M%d %d C%d %d %d %d %d %d C%d %d %d %d %d %d L%d %d Z" fill="#ff0000"/>'     # pouce
+            % (x, y + 12,
+               x + 7, y + 12,
+               x + 7, y + 12,
+               x + 7, y + 17.4,
+               x + 7, y + 22.8,
+               x + 8, y + 12, x + 7, y + 7, x + 10, y + 1, x + 13, y, x + 16, y - 1, x + 18, y + 3, x + 17, y + 6,
+               x + 15, y + 12)), 28
 
 
 def svg_symbole(symbole, police="Sans Serif"):
