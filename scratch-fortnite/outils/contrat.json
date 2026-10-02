@@ -1,0 +1,1059 @@
+{
+ "champs": [
+  [
+   "x",
+   4
+  ],
+  [
+   "y",
+   4
+  ],
+  [
+   "dir",
+   3
+  ],
+  [
+   "pv",
+   3
+  ],
+  [
+   "bouclier",
+   3
+  ],
+  [
+   "battement",
+   5
+  ],
+  [
+   "cible",
+   1
+  ],
+  [
+   "seq",
+   2
+  ],
+  [
+   "degats",
+   2
+  ],
+  [
+   "tueur",
+   1
+  ],
+  [
+   "morts",
+   1
+  ],
+  [
+   "arme",
+   1
+  ],
+  [
+   "etat",
+   1
+  ],
+  [
+   "nom",
+   16
+  ],
+  [
+   "elims",
+   2
+  ],
+  [
+   "niveau",
+   3
+  ],
+  [
+   "equipe",
+   1
+  ],
+  [
+   "emote",
+   1
+  ],
+  [
+   "emoteSeq",
+   1
+  ],
+  [
+   "pingX",
+   2
+  ],
+  [
+   "pingY",
+   2
+  ],
+  [
+   "pingSeq",
+   1
+  ],
+  [
+   "chat",
+   2
+  ],
+  [
+   "chatSeq",
+   1
+  ],
+  [
+   "salon",
+   4
+  ],
+  [
+   "altitude",
+   2
+  ],
+  [
+   "reanime",
+   1
+  ],
+  [
+   "skin",
+   2
+  ],
+  [
+   "pioche",
+   1
+  ],
+  [
+   "planeur",
+   1
+  ],
+  [
+   "surbouclier",
+   2
+  ],
+  [
+   "modeChoisi",
+   1
+  ],
+  [
+   "degatsTotal",
+   4
+  ],
+  [
+   "victoires",
+   2
+  ],
+  [
+   "banniere",
+   2
+  ],
+  [
+   "knockPar",
+   1
+  ]
+ ],
+ "pos": {
+  "x": [
+   2,
+   4
+  ],
+  "y": [
+   6,
+   4
+  ],
+  "dir": [
+   10,
+   3
+  ],
+  "pv": [
+   13,
+   3
+  ],
+  "bouclier": [
+   16,
+   3
+  ],
+  "battement": [
+   19,
+   5
+  ],
+  "cible": [
+   24,
+   1
+  ],
+  "seq": [
+   25,
+   2
+  ],
+  "degats": [
+   27,
+   2
+  ],
+  "tueur": [
+   29,
+   1
+  ],
+  "morts": [
+   30,
+   1
+  ],
+  "arme": [
+   31,
+   1
+  ],
+  "etat": [
+   32,
+   1
+  ],
+  "nom": [
+   33,
+   16
+  ],
+  "elims": [
+   49,
+   2
+  ],
+  "niveau": [
+   51,
+   3
+  ],
+  "equipe": [
+   54,
+   1
+  ],
+  "emote": [
+   55,
+   1
+  ],
+  "emoteSeq": [
+   56,
+   1
+  ],
+  "pingX": [
+   57,
+   2
+  ],
+  "pingY": [
+   59,
+   2
+  ],
+  "pingSeq": [
+   61,
+   1
+  ],
+  "chat": [
+   62,
+   2
+  ],
+  "chatSeq": [
+   64,
+   1
+  ],
+  "salon": [
+   65,
+   4
+  ],
+  "altitude": [
+   69,
+   2
+  ],
+  "reanime": [
+   71,
+   1
+  ],
+  "skin": [
+   72,
+   2
+  ],
+  "pioche": [
+   74,
+   1
+  ],
+  "planeur": [
+   75,
+   1
+  ],
+  "surbouclier": [
+   76,
+   2
+  ],
+  "modeChoisi": [
+   78,
+   1
+  ],
+  "degatsTotal": [
+   79,
+   4
+  ],
+  "victoires": [
+   83,
+   2
+  ],
+  "banniere": [
+   85,
+   2
+  ],
+  "knockPar": [
+   87,
+   1
+  ]
+ },
+ "longueurPaquet": 87,
+ "alphabet": [
+  "a",
+  "b",
+  "c",
+  "d",
+  "e",
+  "f",
+  "g",
+  "h",
+  "i",
+  "j",
+  "k",
+  "l",
+  "m",
+  "n",
+  "o",
+  "p",
+  "q",
+  "r",
+  "s",
+  "t",
+  "u",
+  "v",
+  "w",
+  "x",
+  "y",
+  "z",
+  "0",
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "_",
+  "-"
+ ],
+ "etat": {
+  "vivant": 1,
+  "mort": 2,
+  "aterre": 3,
+  "spectateur": 4,
+  "salon": 5,
+  "bus": 6,
+  "parachute": 7,
+  "prepartie": 8,
+  "fin": 9
+ },
+ "modes": {
+  "1": "Solo",
+  "2": "Duo",
+  "3": "Trio",
+  "4": "Sections",
+  "5": "Rumble",
+  "6": "Arène"
+ },
+ "ltm": {
+  "0": "Aucun",
+  "1": "Pompes uniquement",
+  "2": "Snipers uniquement",
+  "3": "Tempête éclair",
+  "4": "Munitions infinies",
+  "5": "Gravité faible"
+ },
+ "ecrans": [
+  "connexion",
+  "salon",
+  "matchmaking",
+  "chargement",
+  "prepartie",
+  "bus",
+  "parachute",
+  "jeu",
+  "pause",
+  "carte",
+  "spectateur",
+  "cinema",
+  "fin"
+ ],
+ "onglets": [
+  "accueil",
+  "passe",
+  "boutique",
+  "casier",
+  "quetes",
+  "carriere",
+  "parametres"
+ ],
+ "taille": 32,
+ "coffres": [
+  [
+   3.5,
+   28.5
+  ],
+  [
+   17.5,
+   28.5
+  ],
+  [
+   27.5,
+   26.5
+  ],
+  [
+   20.5,
+   21.5
+  ],
+  [
+   16.5,
+   15.5
+  ],
+  [
+   5.5,
+   9.5
+  ],
+  [
+   17.5,
+   9.5
+  ],
+  [
+   26.5,
+   7.5
+  ],
+  [
+   18.5,
+   2.5
+  ],
+  [
+   7.5,
+   19.5
+  ],
+  [
+   12.5,
+   5.5
+  ],
+  [
+   28.5,
+   18.5
+  ]
+ ],
+ "balises": [
+  [
+   10.5,
+   25.5
+  ],
+  [
+   24.5,
+   12.5
+  ]
+ ],
+ "lieux": [
+  [
+   "Fort Béton",
+   "Concrete Fort",
+   3.5,
+   27.5,
+   4
+  ],
+  [
+   "Hangar Métal",
+   "Metal Hangar",
+   17.5,
+   27.5,
+   4
+  ],
+  [
+   "Tour Nord",
+   "North Tower",
+   27.5,
+   27.5,
+   3
+  ],
+  [
+   "Cabane Bois",
+   "Wood Cabin",
+   20.5,
+   21.5,
+   3
+  ],
+  [
+   "Place Brique",
+   "Brick Plaza",
+   17.5,
+   15.5,
+   4
+  ],
+  [
+   "Bunker Ouest",
+   "West Bunker",
+   4.5,
+   10.5,
+   4
+  ],
+  [
+   "Marché",
+   "Market",
+   18.5,
+   9.5,
+   4
+  ],
+  [
+   "Chalet Est",
+   "East Lodge",
+   26.5,
+   7.5,
+   4
+  ],
+  [
+   "Ruines Sud",
+   "South Ruins",
+   18.5,
+   2.5,
+   3
+  ]
+ ],
+ "touches": [
+  "avancer",
+  "reculer",
+  "gauche",
+  "droite",
+  "sauter",
+  "construire",
+  "interagir",
+  "recharger",
+  "carte",
+  "pause",
+  "chat",
+  "emotes",
+  "sprays",
+  "ping",
+  "pioche",
+  "materiau",
+  "edition",
+  "sprint",
+  "viser"
+ ],
+ "presetAzerty": [
+  "z",
+  "s",
+  "q",
+  "d",
+  "space",
+  "b",
+  "e",
+  "r",
+  "m",
+  "p",
+  "t",
+  "y",
+  "h",
+  "v",
+  "f",
+  "n",
+  "g",
+  "x",
+  "c"
+ ],
+ "objets": {
+  "0": "Vide",
+  "1": "Pistolet",
+  "2": "Fusil à pompe",
+  "3": "Sniper",
+  "4": "Bandages",
+  "5": "Médikit",
+  "6": "Mini-potion",
+  "7": "Potion de bouclier",
+  "8": "Pioche"
+ },
+ "phasesTempete": [
+  [
+   30,
+   30,
+   14.0,
+   1
+  ],
+  [
+   20,
+   25,
+   9.0,
+   2
+  ],
+  [
+   15,
+   20,
+   5.0,
+   5
+  ],
+  [
+   10,
+   15,
+   2.5,
+   8
+  ],
+  [
+   0,
+   40,
+   1.5,
+   10
+  ]
+ ],
+ "durees": {
+  "prepartie": 25,
+  "bus": 20,
+  "manche": 300,
+  "resultats": 20
+ },
+ "partiePos": {
+  "debut": [
+   2,
+   5
+  ],
+  "mode": [
+   7,
+   1
+  ],
+  "ltm": [
+   8,
+   1
+  ],
+  "graine": [
+   9,
+   2
+  ]
+ },
+ "globales": [
+  "ecran",
+  "onglet",
+  "superposition",
+  "ecranPrecedent",
+  "survol",
+  "menu_sale",
+  "menu_rafraichi",
+  "enPartie",
+  "ltmChoisi",
+  "monSlot",
+  "nomCode",
+  "monNom",
+  "maintenant",
+  "paquet",
+  "_ext",
+  "_pad",
+  "_i",
+  "connecte",
+  "reconnexion",
+  "latence",
+  "paquetsEnvoyes",
+  "paquetsRecus",
+  "px",
+  "py",
+  "dir",
+  "hauteur",
+  "horizon",
+  "plan",
+  "etat",
+  "❤ PV",
+  "🛡 Bouclier",
+  "surbouclier",
+  "endurance",
+  "invulnerable",
+  "altitude",
+  "aterreDepuis",
+  "pvAterre",
+  "respawnT",
+  "monEmoteFin",
+  "monEquipe",
+  "modeChoisi",
+  "mode",
+  "ltm",
+  "remplissage",
+  "codeSalon",
+  "confidentialite",
+  "slotActif",
+  "armeNum",
+  "🔫 Munitions",
+  "🎯 Arme",
+  "munitions_legeres",
+  "munitions_cartouches",
+  "munitions_lourdes",
+  "mat_bois",
+  "mat_pierre",
+  "mat_metal",
+  "materiauActif",
+  "🧱 Matériaux",
+  "rechargeFin",
+  "utilisationFin",
+  "utilisationDebut",
+  "utilisationObjet",
+  "interactionDebut",
+  "interactionType",
+  "interactionCible",
+  "modeConstruction",
+  "tirAnim",
+  "toucheFin",
+  "flash",
+  "message",
+  "rechargeDebut",
+  "interactionDuree",
+  "murCoups",
+  "murCible",
+  "reanimationProgres",
+  "cible",
+  "seq",
+  "degats",
+  "tueur",
+  "morts",
+  "knockPar",
+  "reanime",
+  "emote",
+  "emoteSeq",
+  "pingX",
+  "pingY",
+  "pingSeq",
+  "chat",
+  "chatSeq",
+  "mortX",
+  "mortY",
+  "redeploiement",
+  "rec_elims",
+  "rec_victoires",
+  "debut",
+  "tempsManche",
+  "phase",
+  "zoneX",
+  "zoneY",
+  "zoneR",
+  "zoneDegats",
+  "horsZone",
+  "prochaineZoneX",
+  "prochaineZoneY",
+  "prochaineZoneR",
+  "tempsAvantZone",
+  "zoneEnMouvement",
+  "tempsPhase",
+  "⏱ Zone",
+  "👥 Joueurs",
+  "💀 Éliminations",
+  "vivants",
+  "equipesVivantes",
+  "rang",
+  "victoire",
+  "finManche",
+  "tempsPartie",
+  "graine",
+  "busX",
+  "busY",
+  "busDirX",
+  "busDirY",
+  "busProgression",
+  "aSaute",
+  "participants",
+  "spectSlot",
+  "cineVitesse",
+  "evt_valeur",
+  "evt_cible",
+  "evt_source",
+  "evt_angle",
+  "evt_texte",
+  "son_pan",
+  "son_volume",
+  "stat_elims",
+  "stat_degats",
+  "stat_degatsRecus",
+  "stat_coffres",
+  "stat_murs",
+  "stat_tirs",
+  "stat_touches",
+  "stat_distance",
+  "stat_tempsSurvie",
+  "stat_victoires",
+  "stat_parties",
+  "stat_top3",
+  "stat_reanimations",
+  "stat_materiaux",
+  "stat_pings",
+  "stat_emotes",
+  "stat_soins",
+  "stat_recoltes",
+  "stat_morts",
+  "stat_meilleurRang",
+  "lieuActuel",
+  "xp",
+  "niveau",
+  "xpNiveau",
+  "xpSuivant",
+  "jetons",
+  "hype",
+  "division",
+  "passeNiveau",
+  "etoiles",
+  "saison",
+  "chapitre",
+  "joursSaison",
+  "bonusXP",
+  "xpGagne",
+  "skin",
+  "pioche",
+  "planeur",
+  "spray",
+  "banniere",
+  "styleSkin",
+  "codeSauvegarde",
+  "codeCreateur",
+  "param_sensibilite",
+  "param_viseeAssistee",
+  "param_constructionTurbo",
+  "param_editionRapide",
+  "param_qualite",
+  "param_afficherFPS",
+  "param_performance",
+  "param_effetsDegats",
+  "param_volumeMusique",
+  "param_volumeEffets",
+  "param_volumeVoix",
+  "param_sousTitres",
+  "param_daltonisme",
+  "param_tailleHUD",
+  "param_langue",
+  "param_region",
+  "param_afficherPing",
+  "param_infosReseau",
+  "param_clavier",
+  "fps",
+  "colonnes"
+ ],
+ "listes": [
+  "Carte",
+  "CarteBase",
+  "Profondeur",
+  "Alphabet",
+  "Touches",
+  "Inventaire",
+  "Quantites",
+  "LieuxNom",
+  "LieuxX",
+  "LieuxY",
+  "LieuxR",
+  "ObjetNoms",
+  "ArmeDegats",
+  "ArmeCadence",
+  "ArmePortee",
+  "ArmeTolerance",
+  "ArmeChargeur",
+  "ArmeRecharge",
+  "ConsoDuree",
+  "MaxConsommable",
+  "LTMNoms",
+  "ModeNoms",
+  "MateriauNoms",
+  "CoffresX",
+  "CoffresY",
+  "CoffresPris",
+  "BalisesX",
+  "BalisesY",
+  "CartesRamassees",
+  "Journal",
+  "Notifications",
+  "DegatsAffiches",
+  "Bruits",
+  "Chat",
+  "Pings",
+  "Muets",
+  "DegatsRecus",
+  "NotificationsFin",
+  "ChatFin",
+  "JournalFin",
+  "Record_nom",
+  "Record_elims",
+  "Record_victoires",
+  "Sprays",
+  "QueteTitres",
+  "QuetesActives",
+  "Succes",
+  "PasseRecompenses",
+  "Possedes",
+  "Boutique",
+  "EmotesEquipees",
+  "RecapLignes",
+  "Textes",
+  "ChatRapide",
+  "Emotes",
+  "SprayNoms",
+  "E_x",
+  "E_y",
+  "E_dir",
+  "E_pv",
+  "E_bouclier",
+  "E_battement",
+  "E_cible",
+  "E_seq",
+  "E_degats",
+  "E_tueur",
+  "E_morts",
+  "E_arme",
+  "E_etat",
+  "E_nom",
+  "E_elims",
+  "E_niveau",
+  "E_equipe",
+  "E_emote",
+  "E_emoteSeq",
+  "E_pingX",
+  "E_pingY",
+  "E_pingSeq",
+  "E_chat",
+  "E_chatSeq",
+  "E_salon",
+  "E_altitude",
+  "E_reanime",
+  "E_skin",
+  "E_pioche",
+  "E_planeur",
+  "E_surbouclier",
+  "E_modeChoisi",
+  "E_degatsTotal",
+  "E_victoires",
+  "E_banniere",
+  "E_knockPar",
+  "E_actif",
+  "E_paquet",
+  "E_dernierSeq",
+  "E_dernierMorts",
+  "E_dernierEmoteSeq",
+  "E_dernierPingSeq",
+  "E_dernierChatSeq",
+  "E_vu",
+  "E_emoteFin",
+  "E_dernierEtat",
+  "E_dernierBattement",
+  "E_vuA"
+ ],
+ "evenements": [
+  "demarrer",
+  "evt tir",
+  "evt touche",
+  "evt degats",
+  "evt mort",
+  "evt aterre",
+  "evt elimination",
+  "evt coffre",
+  "evt mur",
+  "evt recolte",
+  "evt soin",
+  "evt reanimation",
+  "evt nouvelle manche",
+  "evt phase",
+  "evt atterrissage",
+  "evt fin manche",
+  "evt victoire",
+  "evt niveau",
+  "evt quete",
+  "evt succes",
+  "evt achat",
+  "evt lieu",
+  "evt ping",
+  "evt chat",
+  "evt emote",
+  "evt notification",
+  "evt changement ecran",
+  "sauvegarde charger",
+  "sauvegarde generer",
+  "evt knock",
+  "evt record",
+  "record proposer"
+ ],
+ "sons": [
+  "tir_pistolet",
+  "tir_pompe",
+  "tir_sniper",
+  "touche",
+  "elimination",
+  "degats",
+  "coffre",
+  "construction",
+  "pioche",
+  "rechargement",
+  "clic",
+  "survol",
+  "victoire",
+  "defaite",
+  "tempete",
+  "saut",
+  "bus",
+  "parachute",
+  "emote",
+  "notification",
+  "compte",
+  "niveau",
+  "soin",
+  "bouclier",
+  "aterre",
+  "reanimation",
+  "musique_salon",
+  "musique_fin"
+ ],
+ "chatRapide": [
+  [
+   "Salut !",
+   "Hi!"
+  ],
+  [
+   "Bien joué !",
+   "Nice one!"
+  ],
+  [
+   "Merci",
+   "Thanks"
+  ],
+  [
+   "Par ici",
+   "Over here"
+  ],
+  [
+   "Ennemi repéré",
+   "Enemy spotted"
+  ],
+  [
+   "Besoin de soins",
+   "Need healing"
+  ],
+  [
+   "Allons-y",
+   "Let's go"
+  ],
+  [
+   "Attention !",
+   "Watch out!"
+  ],
+  [
+   "👍",
+   "👍"
+  ],
+  [
+   "Désolé",
+   "Sorry"
+  ]
+ ],
+ "emotes": [
+  [
+   "Salut",
+   "Wave"
+  ],
+  [
+   "Danse",
+   "Dance"
+  ],
+  [
+   "Rire",
+   "Laugh"
+  ],
+  [
+   "Pouce",
+   "Thumbs up"
+  ],
+  [
+   "Applaudir",
+   "Clap"
+  ],
+  [
+   "Boude",
+   "Sulk"
+  ]
+ ]
+}

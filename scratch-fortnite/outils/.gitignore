@@ -1,0 +1,5 @@
+node_modules/
+web/*.js
+web/chunks/
+web/projet.sb3
+captures/
