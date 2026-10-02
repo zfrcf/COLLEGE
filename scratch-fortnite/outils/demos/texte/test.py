@@ -35,8 +35,8 @@ S.script(quand_drapeau(), [
     vider(R),
     # 1. largeur de « Jouer » à 20 px
     appel("largeur texte", "Jouer", 20), ajouter_liste(R, Var("txt_largeur")),
-    # 2. caractère inconnu (espace insécable) ignoré : 2 glyphes
-    appel("largeur texte", "a b", 40), ajouter_liste(R, long_liste(G)),
+    # 2. caractère inconnu (idéogramme) ignoré : 2 glyphes (l'espace insécable, lui, compte comme un espace)
+    appel("largeur texte", "a中b", 40), ajouter_liste(R, long_liste(G)),
     # 3. émoji (paire de substitution) : 1 glyphe, numéro du costume g_👍
     appel("largeur texte", "👍", 40), ajouter_liste(R, joins(long_liste(G), "/", item(G, 1))),
     # 4. majuscule et minuscule : costumes différents

@@ -1064,7 +1064,8 @@ def construire_joueur(P):
 
     # --- état par image (hors entrées) ------------------------------------------------------------
     J.proc("physique", [], [
-        si(ou(gt(V("hauteur"), 0), gt(V("velY"), 0)), [
+        # gravité du saut (pas en caméra libre : Social règle hauteur librement, vers le haut ou le bas)
+        si(et(ou(gt(V("hauteur"), 0), gt(V("velY"), 0)), non(eq(V("ecran"), "cinema"))), [
             changev("hauteur", V("velY")),
             si(eq(V("ltm"), 5), [changev("velY", -0.4)], [changev("velY", -0.8)]),
             si(lt(V("hauteur"), 0), [setv("hauteur", 0), setv("velY", 0)]),

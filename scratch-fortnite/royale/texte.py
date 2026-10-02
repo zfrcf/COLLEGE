@@ -30,7 +30,11 @@ Conventions :
     (voir COULEURS ; nom inconnu → blanc).
   - txt_ombre (variable locale, 1 par défaut) : ombre noire décalée de (+1, −1) × taille/20.
   - txt_espacement (variable locale, 0 par défaut) : interlettrage en px à la taille 40.
-  - Caractère inconnu → ignoré. L'espace avance de 0.3 × taille.
+  - Caractère inconnu → ignoré (y compris les sélecteurs de variation comme celui
+    de « ❤️ », sans avaler le caractère suivant). L'espace, l'espace insécable
+    (U+00A0, U+202F, U+2009) et la tabulation avancent de 0.3 × taille.
+  - Un glyphe entièrement hors de la scène n'est pas tamponné (sinon la clôture de
+    scène de Scratch le repousserait vers le bord, où les glyphes s'empileraient).
   - Coût : 1 tampon par glyphe et par passe (2 passes avec ombre) ; mesuré dans
     Chromium : 80 caractères ombrés = 128 tampons (64 non-espaces × 2), ~9 ms par
     image en OpenGL logiciel.
@@ -39,33 +43,47 @@ Conventions :
   - txt_largeur est écrasée par toute écriture : lire sa valeur juste après
     « largeur texte » (ou l'évaluer dans l'argument de l'écriture suivante).
 
+Glyphes : chaque costume est un <path> vectoriel (contours extraits des polices de
+Scratch par outils/demos/texte/mesurer_polices.py --contours → royale/texte_glyphes.json),
+pas une balise <text> : les SVG pèsent ~1 Ko, se chargent en quelques dizaines de ms et
+le rendu ne dépend pas de l'injection de polices de scratch-svg-renderer. Si le JSON
+manque, repli automatique sur <text> (lent : la police entière est injectée dans
+chaque image).
+
 Limites connues :
   - Les images SVG des costumes se chargent de façon asynchrone après le chargement
     du projet : un tampon fait dans la toute première image après le drapeau peut
-    être vide (attendre ~0.5 s ou redessiner l'écran).
+    être vide (quelques dizaines de ms avec les contours vectoriels ; les démos
+    attendent 0.5 s avant d'écrire, et un menu doit de toute façon pouvoir être
+    redessiné).
   - La clôture de scène de Scratch empêche un glyphe de sortir de la scène de plus
-    de ~15 px : un texte qui dépasse le bord voit ses derniers glyphes s'empiler sur
-    le bord (utiliser « ecrire tronque »).
+    de ~15 px : les glyphes entièrement hors scène sont ignorés, mais un glyphe à
+    cheval sur le bord peut être repoussé de quelques pixels vers l'intérieur
+    (utiliser « ecrire tronque » ou garder le texte dans la scène).
   - `lettre de` travaille en unités UTF-16 : les émojis hors BMP sont reconnus par
     paire de substitution (👍 seulement dans le jeu de glyphes).
   - Les blocs personnalisés ne sont appelables que depuis leur sprite : chaque
     sprite qui écrit du texte doit appeler installer() (163 costumes, SVG partagés
     dans le .sb3).
   - Polices : seule « Sans Serif » couvre tout le jeu de caractères ; « Scratch »
-    n'a pas d'accents, « Pixel »/« Marker »/« Handwriting » ignorent ² (et –, ×).
+    n'a pas d'accents, « Pixel »/« Marker »/« Handwriting » ignorent ² (et –).
+    Le « × » absent d'une police est remplacé par une croix vectorielle.
 
 Remarque DSL : `Cible.proc` écrit tous les arguments non booléens « %s » dans le
 proccode Scratch (pas de %n) ; l'appel se fait par le nom seul, ce qui n'a
 aucune incidence. Un sprite doit avoir `layer >= 1` (layerOrder) pour que le .sb3
 soit valide.
 """
+import json
 import math
+import os
 from xml.sax.saxutils import escape
 
-from .dsl import (Arg, Var, add, sub, mul, div, rnd, eq, gt, lt, non, ou, join, lettre, longueur,
-                  item, num_item, long_liste, ajouter_liste, supprimer, vider,
+from .dsl import (Arg, Var, add, sub, mul, div, rnd, eq, gt, lt, non, et, ou, join, lettre, longueur,
+                  contient_texte, item, num_item, long_liste, ajouter_liste, supprimer, vider,
                   setv, changev, si, repeter, repeter_jusqua, costume, costume_numero, taille,
                   aller, tampon, effet, effacer_effets, appel)
+from . import contrat
 
 # ---------------------------------------------------------------------------
 #  Jeu de caractères
@@ -82,6 +100,14 @@ CARACTERES_POLICE = (
 )
 # Symboles dessinés en vectoriel (identiques quelle que soit la police)
 SYMBOLES = "★☆♥❤●○✔✘→←↑↓▶◀▲▼■□👍"
+# Caractères de la police remplacés par un dessin vectoriel quand la police ne les a pas
+SYMBOLES_SECOURS = "×"
+# Caractères traités comme un espace (espace, insécable, insécable étroite, fine, tabulation)
+ESPACES = "    \t"
+# Bornes des substituts hauts UTF-16 (émojis hors BMP) : U+D800..U+DBFF
+# « > U+D7FF » et « < U+E000 » (U+DC00 n'est pas encodable en UTF-8 dans le project.json)
+AVANT_SUBSTITUT = "퟿"
+APRES_SUBSTITUT = ""
 
 # ---------------------------------------------------------------------------
 #  Couleurs : nom -> (effet couleur, effet luminosité, effet fantôme)
@@ -309,16 +335,34 @@ def _geometrie(pol):
     return mx, base, h
 
 
+# Contours vectoriels des glyphes (police → caractère → attribut « d »), générés par
+# outils/demos/texte/mesurer_polices.py --contours. Sans ce fichier, les glyphes
+# retombent sur une balise <text> (fonctionne, mais scratch-svg-renderer injecte alors
+# la police entière — 450 Ko pour Sans Serif — dans CHAQUE image : chargement de
+# plusieurs secondes et ~100 Mo de mémoire par sprite installé).
+_CHEMIN_CONTOURS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "texte_glyphes.json")
+try:
+    with open(_CHEMIN_CONTOURS, encoding="utf-8") as _f:
+        CONTOURS = json.load(_f)
+except (OSError, ValueError):
+    CONTOURS = {}
+
+
 def svg_glyphe(caractere, police="Sans Serif"):
-    """SVG d'un caractère de la police : rouge pur, origine (marge, ligne de base)."""
+    """SVG d'un caractère de la police : rouge pur, origine (marge, ligne de base).
+    Tracé vectoriel (<path>) si CONTOURS le fournit, sinon balise <text>."""
     pol = POLICES[police]
     mx, base, h = _geometrie(pol)
     fs = pol["fs"]
     w = int(math.ceil(pol["largeurs"][caractere])) + mx + 6
-    # Origine du texte = début de la ligne de base (SVG standard ; les corrections
-    # « Scratch 2 » de scratch-svg-renderer ne s'appliquent qu'aux projets .sb2).
-    contenu = ('<text x="%d" y="%d" font-family="%s" font-size="%s" fill="#ff0000">%s</text>'
-               % (mx, base, police, fs, escape(caractere)))
+    d = CONTOURS.get(police, {}).get(caractere)
+    if d:
+        contenu = '<path d="%s" transform="translate(%d %d)" fill="#ff0000"/>' % (d, mx, base)
+    else:
+        # Origine du texte = début de la ligne de base (SVG standard ; les corrections
+        # « Scratch 2 » de scratch-svg-renderer ne s'appliquent qu'aux projets .sb2).
+        contenu = ('<text x="%d" y="%d" font-family="%s" font-size="%s" fill="#ff0000">%s</text>'
+                   % (mx, base, police, fs, escape(caractere)))
     return _svg(w, h, contenu), mx, base
 
 
@@ -439,6 +483,11 @@ def svg_symbole(symbole, police="Sans Serif"):
         adv = 26
     elif symbole == "👍":
         s, adv = _pouce(mx, base)
+    elif symbole == "×":
+        # croix de multiplication (secours pour les polices qui n'ont pas le caractère)
+        s = ('<path d="M%d %d L%d %d M%d %d L%d %d" stroke="#ff0000" stroke-width="3.5" stroke-linecap="round"/>'
+             % (mx + 4, cy - 8, mx + 20, cy + 8, mx + 20, cy - 8, mx + 4, cy + 8))
+        adv = 24
     else:
         raise KeyError("symbole inconnu : %r" % symbole)
     return _svg(adv + mx + 6, h, s), mx, base, adv
@@ -469,6 +518,11 @@ def installer(cible, police="Sans Serif"):
     numeros = {}
     for c in CARACTERES_POLICE:
         if c not in pol["largeurs"]:
+            if c in SYMBOLES_SECOURS:             # dessin vectoriel de remplacement
+                svg, cx, cy, adv = svg_symbole(c, police)
+                cible.costume_svg("g_" + c, svg, cx, cy)
+                numeros[c] = len(cible.costumes)
+                largeurs.append(adv)
             continue                              # glyphe absent de cette police : caractère ignoré
         svg, cx, cy = svg_glyphe(c, police)
         cible.costume_svg("g_" + c, svg, cx, cy)
@@ -496,7 +550,7 @@ def installer(cible, police="Sans Serif"):
         valeurs += list(COULEURS[n])
     cible.liste("txt_couleurValeurs", valeurs)
     for nom, val in [("txt_largeur", 0), ("txt_i", 0), ("txt_j", 0), ("txt_c", 0), ("txt_x", 0), ("txt_x0", 0),
-                     ("txt_k", 1), ("txt_n", 0), ("txt_lmax", 0), ("txt_ombre", 1), ("txt_espacement", 0)]:
+                     ("txt_fin", 0), ("txt_k", 1), ("txt_n", 0), ("txt_lmax", 0), ("txt_ombre", 1), ("txt_espacement", 0)]:
         cible.var(nom, val)
 
     V = Var
@@ -516,12 +570,13 @@ def installer(cible, police="Sans Serif"):
         setv("txt_i", 1),
         repeter_jusqua(gt(V("txt_i"), longueur(Arg("texte"))), [
             setv("txt_c", lettre(V("txt_i"), Arg("texte"))),
-            si(eq(V("txt_c"), " "), [
+            si(contient_texte(ESPACES, V("txt_c")), [      # espace (y compris insécable)
                 ajouter_liste("txt_glyphes", 0),
                 changev("txt_largeur", mul(LARGEUR_ESPACE, k)),
             ], [
-                # paire de substitution UTF-16 (émoji) : lettre(i) ≥ U+D800 → on prend 2 unités
-                si(gt(V("txt_c"), "퟿"), [
+                # paire de substitution UTF-16 (émoji) : lettre(i) dans U+D800..U+DBFF → on prend 2 unités
+                # (les caractères au-delà, comme le sélecteur de variation U+FE0F de « ❤️ », restent seuls)
+                si(et(gt(V("txt_c"), AVANT_SUBSTITUT), lt(V("txt_c"), APRES_SUBSTITUT)), [
                     setv("txt_c", join(V("txt_c"), lettre(add(V("txt_i"), 1), Arg("texte")))),
                     changev("txt_i", 1),
                 ]),
@@ -537,22 +592,33 @@ def installer(cible, police="Sans Serif"):
         ]),
     ])
 
-    # --- txt_passe %n %n %n : tamponne txt_glyphes à partir de (x, y) avec les effets courants
+    # --- txt_passe %n %n %n : tamponne txt_glyphes à partir de (x, y) avec les effets courants.
+    #     Les glyphes entièrement hors scène ne sont pas tamponnés : la clôture de scène de
+    #     Scratch (motion_gotoxy) les repousserait vers le bord, où ils s'empileraient.
+    _, base, h = _geometrie(pol)
+    descente = h - base                              # px sous la ligne de base (taille 40)
+    demi_l, demi_h = contrat.LARGEUR / 2, contrat.HAUTEUR / 2
     cible.proc("txt_passe", [("x", "n"), ("y", "n"), ("taille", "n")], [
         costume("g_"),                                   # costume large : taille minimale non bridée
         taille(mul(Arg("taille"), 100.0 / BOITE)),
         setv("txt_x", Arg("x")),
         setv("txt_j", 0),
-        repeter(long_liste("txt_glyphes"), [
-            changev("txt_j", 1),
-            setv("txt_c", item("txt_glyphes", V("txt_j"))),
-            si(eq(V("txt_c"), 0), [
-                changev("txt_x", mul(LARGEUR_ESPACE, k)),
-            ], [
-                costume(V("txt_c")),
-                aller(V("txt_x"), Arg("y")),
-                tampon(),
-                changev("txt_x", avance(V("txt_c"))),
+        # ligne de base telle que la boîte des glyphes est entièrement au-dessus ou au-dessous de la scène : rien
+        si(et(lt(Arg("y"), add(demi_h, mul(descente, k))), gt(Arg("y"), sub(-demi_h, mul(base, k)))), [
+            repeter(long_liste("txt_glyphes"), [
+                changev("txt_j", 1),
+                setv("txt_c", item("txt_glyphes", V("txt_j"))),
+                si(eq(V("txt_c"), 0), [
+                    changev("txt_x", mul(LARGEUR_ESPACE, k)),
+                ], [
+                    setv("txt_fin", add(V("txt_x"), avance(V("txt_c")))),
+                    si(et(lt(V("txt_x"), demi_l), gt(V("txt_fin"), -demi_l)), [     # glyphe au moins en partie visible
+                        costume(V("txt_c")),
+                        aller(V("txt_x"), Arg("y")),
+                        tampon(),
+                    ]),
+                    setv("txt_x", V("txt_fin")),
+                ]),
             ]),
         ]),
     ])
@@ -639,10 +705,10 @@ def largeur_px(texte, taille_px, police="Sans Serif"):
     k = taille_px / float(BOITE)
     total = 0.0
     for c in texte:
-        if c == " ":
+        if c in ESPACES:
             total += LARGEUR_ESPACE * k
         elif c in pol["largeurs"]:
             total += pol["largeurs"][c] * k
-        elif c in SYMBOLES:
+        elif c in SYMBOLES or c in SYMBOLES_SECOURS:
             total += svg_symbole(c, police)[3] * k
     return total

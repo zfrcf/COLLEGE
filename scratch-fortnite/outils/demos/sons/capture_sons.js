@@ -1,35 +1,14 @@
 // Script de capture pour outils/capture.js : rendu réel dans Chromium + VRAI moteur audio.
 //   node outils/capture.js outils/demos/sons/demo.sb3 outils/demos/sons/capture_sons.js
-// 1. injecte scratch-audio dans la page (bundle commonjs2 + ses trois externes : audio-context,
-//    startaudiocontext, minilog) via un petit shim `require`, attache un AudioEngine au vm et
-//    recharge le projet : Chromium décode alors réellement les 28 WAV (decodeAudioData) ;
+// 1. injecte scratch-audio dans la page (voir moteur_audio.js) : Chromium décode réellement les 28 WAV ;
 // 2. laisse tourner la démo et capture l'écran à des instants clés en consignant l'état du
 //    sprite Sons (clones et leur rôle, volumes, PAN, sons en cours de lecture).
-const fs = require('fs');
-const path = require('path');
+const injecterAudio = require('./moteur_audio');
 
 module.exports = async (aides) => {
   const { page } = aides;
-  const nm = path.join(__dirname, '..', '..', 'node_modules');
-  const lire = f => fs.readFileSync(path.join(nm, f), 'utf8');
-  const enveloppe = (src, nom) => '(function(){var module={exports:{}};var exports=module.exports;\n' + src
-    + '\n;modules[' + JSON.stringify(nom) + ']=module.exports;})();\n';
-  const script = '(function(){var modules={};\n'
-    + enveloppe(lire('audio-context/index.js'), 'audio-context')
-    + enveloppe(lire('startaudiocontext/StartAudioContext.js'), 'startaudiocontext')
-    + lire('minilog/dist/minilog.js') + '\nmodules["minilog"]=window.Minilog;\n'
-    + 'var require=function(n){if(!(n in modules))throw new Error("module absent : "+n);return modules[n];};\n'
-    + 'var module={exports:{}};var exports=module.exports;\n' + lire('scratch-audio/dist.js')
-    + '\n;window.AudioEngine=module.exports.default||module.exports;})();';
-  await page.addScriptTag({ content: script });
-  await page.mouse.click(240, 180);            // geste utilisateur réel : autorise l'AudioContext
-  const charge = await page.evaluate(async () => {
-    const moteur = new window.AudioEngine();
-    window.moteur = moteur;
-    vm.attachAudioEngine(moteur);
-    const buf = await (await fetch('projet.sb3')).arrayBuffer();
-    await vm.loadProject(buf);
-    try { moteur.audioContext.resume().catch(() => {}); } catch (e) { /* politique de lecture automatique */ }
+  const charge = await injecterAudio(page);
+  const depart0 = await page.evaluate(() => {
     vm.greenFlag();
     window.t0 = performance.now();
     const s = vm.runtime.getSpriteTargetByName('Sons');
@@ -37,14 +16,12 @@ module.exports = async (aides) => {
     window.departsMusique = [];
     const idMusique = s.sprite.sounds.find(x => x.name === 'musique_salon').soundId;
     s.sprite.soundBank.soundPlayers[idMusique].on('play', () => window.departsMusique.push(moteur.audioContext.currentTime));
-    return {
-      etatAudio: moteur.audioContext.state, nbSons: s.sprite.sounds.length,
-      decodes: s.sprite.sounds.filter(x => x.soundId).length,
-      lecteurs: s.sprite.soundBank ? Object.keys(s.sprite.soundBank.soundPlayers).length : -1,
-      sons: s.sprite.sounds.map(x => x.name + ':' + x.rate + 'Hz/' + x.sampleCount),
-    };
+    return { nbSons: s.sprite.sounds.length, lecteurs: s.sprite.soundBank ? Object.keys(s.sprite.soundBank.soundPlayers).length : -1 };
   });
-  console.log('chargement avec moteur audio :', JSON.stringify(charge));
+  console.log('chargement avec moteur audio :', JSON.stringify({
+    etatAudio: charge.etatAudio, nbSons: depart0.nbSons, decodes: charge.sons.filter(x => x.decode).length, lecteurs: depart0.lecteurs,
+    sons: charge.sons.map(x => x.nom + ':' + x.rate + 'Hz/' + x.sampleCount + '→' + x.dureeDecodee.toFixed(2) + 's'),
+  }));
 
   const etat = () => aides.evaluer((vm, V) => {
     const s = vm.runtime.getSpriteTargetByName('Sons');
@@ -60,7 +37,7 @@ module.exports = async (aides) => {
       audio: moteur.audioContext.state, horlogeAudio: moteur.audioContext.currentTime.toFixed(1), ecran: V('ecran').value,
       musiqueActive: locale(s, 'son_musiqueActive'), clones: clones.map(c => locale(c, 'son_role')),
       volumeOriginal: s.volume, volumesClones: clones.map(c => c.volume),
-      pan: s.getCustomState('Scratch.sound').effects.pan, enCours,
+      pan: s.getCustomState('Scratch.sound').effects.pan, pansClones: clones.map(c => c.getCustomState('Scratch.sound').effects.pan), enCours,
     };
   });
 

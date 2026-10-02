@@ -251,7 +251,8 @@ def installer_billboard(cible, ex, ey, taille_num, decal_y, condition, avant=Non
     for v in ["dx", "dy", "f", "r", "sx", "col"]:
         cible.var(v, 0)
     cible.proc("afficher", [], [
-        si(et(condition, est_ecran_rendu()), [
+        # masqué dès qu'une superposition au stylo (chat, roues, signalement) est ouverte : les sprites passent au-dessus du stylo
+        si(et3(condition, est_ecran_rendu(), eq(V("superposition"), "")), [
             setv("dx", sub(ex, V("px"))), setv("dy", sub(ey, V("py"))),
             setv("f", add(mul(V("dx"), cos(V("dir"))), mul(V("dy"), sin(V("dir"))))),
             setv("r", sub(mul(V("dx"), sin(V("dir"))), mul(V("dy"), cos(V("dir"))))),

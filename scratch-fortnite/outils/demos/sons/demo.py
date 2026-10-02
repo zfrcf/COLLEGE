@@ -28,7 +28,7 @@ COULEURS = {"effets": "#4cc9f0", "voix": "#f9a826", "musique": "#7bd389"}
 
 def carte(nom, ech, rate):
     """Carte 440x200 : nom, catégorie, taux, durée, pic et forme d'onde (enveloppe min/max par colonne)."""
-    colonnes, x0, cy, amp = 400, 20, 118, 68
+    colonnes, x0, cy, amp = 400, 20, 116, 60      # forme d'onde entre y = 56 et 176 : titre au-dessus, infos en dessous
     n = len(ech)
     pas = n / float(colonnes)
     segments = []
@@ -46,7 +46,7 @@ def carte(nom, ech, rate):
     return svg(440, 200, (
         '<rect width="440" height="200" rx="16" fill="#16213e" stroke="%s" stroke-width="3"/>' % coul
         + '<text x="22" y="40" font-family="Sans Serif" font-weight="bold" font-size="26" fill="#ffffff">%s</text>' % echapper(nom)
-        + '<text x="418" y="40" text-anchor="end" font-family="Sans Serif" font-size="14" fill="#c8d3f5">%s · %d Hz · %.2f s · pic %.2f</text>'
+        + '<text x="418" y="191" text-anchor="end" font-family="Sans Serif" font-size="14" fill="#c8d3f5">%s · %d Hz · %.2f s · pic %.2f</text>'
         % (cat, rate, n / rate, max(abs(v) for v in ech))
         + '<line x1="20" y1="%d" x2="420" y2="%d" stroke="#2f3b63" stroke-width="1"/>' % (cy, cy)
         + '<path d="%s" stroke="%s" stroke-width="1" fill="none"/>' % ("".join(segments), coul)))

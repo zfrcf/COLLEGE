@@ -9,13 +9,24 @@ majuscule de 28 px (boîte de référence 40 px). Le résultat est imprimé sous
 forme de dictionnaire Python à coller dans royale/texte.py (POLICES).
 
 Usage :
-    PYTHONPATH=<dossier contenant fontTools> python3 mesurer_polices.py
+    PYTHONPATH=<dossier contenant fontTools> python3 mesurer_polices.py             → table POLICES (stdout)
+    PYTHONPATH=<dossier contenant fontTools> python3 mesurer_polices.py --contours  → royale/texte_glyphes.json
 Dépendance : fontTools (pip install fonttools --target <dossier>).
+
+Le mode --contours extrait le tracé vectoriel (attribut « d » d'un <path>) de chaque
+glyphe, en px pour une majuscule de 28 px, origine au début de la ligne de base, y vers
+le bas. texte.py s'en sert pour fabriquer les costumes sans balise <text> : les SVG
+restent minuscules (pas de police de 450 Ko injectée dans chaque image par
+scratch-svg-renderer) et se chargent instantanément.
 """
 import os
 import sys
 
+import json
+
 from fontTools.pens.boundsPen import BoundsPen
+from fontTools.pens.svgPathPen import SVGPathPen
+from fontTools.pens.transformPen import TransformPen
 from fontTools.ttLib import TTFont
 
 ICI = os.path.dirname(os.path.abspath(__file__))
@@ -74,7 +85,43 @@ def mesurer(nom):
             "manquants": manquants}
 
 
+def _nombre(v):
+    """Nombre compact à 1 décimale (« 12.5 », « -3 ») : 0,05 px d'erreur au plus à la taille 40."""
+    t = "%.1f" % v
+    t = t.rstrip("0").rstrip(".")
+    return "0" if t in ("-0", "") else t
+
+
+def contours(nom):
+    """Tracés SVG (px, origine ligne de base, y vers le bas) de chaque caractère de la police."""
+    f = TTFont(os.path.join(DOSSIER_POLICES, POLICES[nom]))
+    upm = f["head"].unitsPerEm
+    cmap = f.getBestCmap()
+    glyphes = f.getGlyphSet()
+    bH = BoundsPen(glyphes)
+    glyphes[cmap[ord("H")]].draw(bH)
+    k = CAP_REFERENCE / (bH.bounds[3] / upm) / upm     # unités de police → px
+    out = {}
+    for c in CARACTERES_POLICE:
+        if ord(c) not in cmap:
+            continue
+        pen = SVGPathPen(glyphes, ntos=_nombre)
+        glyphes[cmap[ord(c)]].draw(TransformPen(pen, (k, 0, 0, -k, 0, 0)))
+        d = pen.getCommands()
+        if d:
+            out[c] = d
+    return out
+
+
 if __name__ == "__main__":
+    if "--contours" in sys.argv:
+        chemin = os.path.join(ICI, "..", "..", "..", "royale", "texte_glyphes.json")
+        data = {nom: contours(nom) for nom in POLICES}
+        with open(chemin, "w", encoding="utf-8") as fichier:
+            json.dump(data, fichier, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+        print("contours écrits :", os.path.normpath(chemin), "—", sum(len(v) for v in data.values()), "glyphes,",
+              os.path.getsize(chemin) // 1024, "Ko")
+        sys.exit(0)
     print("# Généré par outils/demos/texte/mesurer_polices.py — ne pas éditer à la main.")
     print("POLICES = {")
     for nom in POLICES:

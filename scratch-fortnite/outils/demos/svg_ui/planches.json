@@ -1,0 +1,157 @@
+[
+ {
+  "nom": "objets",
+  "titre": "Objets d'inventaire 48 px (×1 et ×2)",
+  "clones": 16
+ },
+ {
+  "nom": "munitions_materiaux",
+  "titre": "Munitions et matériaux 32 px (×1, ×2, ×2,5)",
+  "clones": 18
+ },
+ {
+  "nom": "personnages",
+  "titre": "Personnages style 0 : debout, émote, parachute, à terre (×0,5)",
+  "clones": 40
+ },
+ {
+  "nom": "personnages_style1",
+  "titre": "Personnages style 1 : debout, émote, parachute, à terre (×0,5)",
+  "clones": 40
+ },
+ {
+  "nom": "skins",
+  "titre": "Skins 1 à 10 : debout (×1) et à terre (×0,7)",
+  "clones": 20
+ },
+ {
+  "nom": "cosmetiques_a",
+  "titre": "9 pioches 48, 9 planeurs 64×48, 6 sprays 64 (×1)",
+  "clones": 24
+ },
+ {
+  "nom": "cosmetiques_b",
+  "titre": "Émotes 48, 10 bannières 40, divisions 48, médailles 48 (×1)",
+  "clones": 26
+ },
+ {
+  "nom": "zoom_pioches_emotes",
+  "titre": "Pioches et émotes (×1,5)",
+  "clones": 15
+ },
+ {
+  "nom": "zoom_planeurs",
+  "titre": "Planeurs (×1,5)",
+  "clones": 9
+ },
+ {
+  "nom": "zoom_sprays",
+  "titre": "Sprays et médailles (×1,5)",
+  "clones": 9
+ },
+ {
+  "nom": "zoom_badges",
+  "titre": "Divisions et bannières (×1,5)",
+  "clones": 17
+ },
+ {
+  "nom": "icones",
+  "titre": "Petites icônes d'interface 24/32 px (×1)",
+  "clones": 37
+ },
+ {
+  "nom": "icones_grandes",
+  "titre": "Bus, pings, carte, balise, coffre ouvert, dégâts (×1)",
+  "clones": 11
+ },
+ {
+  "nom": "icones_grandes_x2",
+  "titre": "Bus, pings, carte, balise, coffre ouvert, dégâts (×2)",
+  "clones": 11
+ },
+ {
+  "nom": "icones_x2a",
+  "titre": "Icônes ×2 (onglets, quêtes, succès, amis, haut-parleur)",
+  "clones": 21
+ },
+ {
+  "nom": "icones_x2b",
+  "titre": "Icônes ×2 (divers, flèches, boussole, parachute, planeur)",
+  "clones": 16
+ },
+ {
+  "nom": "icones_carte_x3",
+  "titre": "Icônes de la carte plein écran (bus, parachute, coffre) ×1, ×2 et ×3",
+  "clones": 9
+ },
+ {
+  "nom": "composants",
+  "titre": "Progression, barres, boutons",
+  "clones": 13
+ },
+ {
+  "nom": "composants_b",
+  "titre": "Onglets, panneaux, logo",
+  "clones": 5
+ },
+ {
+  "nom": "cartes",
+  "titre": "Carte complète 320×320 (×1) — minicarte 109×109 (×1 et ×1,5)",
+  "clones": 3
+ },
+ {
+  "nom": "cartes_echelles",
+  "titre": "Carte complète à 5 px/case (160, appel de Menus) et 7 px/case (224)",
+  "clones": 2
+ },
+ {
+  "nom": "fonds",
+  "titre": "Fonds d'écran 480×360 (×0,23)",
+  "clones": 9
+ },
+ {
+  "nom": "fond_connexion",
+  "titre": "",
+  "clones": 2
+ },
+ {
+  "nom": "fond_salon",
+  "titre": "",
+  "clones": 2
+ },
+ {
+  "nom": "fond_matchmaking",
+  "titre": "",
+  "clones": 2
+ },
+ {
+  "nom": "fond_chargement",
+  "titre": "",
+  "clones": 2
+ },
+ {
+  "nom": "fond_victoire",
+  "titre": "",
+  "clones": 2
+ },
+ {
+  "nom": "fond_defaite",
+  "titre": "",
+  "clones": 2
+ },
+ {
+  "nom": "fond_fin",
+  "titre": "",
+  "clones": 2
+ },
+ {
+  "nom": "fond_tempete",
+  "titre": "",
+  "clones": 2
+ },
+ {
+  "nom": "fond_ciel",
+  "titre": "",
+  "clones": 2
+ }
+]

@@ -30,6 +30,11 @@ Sprite « Sons » (`installer(P)`)
   donc joués par le sprite original, tandis que la musique et les jingles « voix »
   (longs) sont joués par des CLONES éphémères qui ont leur propre volume : un coup
   de feu ne fait plus sauter le volume de la musique ni d'une fanfare.
+  Attention : à sa création un clone repart à volume 100 mais HÉRITE de l'effet PAN
+  de l'original (scratch-vm copie l'état sonore) ; les clones remettent donc leur
+  PAN explicitement (comparé à `son_dernierPan`, lui aussi hérité) avant de jouer.
+- Seul l'original réagit à « demarrer » : un clone qui le reçoit (relance du jeu)
+  se supprime, sinon il remettrait ses locales à zéro et se prendrait pour l'original.
 - Musique : `quand je reçois "demarrer"` -> boucle qui surveille `ecran` ; sur les
   écrans connexion/salon/matchmaking/chargement et si `son_musiqueActive` = 0, un
   clone « musique » est créé et joue `musique_salon` jusqu'au bout en boucle (volume
@@ -48,7 +53,7 @@ import sys
 from array import array
 
 from . import contrat
-from .dsl import (Cible, Node, Var, add, attendre, cloner_moi, diffuser, div, effet_son, eq, et, mul, non, ou,
+from .dsl import (Cible, Node, Var, attendre, cloner_moi, diffuser, div, effet_son, eq, et, mul, non, ou,
                   quand_clone, quand_drapeau, quand_message, setv, si, son, son_attendre, stop_sons, supprimer_clone,
                   toujours, volume)
 
@@ -245,8 +250,62 @@ def _doux(x, k=1.5):
     return [t(k * v) * g for v in x]
 
 
+_SINC_POINTS = 24          # points de l'interpolateur (i-11 … i+12)
+_SINC_SUR = 8              # positions estimées entre deux échantillons (1/8 … 7/8)
+
+
+def _coeffs_sinc():
+    """Coefficients d'interpolation sinc fenêtrée (24 points, fenêtre de Hann) aux positions k/8 entre deux
+    échantillons : sert à estimer le signal reconstruit par le rééchantillonneur du navigateur."""
+    out = []
+    demi = _SINC_POINTS // 2
+    for k in range(1, _SINC_SUR):
+        frac = k / _SINC_SUR
+        c = []
+        for p in range(-demi + 1, demi + 1):         # échantillons i-11 … i+12 autour de la position i+frac
+            d = p - frac
+            s = math.sin(math.pi * d) / (math.pi * d)
+            c.append(s * 0.5 * (1.0 + math.cos(math.pi * d / (demi + 0.5))))
+        somme = sum(c)
+        out.append([v / somme for v in c])           # gain unité en continu
+    return out
+
+
+_SINC = _coeffs_sinc()
+
+
+def _pic_inter(x, seuil):
+    """Pic INTER-échantillons estimé (interpolation sinc à 8×) autour des échantillons dont |x| > seuil.
+    Chromium rééchantillonne les WAV à 44,1 kHz : un bruit riche près de Nyquist dont les échantillons
+    plafonnent à 0,8 peut alors dépasser 1,0 entre deux échantillons (mesuré : tir_pistolet à 1,01)."""
+    n = len(x)
+    pic = 0.0
+    a = abs
+    demi = _SINC_POINTS // 2
+    for i in range(n - 1):
+        if a(x[i]) > seuil or a(x[i + 1]) > seuil:
+            debut = i - demi + 1
+            if debut >= 0 and i + demi < n:
+                fen = x[debut:i + demi + 1]
+                for c in _SINC:
+                    v = sum(w * s for w, s in zip(c, fen))
+                    if a(v) > pic:
+                        pic = a(v)
+            else:                                    # bord : les échantillons manquants valent 0
+                for c in _SINC:
+                    v = 0.0
+                    for k, w in enumerate(c):
+                        j = debut + k
+                        if 0 <= j < n:
+                            v += w * x[j]
+                    if a(v) > pic:
+                        pic = a(v)
+    return pic
+
+
 def _finir(x, rate, pic=0.8, attaque=0.002, relache=0.01):
-    """Fondu d'attaque et de relâchement (anti-clic) puis normalisation du pic."""
+    """Fondu d'attaque et de relâchement (anti-clic) puis normalisation du pic — pic des échantillons ET
+    pic inter-échantillons estimé, pour que le son rééchantillonné par le navigateur reste sous `pic`."""
     n = len(x)
     na = max(1, _n(attaque, rate))
     nr = max(1, _n(relache, rate))
@@ -255,6 +314,9 @@ def _finir(x, rate, pic=0.8, attaque=0.002, relache=0.01):
     for i in range(min(nr, n)):
         x[n - 1 - i] *= i / nr
     m = max(abs(v) for v in x) or 1.0
+    inter = _pic_inter(x, 0.5 * m)
+    if inter > m:
+        m = 1.03 * inter        # marge : l'estimateur sous-évalue de ~2 % le contenu collé à Nyquist (mesuré dans Chromium)
     g = pic / m
     return [g * v for v in x]
 
@@ -450,8 +512,8 @@ def _clic(rate):
 
 
 def _survol(rate):
-    """Survol d'interface : très court et doux."""
-    n = _n(0.04, rate)
+    """Survol d'interface : très court et doux (55 ms : les effets durent au moins 50 ms)."""
+    n = _n(0.055, rate)
     out = _mult(_sinus(n, rate, 2200), _env_perc(n, rate, 0.002, 0.009))
     return _finir(out, rate, 0.4, 0.001, 0.008)
 
@@ -708,13 +770,15 @@ def fabriquer_sons():
 
 
 def infos(banque=None):
-    """{nom: {'duree', 'pic', 'rate', 'octets', 'categorie', 'debut', 'fin'}} — pour inspection."""
+    """{nom: {'duree', 'pic', 'pic_inter', 'rate', 'octets', 'categorie', 'debut', 'fin'}} — pour inspection
+    (pic_inter : pic inter-échantillons estimé, voir _pic_inter)."""
     banque = banque or fabriquer_sons()
     out = {}
     for nom in contrat.SONS:
         ech, rate = generer(nom, banque[nom][1])
         bord = max(1, int(rate * 0.001))
-        out[nom] = {"duree": len(ech) / rate, "pic": max(abs(v) for v in ech), "rate": rate,
+        pic = max(abs(v) for v in ech)
+        out[nom] = {"duree": len(ech) / rate, "pic": pic, "pic_inter": max(pic, _pic_inter(ech, 0.5 * pic)), "rate": rate,
                     "octets": len(banque[nom][0]), "categorie": categorie(nom),
                     "debut": max(abs(v) for v in ech[:bord]), "fin": max(abs(v) for v in ech[-bord:])}
     return out
@@ -757,14 +821,15 @@ def installer(P, banque=None):
 
     # --- initialisation et surveillance de l'écran pour la musique ---------------
     S.script(quand_drapeau(), list(init))
-    S.script(quand_message("demarrer"), init + [
+    # Les clones reçoivent aussi « demarrer » (relance sans drapeau vert) : ils se suppriment, et seul
+    # l'original remet ses locales à zéro puis surveille l'écran (la musique repart proprement).
+    S.script(quand_message("demarrer"), [si(eq(V("son_estClone"), 1), [supprimer_clone()], init + [
         volume(100), effet_son("PAN", 0),
-        diffuser("son stop musique"),           # clones restants d'une diffusion « demarrer » précédente
         toujours([
             si(_sur_ecran_musique(),
                [si(eq(V("son_musiqueActive"), 0), [setv("son_musiqueActive", 1)] + _cloner_avec_role("musique"))],
                [si(eq(V("son_musiqueActive"), 1), [setv("son_musiqueActive", 0), diffuser("son stop musique")])]),
-        ])])
+        ])])])
 
     # --- un script par son ---------------------------------------------------------
     for nom in contrat.SONS:
@@ -778,15 +843,22 @@ def installer(P, banque=None):
             ]
         else:   # musique et voix : un clone éphémère au volume indépendant
             corps = [setv("son_niveauClone", niveau), setv("son_panClone", V("son_pan"))] + _cloner_avec_role(nom)
+            if nom == "musique_salon":
+                # la boucle du salon est automatique : un lecteur par son et par sprite, un second départ
+                # ne ferait que la relancer au début ; ignoré tant que la boucle est active
+                corps = [si(eq(V("son_musiqueActive"), 0), corps)]
         S.script(quand_message("son " + nom), [si(eq(V("son_estClone"), 0), corps)])
 
     # --- clones : musique en boucle ou jingle joué jusqu'au bout ---------------------
+    # Un clone naît à volume 100 mais avec le PAN de l'original (état sonore copié) ; son_dernierPan,
+    # copié lui aussi, dit quel PAN il a hérité : on ne règle (une image perdue) que ce qui change.
     jingles = [si(eq(V("son_role"), nom), [son_attendre(nom)]) for nom in contrat.SONS if categorie(nom) != "effets"]
     S.script(quand_clone(), [
         si(eq(V("son_role"), "musique"),
-           [volume(V("param_volumeMusique")), toujours([son_attendre("musique_salon")])],
-           [volume(V("son_niveauClone")),
-            si(non(eq(V("son_panClone"), 0)), [effet_son("PAN", V("son_panClone"))])]
+           [si(non(eq(V("son_dernierPan"), 0)), [effet_son("PAN", 0)]),      # musique toujours au centre
+            volume(V("param_volumeMusique")), toujours([son_attendre("musique_salon")])],
+           [si(non(eq(volume_actuel(), V("son_niveauClone"))), [volume(V("son_niveauClone"))]),
+            si(non(eq(V("son_panClone"), V("son_dernierPan"))), [effet_son("PAN", V("son_panClone"))])]
            + jingles + [supprimer_clone()])])
     # volume de la musique suivi en temps réel (le réglage s'applique au son en cours)
     S.script(quand_clone(), [si(eq(V("son_role"), "musique"),
@@ -807,4 +879,5 @@ if __name__ == "__main__":
     total = sum(len(o) for o, _, _ in b.values())
     print("%d sons, %.0f Ko, %.1f s de synthèse" % (len(b), total / 1024, time.time() - t))
     for nom, i in infos(b).items():
-        print("%-14s %5d Hz %5.2f s pic %.2f %7d o  %s" % (nom, i["rate"], i["duree"], i["pic"], i["octets"], i["categorie"]))
+        print("%-14s %5d Hz %5.2f s pic %.2f (inter %.2f) %7d o  %s"
+              % (nom, i["rate"], i["duree"], i["pic"], i["pic_inter"], i["octets"], i["categorie"]))

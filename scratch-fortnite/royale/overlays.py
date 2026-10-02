@@ -65,7 +65,7 @@ def construire(P):
     W.script(quand_drapeau(), [
         cacher(), taille(70),
         toujours([
-            si(et4(ou(eq(V("etat"), 1), eq(V("etat"), 8)), gt(V("plan"), 0.5), en_jeu(), lt(V("monEmoteFin"), chrono())), [
+            si(et4(ou(eq(V("etat"), 1), eq(V("etat"), 8)), gt(V("plan"), 0.5), et(en_jeu(), eq(V("superposition"), "")), lt(V("monEmoteFin"), chrono())), [
                 setv("objet", item("Inventaire", V("slotActif"))),
                 si(eq(V("armeNum"), 8), [setv("objet", 8)]),
                 si(lt(V("objet"), 4), [
@@ -91,7 +91,7 @@ def construire(P):
     F.layer = C.CALQUES["Flash"]
     F.script(quand_drapeau(), [
         cacher(), aller(40, -45), taille(120),
-        toujours([si(et3(gt(V("tirAnim"), 2), gt(V("plan"), 0.5), lt(V("armeNum"), 4)), [montrer()], [cacher()])]),
+        toujours([si(et4(gt(V("tirAnim"), 2), gt(V("plan"), 0.5), lt(V("armeNum"), 4), eq(V("superposition"), "")), [montrer()], [cacher()])]),
     ])
 
     H = Cible(P, "Viseur")
@@ -103,7 +103,7 @@ def construire(P):
     H.script(quand_drapeau(), [
         aller(0, 0), cacher(),
         toujours([
-            si(et(ou(eq(V("etat"), 1), eq(V("etat"), 8)), en_jeu()), [
+            si(et3(ou(eq(V("etat"), 1), eq(V("etat"), 8)), en_jeu(), eq(V("superposition"), "")), [
                 si(lt(V("plan"), 0.5), [costume("lunette"), taille(100)], [
                     taille(V("param_tailleHUD")),
                     si(gt(V("toucheFin"), chrono()), [costume("touche")], [costume("viseur")]),

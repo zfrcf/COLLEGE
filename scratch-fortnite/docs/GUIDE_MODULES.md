@@ -33,6 +33,9 @@ qui est partagé. Ce guide explique comment écrire, brancher et tester un modul
 - `ecran` décide qui dessine le fond : écrans 3D → Moteur3D ; connexion/salon/matchmaking/chargement →
   Menus ; bus/parachute/carte → Partie ; pause/fin → Moteur3D rend le 3D puis Menus dessine par-dessus.
   Le sprite propriétaire du fond fait `effacer()` en début d'image, les autres ne l'appellent jamais.
+- Quand `superposition` ≠ "" (chat, roues, signalement…), les sprites 3D (Ennemi, Coffre, Spray…), l'arme et
+  le viseur se cachent pour ne pas passer au-dessus des panneaux au stylo ; Joueur ignore alors les clics.
+- En écran « cinema », Joueur n'applique pas la gravité : `hauteur` peut être réglée librement (horizon = −hauteur).
 - Ne redessiner un menu que quand quelque chose change (survol, onglet, données) : un tampon par glyphe.
 
 ## 3. Tester
