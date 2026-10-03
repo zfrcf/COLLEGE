@@ -8,6 +8,9 @@ Contenu du dossier :
 
 | Fichier | Rôle |
 |---|---|
+| **`Optimisation-26.2-tout-en-un.jar`** | **Le mod unique** : un seul fichier à mettre dans `mods/`, qui contient les 38 mods et l'écran d'activation dans le jeu. |
+| `mod-unique/` | Code source Java du mod unique (Gradle + Fabric Loom). |
+| `assembler.py` | Fabrique le jar tout-en-un à partir du mod compilé, du catalogue et des jars des mods. |
 | `Optimisation-Fabric-26.2.mrpack` | Le pack prêt à importer dans **Modrinth App** ou **Prism Launcher** (le plus simple). |
 | `Lancer-Gestionnaire.bat` / `lancer-gestionnaire.sh` | Lance le gestionnaire (Windows / macOS-Linux). |
 | `gestionnaire.py` | Le gestionnaire lui-même (Python 3, aucune dépendance). |
@@ -15,7 +18,37 @@ Contenu du dossier :
 | `verrou.json` | Versions exactes vérifiées (URL Modrinth + empreintes SHA-512). |
 | `mods-perso/` | Les 7 mods fournis dans ton zip, intégrés tels quels. |
 
-## 1. Installation rapide (recommandée)
+## 0. Le mod unique (le plus simple)
+
+1. Installe Fabric Loader 0.19.5 pour Minecraft 26.2 ([fabricmc.net/use](https://fabricmc.net/use/installer/)).
+2. Copie **`Optimisation-26.2-tout-en-un.jar`** dans ton dossier `.minecraft/mods/`. Rien d'autre : Fabric API,
+   Sodium, Iris, Lithium, tes 7 mods… tout est à l'intérieur (mécanisme officiel Fabric « jar-in-jar »).
+3. Lance le jeu. Dans Mod Menu, le pack apparaît comme **« Optimisation 26.2 »** avec tous les mods en dessous.
+4. Pour activer / désactiver un mod : Mod Menu → Optimisation 26.2 → **Configurer**.
+   - un onglet par famille (Rendu et FPS, Moteur, Réseau, Mods personnels, Outils optionnels…) ;
+   - chaque mod a un interrupteur Activé / Désactivé et une infobulle (rôle, dépendances, qui en a besoin,
+     fichiers associés) ;
+   - **désactiver une bibliothèque** (ex. Sodium) désactive automatiquement ce qui en dépend (Iris, Sodium Extra…)
+     après confirmation ; **activer un mod** réactive ses bibliothèques tout seul ;
+   - les contraintes de version déclarées par les mods sont vérifiées par Fabric Loader lui-même ;
+   - option **« Mettre de côté les fichiers des mods désactivés »** : schematics, shaderpacks, resourcepacks et
+     `config/...` d'un mod désactivé sont déplacés dans `config/optimisation_pack/mis-de-cote/<mod>/`, puis remis
+     en place automatiquement à la réactivation. Un dossier partagé par un mod encore actif n'est jamais touché.
+   - Mod Menu, Cloth Config et Fabric API restent toujours actifs (ils font fonctionner l'écran).
+5. Clique **Enregistrer** : les changements sont appliqués **à la fermeture du jeu** (le jar ne peut pas être
+   modifié tant que Minecraft l'utilise), puis pris en compte au lancement suivant.
+
+Comment ça marche : le jar contient les 38 mods dans `META-INF/jars/`. Sa liste `jars` (dans `fabric.mod.json`)
+indique ceux que Fabric doit charger. Quand tu enregistres, le mod écrit `config/optimisation_pack/en-attente.txt`
+et, à la fermeture du jeu, lance un petit programme Java (inclus dans le jar) qui attend la fin de Minecraft,
+réécrit la liste `jars` du fichier, et déplace/restaure les fichiers associés. Journal :
+`config/optimisation_pack/applicateur.log`. Les mods optionnels (Litematica, MaLiLib, Spark, C2ME) sont déjà dans
+le jar : il suffit de les cocher.
+
+Reconstruire le jar après modification : `cd mod-unique && gradle build` (JDK 25, Internet) puis
+`python assembler.py` à la racine.
+
+## 1. Installation rapide (via launcher ou gestionnaire Python)
 
 **Option A — via un launcher qui gère les packs**
 

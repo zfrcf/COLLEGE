@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "optimisation_pack",
+  "version": "${version}",
+  "name": "Optimisation 26.2",
+  "description": "Pack d'optimisation tout-en-un pour Minecraft 26.2 : tous les mods sont dans ce seul fichier. Active ou désactive chaque mod depuis Mod Menu.",
+  "authors": ["Antoine"],
+  "license": "MIT",
+  "icon": "assets/optimisation_pack/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["fr.antoine.optimisation.OptimisationPack"],
+    "modmenu": ["fr.antoine.optimisation.ModMenuIntegration"]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.2",
+    "minecraft": "~26.2",
+    "java": ">=25"
+  },
+  "custom": {
+    "modmenu": { "links": {}, "update_checker": false }
+  },
+  "jars": []
+}

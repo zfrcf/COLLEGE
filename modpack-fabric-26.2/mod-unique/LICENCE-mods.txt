@@ -1,0 +1,1 @@
+Les mods embarqués conservent leurs licences respectives (voir chaque jar dans META-INF/jars).

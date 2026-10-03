@@ -1,0 +1,45 @@
+plugins {
+    id 'fabric-loom' version '1.18.2'
+    id 'java'
+}
+
+version = project.mod_version
+group = 'fr.antoine'
+
+base { archivesName = 'optimisation-pack' }
+
+repositories {
+    maven { name = 'TerraformersMC'; url = 'https://maven.terraformersmc.com/releases/' }
+    maven { name = 'Shedaniel'; url = 'https://maven.shedaniel.me/' }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    implementation "com.terraformersmc:modmenu:${project.modmenu_version}"
+    implementation "me.shedaniel.cloth:cloth-config-fabric:${project.cloth_version}"
+}
+
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(25) }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 25
+}
+
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') { expand 'version': project.version }
+}
+
+jar {
+    from('LICENCE-mods.txt') { into 'META-INF' }
+}
+
+// Chemin des bibliothèques pour un lancement de test hors Gradle
+tasks.register('printRunClasspath') {
+    doLast { println "CLASSPATH=" + sourceSets.main.runtimeClasspath.asPath }
+}
