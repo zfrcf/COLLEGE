@@ -46,13 +46,16 @@ def main() -> int:
     p = argparse.ArgumentParser(description="Assemble le mod unique Optimisation 26.2")
     p.add_argument("--sortie", help="Jar final (défaut : Optimisation-26.2-tout-en-un.jar)")
     p.add_argument("--jar-mod", help="Jar compilé du gestionnaire (défaut : dernier build Gradle)")
+    p.add_argument("--sans-optionnels", action="store_true",
+                   help="Version allégée : n'embarque pas les mods optionnels (Litematica, Spark, C2ME...)")
     args = p.parse_args()
 
     catalogue = G.charger_json(G.CHEMIN_CATALOGUE)
     verrou = G.charger_json(G.CHEMIN_VERROU) or {"mods": {}}
     version_pack = catalogue.get("version_pack", "1.0.0")
     mc = catalogue.get("minecraft", "26.2")
-    sortie = Path(args.sortie) if args.sortie else RACINE / f"Optimisation-{mc}-tout-en-un.jar"
+    suffixe = "-essentiel" if args.sans_optionnels else ""
+    sortie = Path(args.sortie) if args.sortie else RACINE / f"Optimisation-{mc}-tout-en-un{suffixe}.jar"
 
     if args.jar_mod:
         jar_mod = Path(args.jar_mod)
@@ -97,6 +100,10 @@ def main() -> int:
             nom_jar += ".jar"
         jars_a_embarquer.append((local, nom_jar))
         par_defaut = bool(entree.get("par_defaut", True))
+        if not par_defaut and args.sans_optionnels:
+            jars_a_embarquer.pop()
+            print(f"  - {meta.id:24} {meta.version:22} optionnel, non embarqué")
+            continue
         if par_defaut:
             actifs_par_defaut.append(nom_jar)
         manifeste["mods"].append({
@@ -119,7 +126,7 @@ def main() -> int:
 
     # dépendances automatiques du verrou (ex. placeholder-api pour spark)
     for ident, v in verrou["mods"].items():
-        if not v.get("auto"):
+        if not v.get("auto") or args.sans_optionnels:
             continue
         local = cache / v["fichier"]
         if not local.exists():
@@ -168,7 +175,7 @@ def main() -> int:
                 dst.writestr(info, src.read(info))
         dst.writestr("pack-manifest.json", json.dumps(manifeste, ensure_ascii=False, indent=2))
         for local, nom_jar in jars_a_embarquer:
-            dst.write(local, f"META-INF/jars/{nom_jar}", compress_type=zipfile.ZIP_STORED)
+            dst.write(local, f"META-INF/jars/{nom_jar}", compress_type=zipfile.ZIP_DEFLATED)
     taille = sortie.stat().st_size / 1e6
     print(f"\nJar final : {sortie}  ({taille:.1f} Mo, {len(jars_a_embarquer)} mods embarqués, "
           f"{len(actifs_par_defaut)} actifs par défaut)")

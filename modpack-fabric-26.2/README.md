@@ -9,6 +9,7 @@ Contenu du dossier :
 | Fichier | Rôle |
 |---|---|
 | **`Optimisation-26.2-tout-en-un.jar`** | **Le mod unique** : un seul fichier à mettre dans `mods/`, qui contient les 38 mods et l'écran d'activation dans le jeu. |
+| `Optimisation-26.2-tout-en-un-essentiel.jar` | Même mod, sans les 5 optionnels (Litematica, MaLiLib, Spark, C2ME, Placeholder API) : 26 Mo au lieu de 38. Généré par `python assembler.py --sans-optionnels`, non versionné. |
 | `mod-unique/` | Code source Java du mod unique (Gradle + Fabric Loom). |
 | `assembler.py` | Fabrique le jar tout-en-un à partir du mod compilé, du catalogue et des jars des mods. |
 | `Optimisation-Fabric-26.2.mrpack` | Le pack prêt à importer dans **Modrinth App** ou **Prism Launcher** (le plus simple). |
