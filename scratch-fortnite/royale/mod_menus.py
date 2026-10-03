@@ -1204,6 +1204,8 @@ class Menus:
         ("jeu", "enum", "param_region", "Région de serveur", "Server region", [(0, "Europe (Scratch)", "Europe (Scratch)"), (1, "Amérique", "America"), (2, "Asie", "Asia")]),
         ("jeu", "bool", "param_afficherPing", "Affichage du ping / latence", "Show ping / latency", None),
         ("jeu", "bool", "param_infosReseau", "Affichage des informations réseau", "Show network info", None),
+        ("jeu", "bool", "param_bots", "Bots de remplissage", "Fill bots", None),
+        ("jeu", "enum", "bots_difficulte", "Difficulté des bots", "Bot difficulty", [(1, "Facile", "Easy"), (2, "Normale", "Normal"), (3, "Difficile", "Hard")]),
         ("video", "enum", "param_qualite", "Qualité graphique", "Graphics quality", [(i + 1, fr, en) for i, (fr, en) in enumerate(QUALITES)]),
         ("video", "bool", "param_afficherFPS", "Afficher les FPS", "Show FPS", None),
         ("video", "bool", "param_performance", "Mode performance", "Performance mode", None),

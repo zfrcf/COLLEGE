@@ -92,7 +92,7 @@ LTM = {0: "Aucun", 1: "Pompes uniquement", 2: "Snipers uniquement", 3: "Tempête
 # ---------------------------------------------------------------------------
 CALQUES = {
     "Joueur": 99, "Reseau": 98, "Partie": 97, "Systemes": 96, "Moteur3D": 95,
-    "HUD": 90, "Social": 89, "Menus": 88, "Sons": 87, "Texte": 86,
+    "HUD": 90, "Social": 89, "Menus": 88, "Sons": 87, "Texte": 86, "Spectacle": 85,
     # sprites visibles (du fond vers l'avant)
     "Spray": 2, "Balise": 3, "CarteRedeploiement": 4, "Marqueur": 5, "Coffre": 6, "Ennemi": 7,
     "Largage": 8, "Lama": 9,          # panneaux 3D de mod_largages ; « Largages » (logique) : 94, après Moteur3D
@@ -242,7 +242,8 @@ EVENEMENTS = [
 SONS = ["tir_pistolet", "tir_pompe", "tir_sniper", "touche", "elimination", "degats", "coffre",
         "construction", "pioche", "rechargement", "clic", "survol", "victoire", "defaite", "tempete",
         "saut", "bus", "parachute", "emote", "notification", "compte", "niveau", "soin", "bouclier",
-        "aterre", "reanimation", "musique_salon", "musique_fin"]
+        "aterre", "reanimation", "musique_salon", "musique_fin",
+        "explosion", "serie", "largage", "musique_combat", "musique_tempete"]
 
 # ---------------------------------------------------------------------------
 #  Variables globales : nom -> valeur initiale. (Module propriétaire en commentaire.)

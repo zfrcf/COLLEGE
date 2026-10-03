@@ -1140,7 +1140,12 @@
   "aterre",
   "reanimation",
   "musique_salon",
-  "musique_fin"
+  "musique_fin",
+  "explosion",
+  "serie",
+  "largage",
+  "musique_combat",
+  "musique_tempete"
  ],
  "chatRapide": [
   [
