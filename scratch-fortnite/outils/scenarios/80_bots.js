@@ -80,6 +80,8 @@ module.exports = async (T, verifier) => {
 
   // ---- mes tirs sur le bot 2 (globales cible / seq / degats = mon dernier tir) : 99 puis 99 dégâts ----
   const elims0 = n('💀 Éliminations');
+  // état de départ déterministe : un autre bot a pu blesser le bot 2 entre-temps
+  listeBot('bpv')[1] = 100; listeBot('bbou')[1] = 0; T.pas(1);
   T.set('cible', 2); T.set('seq', (n('seq') + 1) % 100); T.set('degats', 99);
   attendre(() => Number(T.L('E_pv')[1]) === 1, 1500);
   verifier('premier tir (99) : bot 2 à 1 PV, toujours vivant', Number(T.L('E_pv')[1]) === 1 && Number(T.L('E_etat')[1]) === 1, [T.L('E_pv')[1], T.L('E_etat')[1]]);

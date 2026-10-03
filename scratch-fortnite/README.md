@@ -15,13 +15,29 @@ pistolet-mitrailleur, lance-grenades à dégâts de zone), largages de ravitaill
 | ![Bus](docs/captures/parcours_12_bus.png) | ![Parachute](docs/captures/parcours_13_parachute.png) | ![Jeu](docs/captures/parcours_14_jeu.png) |
 | ![Carte](docs/captures/parcours_15_carte.png) | ![À terre](docs/captures/parcours_19_aterre.png) | ![Victoire](docs/captures/parcours_22_fin_victoire.png) |
 
+## Nouveautés de la version « 100× plus cool »
+
+- **Bots de remplissage** : des adversaires IA prennent les emplacements libres (errance, poursuite en ligne de vue, tir,
+  réanimation en équipe, réapparition en Rumble, trois difficultés) : le jeu se joue aussi en solo. Réglable dans Paramètres › Jeu.
+- **Rendu** : murs texturés (béton, bois, brique, métal), ciel à bandes avec soleil, lune et nuages, cycle jour → crépuscule → nuit
+  sur la manche, mur de tempête animé, éclairs dans les dernières phases, brume d'horizon, secousses d'écran, traceurs et étincelles,
+  recul et balancement de l'arme, ennemis qui s'illuminent quand ils sont touchés et s'évanouissent à leur mort, cône de vision sur la minicarte.
+- **Contenu** : fusil d'assaut, pistolet-mitrailleur, lance-grenades à dégâts de zone, cinq types de munitions, cinq raretés
+  (commune → légendaire, multiplicateurs de dégâts et couleurs dans le HUD), largages de ravitaillement aux phases 2 et 4, lama à butin.
+- **Spectacle** : feux d'artifice et confettis de victoire, bannières de séries (double, triple, quadruple, monstrueux, rampage, légende),
+  annonces de manche (tempête, dernière zone, joueurs restants, niveau), salon animé, musique dynamique (salon, combat, tempête).
+
+| | | |
+|---|---|---|
+| ![Crépuscule](docs/captures/rendu_04_crepuscule_metal.png) | ![Éclair](docs/captures/rendu_07_tempete_eclair.png) | ![Bots](docs/captures/bots_jeu.png) |
+
 ## Fichiers
 
 | Chemin | Rôle |
 |---|---|
 | `Royale 3D.sb3` | Le projet Scratch prêt à importer (Fichier → Importer depuis votre ordinateur). |
 | `generer_projet.py` | Génère le `.sb3` à partir des modules Python (`python3 generer_projet.py`). |
-| `royale/` | Le code : `dsl.py` (blocs Scratch), `contrat.py` (tout ce qui est partagé), `joueur.py`, `moteur3d.py`, `overlays.py`, `texte.py` (moteur de texte), `sons.py`, `svg.py` / `svg_ui.py` (costumes), `mod_partie.py`, `mod_systemes.py`, `mod_menus.py`, `mod_hud.py`, `mod_social.py`. |
+| `royale/` | Le code : `dsl.py` (blocs Scratch), `contrat.py` (tout ce qui est partagé), `joueur.py`, `moteur3d.py`, `overlays.py`, `texte.py` (moteur de texte), `sons.py`, `svg.py` / `svg_ui.py` (costumes), `mod_partie.py`, `mod_systemes.py`, `mod_menus.py`, `mod_hud.py`, `mod_social.py`, `mod_bots.py`, `mod_largages.py`, `mod_spectacle.py`. |
 | `outils/` | Banc de test : exécution dans scratch-vm (`node outils/test_vm.js`), rendu réel Chromium et captures (`node outils/capture.js …`), scénarios dans `outils/scenarios/`. |
 | `docs/` | `GUIDE_MODULES.md` (comment écrire un module), `CORRESPONDANCE.md` (fonctionnalités). |
 
@@ -84,7 +100,7 @@ Munitions infinies, Gravité faible.
 ```bash
 python3 generer_projet.py              # construit le .sb3 et outils/contrat.json
 cd outils && npm install               # une fois (scratch-vm, playwright)
-node test_vm.js                        # tous les scénarios (456 vérifications)
+node test_vm.js                        # tous les scénarios (600+ vérifications)
 node capture.js captures_scripts/jeu_base.js   # captures réelles dans outils/captures/
 ```
 Voir `docs/GUIDE_MODULES.md`.

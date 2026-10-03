@@ -127,3 +127,15 @@ Les numéros reprennent la liste d'origine.
 | 126 | Phases de tempête (dégâts croissants) | ✅ (5 phases) |
 | 127 | Fin de partie (endgame) | ✅ |
 | 128 | Dernière zone en mouvement | ✅ |
+
+## Ajouts hors liste (version « 100× plus cool »)
+
+| Élément | État | Où |
+|---|---|---|
+| Bots de remplissage (IA locale, 3 difficultés) | ✅ | `mod_bots` — locaux à chaque client ; un vrai joueur reprend l'emplacement automatiquement |
+| Fusil d'assaut, pistolet-mitrailleur, lance-grenades | ✅ | `joueur`, `contrat` — dégâts réseau plafonnés à 99 par tir (champ à 2 chiffres) |
+| Raretés d'armes | ✅ | coffres 40/30/20/10 %, largages et lama épique/légendaire |
+| Largages de ravitaillement, lama à butin | ✅ | `mod_largages` — positions déterministes par la graine de manche |
+| Textures, ciel, jour/nuit, éclairs, secousses, traceurs | ✅ | `moteur3d`, `overlays` — désactivables par la qualité basse / le mode performance |
+| Feux d'artifice, séries, annonces, salon animé | ✅ | `mod_spectacle` |
+| Musique dynamique (salon / combat / tempête) | ✅ | `sons` |
