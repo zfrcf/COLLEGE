@@ -1,0 +1,311 @@
+{
+  "nom": "Optimisation Fabric 26.2",
+  "version_pack": "1.0.0",
+  "minecraft": "26.2",
+  "chargeur": "fabric",
+  "java_minimum": 25,
+  "description": "Pack d'optimisation complet pour Minecraft 26.2 (Fabric) : rendu, logique de jeu, réseau, mémoire, plus les mods personnels d'Antoine.",
+  "categories": {
+    "bibliotheque": "Bibliothèques (requises par d'autres mods)",
+    "rendu": "Rendu et FPS",
+    "moteur": "Moteur de jeu et chargement",
+    "reseau": "Réseau et multijoueur",
+    "confort": "Confort et interface",
+    "perso": "Mods personnels (zip)",
+    "outil": "Outils (optionnels)"
+  },
+  "mods": [
+    {
+      "id": "fabric-api",
+      "modrinth": "fabric-api",
+      "nom": "Fabric API",
+      "categorie": "bibliotheque",
+      "bibliotheque": true,
+      "description": "Bibliothèque centrale de Fabric, requise par la majorité des mods."
+    },
+    {
+      "id": "fabric-language-kotlin",
+      "modrinth": "fabric-language-kotlin",
+      "nom": "Fabric Language Kotlin",
+      "categorie": "bibliotheque",
+      "bibliotheque": true,
+      "description": "Support Kotlin, requis par Resourcify et Particle Core."
+    },
+    {
+      "id": "cloth-config",
+      "modrinth": "cloth-config",
+      "nom": "Cloth Config",
+      "categorie": "bibliotheque",
+      "bibliotheque": true,
+      "description": "Écrans de configuration, requis par RenderScale, More Culling et FastQuit."
+    },
+    {
+      "id": "fzzy_config",
+      "modrinth": "fzzy-config",
+      "nom": "Fzzy Config",
+      "categorie": "bibliotheque",
+      "bibliotheque": true,
+      "description": "Bibliothèque de configuration requise par Particle Core."
+    },
+    {
+      "id": "sodium",
+      "modrinth": "sodium",
+      "nom": "Sodium",
+      "categorie": "rendu",
+      "description": "Moteur de rendu moderne : le plus gros gain de FPS du pack."
+    },
+    {
+      "id": "iris",
+      "modrinth": "iris",
+      "nom": "Iris Shaders",
+      "categorie": "rendu",
+      "fichiers": [
+        "shaderpacks",
+        "config/iris.properties"
+      ],
+      "description": "Shaders compatibles Sodium (dossier shaderpacks)."
+    },
+    {
+      "id": "sodium-extra",
+      "modrinth": "sodium-extra",
+      "nom": "Sodium Extra",
+      "categorie": "rendu",
+      "description": "Options supplémentaires pour Sodium (particules, animations, brouillard...)."
+    },
+    {
+      "id": "reeses-sodium-options",
+      "modrinth": "reeses-sodium-options",
+      "nom": "Reese's Sodium Options",
+      "categorie": "rendu",
+      "description": "Menu d'options Sodium plus lisible."
+    },
+    {
+      "id": "entityculling",
+      "modrinth": "entityculling",
+      "nom": "Entity Culling",
+      "categorie": "rendu",
+      "description": "Ne rend plus les entités cachées derrière les murs."
+    },
+    {
+      "id": "moreculling",
+      "modrinth": "moreculling",
+      "nom": "More Culling",
+      "categorie": "rendu",
+      "description": "Culling supplémentaire des feuilles, blocs et objets invisibles."
+    },
+    {
+      "id": "immediatelyfast",
+      "modrinth": "immediatelyfast",
+      "nom": "ImmediatelyFast",
+      "categorie": "rendu",
+      "description": "Accélère le rendu immédiat (interface, texte, entités)."
+    },
+    {
+      "id": "badoptimizations",
+      "modrinth": "badoptimizations",
+      "nom": "BadOptimizations",
+      "categorie": "rendu",
+      "description": "Optimisations diverses du rendu et des calculs d'éclairage."
+    },
+    {
+      "id": "particle_core",
+      "modrinth": "particle-core",
+      "nom": "Particle Core",
+      "categorie": "rendu",
+      "description": "Optimise le rendu et le culling des particules."
+    },
+    {
+      "id": "entity-view-distance",
+      "modrinth": "entity-view-distance",
+      "nom": "Entity View Distance",
+      "categorie": "rendu",
+      "description": "Limite la distance d'affichage des entités côté client."
+    },
+    {
+      "id": "dynamic_fps",
+      "modrinth": "dynamic-fps",
+      "nom": "Dynamic FPS",
+      "categorie": "rendu",
+      "description": "Réduit la charge quand la fenêtre n'est pas au premier plan."
+    },
+    {
+      "id": "lithium",
+      "modrinth": "lithium",
+      "nom": "Lithium",
+      "categorie": "moteur",
+      "description": "Optimise la logique du jeu (IA, physique, redstone, ticks) sans changer le comportement."
+    },
+    {
+      "id": "ferritecore",
+      "modrinth": "ferrite-core",
+      "nom": "FerriteCore",
+      "categorie": "moteur",
+      "description": "Réduit fortement la consommation de mémoire."
+    },
+    {
+      "id": "scalablelux",
+      "modrinth": "scalablelux",
+      "nom": "ScalableLux",
+      "categorie": "moteur",
+      "description": "Moteur d'éclairage plus rapide (successeur de Starlight)."
+    },
+    {
+      "id": "alternate-current",
+      "modrinth": "alternate-current",
+      "nom": "Alternate Current",
+      "categorie": "moteur",
+      "description": "Redstone jusqu'à 20x plus rapide à calculer."
+    },
+    {
+      "id": "ksyxis",
+      "modrinth": "ksyxis",
+      "nom": "Ksyxis",
+      "categorie": "moteur",
+      "description": "Accélère le chargement des mondes (pas de pré-chargement du spawn)."
+    },
+    {
+      "id": "fastquit",
+      "modrinth": "fastquit",
+      "nom": "FastQuit",
+      "categorie": "moteur",
+      "description": "Retour au menu immédiat, la sauvegarde se termine en arrière-plan."
+    },
+    {
+      "id": "debugify",
+      "modrinth": "debugify",
+      "nom": "Debugify",
+      "categorie": "moteur",
+      "description": "Corrige des centaines de bugs vanilla référencés."
+    },
+    {
+      "id": "clumps",
+      "modrinth": "clumps",
+      "nom": "Clumps",
+      "categorie": "moteur",
+      "description": "Regroupe les orbes d'expérience pour éviter le lag."
+    },
+    {
+      "id": "c2me",
+      "modrinth": "c2me-fabric",
+      "nom": "C2ME (expérimental)",
+      "categorie": "moteur",
+      "par_defaut": false,
+      "prerelease": true,
+      "description": "Génération et chargement de chunks multithread. Version alpha : à activer si stable chez toi."
+    },
+    {
+      "id": "krypton",
+      "modrinth": "krypton",
+      "nom": "Krypton",
+      "categorie": "reseau",
+      "description": "Optimise la pile réseau de Minecraft."
+    },
+    {
+      "id": "fastipping",
+      "modrinth": "fast-ip-ping",
+      "nom": "Fast IP Ping",
+      "categorie": "reseau",
+      "description": "Ping des serveurs beaucoup plus rapide dans la liste multijoueur."
+    },
+    {
+      "id": "languagereload",
+      "modrinth": "language-reload",
+      "nom": "Language Reload",
+      "categorie": "confort",
+      "description": "Changement de langue instantané et chargement des ressources plus rapide."
+    },
+    {
+      "id": "modmenu",
+      "fichier": "modmenu-20.0.3.jar",
+      "modrinth": "modmenu",
+      "nom": "Mod Menu",
+      "categorie": "perso",
+      "description": "Liste des mods et accès à leurs configurations dans le jeu."
+    },
+    {
+      "id": "mousetweaks",
+      "fichier": "MouseTweaks-fabric-mc26.2-2.31.jar",
+      "modrinth": "mouse-tweaks",
+      "nom": "Mouse Tweaks",
+      "categorie": "perso",
+      "description": "Gestion des stacks à la souris dans les inventaires."
+    },
+    {
+      "id": "renderscale",
+      "fichier": "renderscale-1.4.0-alpha.4-fabric+26.2.jar",
+      "modrinth": "renderscale",
+      "nom": "RenderScale",
+      "categorie": "perso",
+      "description": "Rend le jeu à une résolution différente de la fenêtre (gain de FPS ou netteté)."
+    },
+    {
+      "id": "resourcefullib",
+      "fichier": "ResourcefulLib-5.0.4.jar",
+      "modrinth": "resourceful-lib",
+      "nom": "Resourceful Lib",
+      "categorie": "perso",
+      "bibliotheque": true,
+      "description": "Bibliothèque fournie dans ton zip (requise par les mods Team Resourceful)."
+    },
+    {
+      "id": "resourcify",
+      "fichier": "Resourcify (26.2-fabric)-1.8.7.jar",
+      "modrinth": "resourcify",
+      "nom": "Resourcify",
+      "categorie": "perso",
+      "fichiers": [
+        "resourcepacks",
+        "shaderpacks",
+        "config/resourcify"
+      ],
+      "description": "Navigateur de packs de ressources et shaders dans le jeu."
+    },
+    {
+      "id": "smoothswapping",
+      "fichier": "smoothswapping-0.9.10-26.2-fabric.jar",
+      "modrinth": "smooth-swapping",
+      "nom": "Smooth Swapping",
+      "categorie": "perso",
+      "description": "Animations fluides des objets dans l'inventaire."
+    },
+    {
+      "id": "ykfps",
+      "fichier": "ykfps-1.0.0+26.2.jar",
+      "nom": "YK FPS",
+      "categorie": "perso",
+      "description": "Mod FPS fourni dans ton zip (non publié sur Modrinth)."
+    },
+    {
+      "id": "malilib",
+      "modrinth": "malilib",
+      "nom": "MaLiLib",
+      "categorie": "outil",
+      "bibliotheque": true,
+      "par_defaut": false,
+      "description": "Bibliothèque requise par Litematica."
+    },
+    {
+      "id": "litematica",
+      "modrinth": "litematica",
+      "nom": "Litematica",
+      "categorie": "outil",
+      "par_defaut": false,
+      "fichiers": [
+        "schematics",
+        "config/litematica"
+      ],
+      "description": "Schématiques (dossier schematics). Optionnel : à installer depuis le gestionnaire."
+    },
+    {
+      "id": "spark",
+      "modrinth": "spark",
+      "nom": "Spark",
+      "categorie": "outil",
+      "par_defaut": false,
+      "fichiers": [
+        "config/spark"
+      ],
+      "description": "Profileur de performances pour trouver ce qui ralentit le jeu. Optionnel."
+    }
+  ]
+}
