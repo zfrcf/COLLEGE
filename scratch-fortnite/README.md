@@ -1,99 +1,81 @@
-# Royale 3D — jeu de tir multijoueur 3D sur Scratch (façon Fortnite)
+# Royale 3D — battle royale 3D multijoueur sur Scratch (façon Fortnite)
 
-Un **FPS 3D multijoueur** entièrement en Scratch 3, synchronisé par **variables cloud**,
-qui reprend les codes de Fortnite : zone qui se referme (tempête), armes, construction
-de murs, coffres, bouclier, éliminations et **Victoire Royale**.
+Un **jeu de tir 3D multijoueur** entièrement en Scratch 3, synchronisé par **variables cloud**,
+qui reprend les systèmes de Fortnite : salon et onglets (passe de combat, boutique, casier, quêtes,
+carrière, paramètres), matchmaking, île d'attente, bus de combat, parachute, zone de tempête en
+5 phases, construction, coffres, à terre / réanimation / redéploiement, HUD complet, chat rapide,
+émotes, pings, spectateur, XP, saisons, succès… Le détail des 128 éléments demandés et leur statut
+(fait / adapté / impossible sur Scratch) est dans [`docs/CORRESPONDANCE.md`](docs/CORRESPONDANCE.md).
 
-![Aperçu](apercu.png) ![Tempête](apercu-tempete.png)
+![Jeu](outils/captures/jeu_base.png)
 
 ## Fichiers
 
-| Fichier | Rôle |
+| Chemin | Rôle |
 |---|---|
 | `Royale 3D.sb3` | Le projet Scratch prêt à importer (Fichier → Importer depuis votre ordinateur). |
-| `generer_projet.py` | Le générateur Python qui construit le `.sb3` (tous les scripts Scratch y sont décrits). |
+| `generer_projet.py` | Génère le `.sb3` à partir des modules Python (`python3 generer_projet.py`). |
+| `royale/` | Le code : `dsl.py` (blocs Scratch), `contrat.py` (tout ce qui est partagé), `joueur.py`, `moteur3d.py`, `overlays.py`, `texte.py` (moteur de texte), `sons.py`, `svg.py` / `svg_ui.py` (costumes), `mod_partie.py`, `mod_systemes.py`, `mod_menus.py`, `mod_hud.py`, `mod_social.py`. |
+| `outils/` | Banc de test : exécution dans scratch-vm (`node outils/test_vm.js`), rendu réel Chromium et captures (`node outils/capture.js …`), scénarios dans `outils/scenarios/`. |
+| `docs/` | `GUIDE_MODULES.md` (comment écrire un module), `CORRESPONDANCE.md` (fonctionnalités). |
 
 ## Mise en ligne (obligatoire pour le multijoueur)
 
-1. Ouvrir https://scratch.mit.edu → **Créer** → *Fichier → Importer depuis votre ordinateur* → `Royale 3D.sb3`.
-2. Enregistrer le projet **en ligne** (compte connecté), puis **le partager**.
-3. Jouer depuis la **page du projet** (pas depuis l'éditeur) : c'est là que les variables cloud sont actives.
-4. Envoyer le lien aux autres joueurs : ils rejoignent automatiquement un des **6 emplacements**.
+1. https://scratch.mit.edu → **Créer** → *Fichier → Importer depuis votre ordinateur* → `Royale 3D.sb3`.
+2. Enregistrer **en ligne** puis **partager** le projet.
+3. Jouer depuis la **page du projet** : c'est là que les variables cloud sont actives.
+4. Partager le lien : jusqu'à **6 joueurs** rejoignent automatiquement (code de salon possible pour jouer entre amis).
 
-Contraintes imposées par Scratch :
-- Les variables cloud ne fonctionnent que pour les comptes **Scratcher** (pas « Nouveau Scratcher ») et seulement en ligne.
-- Les variables cloud ne stockent que des **nombres** : toutes les données sont codées en chiffres (voir plus bas).
-- Scratch limite la vitesse d'envoi : les positions des autres joueurs sont rafraîchies ~5 à 10 fois par seconde.
-- En solo ou dans l'éditeur hors ligne, le jeu tourne quand même (zone, coffres, construction) mais sans adversaires.
+Limites imposées par Scratch (et contournements choisis) :
+- Variables cloud réservées aux comptes **Scratcher**, numériques uniquement, 10 par projet, ~10 écritures/s :
+  tout est codé en chiffres (paquet de 87 chiffres par joueur), les positions des autres se rafraîchissent 5 à 10 fois par seconde.
+- Pas de stockage par joueur : la progression (XP, jetons, cosmétiques, succès) se conserve via un **code de sauvegarde** à copier.
+- Pas de chat libre (interdit par les règles Scratch sur le cloud) : **chat rapide** de phrases prédéfinies ; pas de voix.
+- Un seul serveur cloud : la « région » est indicative, le matchmaking par niveau est affiché mais pas un vrai tri.
+- 30 images/s maximum ; la qualité graphique (40/80/120 colonnes) et le mode performance s'adaptent aux machines lentes.
 
-## Commandes (clavier AZERTY et QWERTY)
+## Commandes (configurables dans Paramètres → Commandes, presets AZERTY / QWERTY)
 
-| Action | Touches |
-|---|---|
-| Avancer / reculer | `Z` ou `W` ou `↑` / `S` ou `↓` |
-| Pas de côté | `Q` ou `A` / `D` |
-| Tourner | souris vers les bords de la scène, ou `←` / `→` |
-| Tirer | clic gauche (maintenu = tir automatique) |
-| Sauter | `Espace` |
-| Changer d'arme | `1` Pistolet · `2` Fusil à pompe · `3` Sniper |
-| Viser à la lunette (sniper) | `C` maintenu |
-| Recharger | `R` |
-| Construire un mur devant soi | `B` (10 matériaux) |
+| Action | Touche | Action | Touche |
+|---|---|---|---|
+| Avancer / reculer | `Z` / `S` (ou flèches) | Construire un mur | `B` (ou mode construction + clic) |
+| Pas de côté | `Q` / `D` | Matériau suivant | `N` |
+| Tourner | souris vers les bords ou `←` `→` | Édition (retirer un mur) | `G` |
+| Tirer / utiliser | clic gauche | Pioche (récolte, destruction) | `F` |
+| Viser (sniper) | `C` | Interagir (coffre, réanimer, redéployer) | `E` |
+| Sauter / sauter du bus | `Espace` | Carte plein écran | `M` |
+| Sprint | `X` | Menu pause | `P` |
+| Recharger | `R` | Chat rapide / Émotes / Sprays / Ping | `T` / `Y` / `H` / `V` |
+| Inventaire | `1` à `5` | Spectateur : changer de joueur | `←` `→` |
 
-## Règles de la partie
+## Déroulé d'une partie
 
-- **Manche de 150 s** : la zone (cercle violet sur la minicarte, mur violet en 3D) commence à se refermer après 40 s.
-  Hors de la zone : −5 PV/s, puis −10 PV/s en fin de manche.
-- **Éliminé** : réapparition après 5 s (mode « Rumble » : les éliminations comptent).
-- **Fin de manche** : le joueur avec le plus d'éliminations voit **VICTOIRE ROYALE**, les autres **MANCHE TERMINÉE** ;
-  nouvelle manche automatique ~50 s plus tard, nouvelle zone, murs construits effacés.
-- **Coffres** (8 sur la carte, dorés) : +50 bouclier, +30 matériaux, chargeurs pleins.
-- **Armes** : Pistolet 20 dégâts / 12 balles · Fusil à pompe jusqu'à 70 dégâts (baisse avec la distance) / 5 cartouches ·
-  Sniper 95 dégâts / 3 balles, avec lunette.
-- Le **bouclier** absorbe les dégâts des armes avant les PV (la tempête l'ignore, comme dans Fortnite).
-
-## HUD
-
-Moniteurs Scratch en français : `❤ PV`, `🛡 Bouclier`, `🔫 Munitions`, `🎯 Arme`, `🧱 Matériaux`,
-`💀 Éliminations`, `👥 Joueurs`, `⏱ Zone` + minicarte circulaire (toi en blanc, adversaires en rouge, zone en violet),
-viseur, marqueur de touche rouge, écran rouge quand on prend des dégâts, teinte violette hors zone.
+Salon → **JOUER** → matchmaking → chargement → **île d'attente** (25 s, invulnérable) → **bus de combat**
+(trajectoire aléatoire, `Espace` pour sauter) → **parachute / planeur** → combat avec 5 phases de tempête
+(dégâts croissants, dernière zone en mouvement) → fin de partie et récapitulatif (XP, placement, **Victoire Royale**).
+Modes : Solo, Duo, Trio, Sections (à terre, réanimation, cartes et balises de redéploiement), Rumble (réapparition),
+Arène (points de hype et divisions). Événements limités : Pompes uniquement, Snipers uniquement, Tempête éclair,
+Munitions infinies, Gravité faible.
 
 ## Comment ça marche
 
-### Moteur 3D
-Le sprite **Moteur3D** dessine chaque image au stylo : un **raycasting** (algorithme DDA) sur une grille 24×24
-(`Carte`), 80 colonnes de 6 px, ombrage selon la distance et l'orientation du mur, matériaux colorés
-(béton, bois construit, brique, métal). Les joueurs et les coffres sont des **panneaux** (sprites clones) placés
-par projection caméra et masqués par les murs grâce au tampon `Profondeur`. Le **mur de tempête** est l'intersection
-rayon/cercle de la zone, tracé en violet semi-transparent.
+- **Moteur 3D** : raycasting DDA au stylo sur une grille 32×32 (9 lieux nommés), colonnes de rendu variables,
+  panneaux 3D pour joueurs (10 tenues, poses à terre / émote), coffres, balises, marqueurs, sprays, mur de tempête, minicarte.
+- **Réseau** : `☁ J1…☁ J6` (un paquet par joueur : position, direction, PV, boucliers, battement de cœur,
+  dernier tir, état, pseudo, équipe, émote, ping, chat, code de salon, altitude, réanimation, cosmétiques, statistiques),
+  `☁ Partie` (début de manche, mode, événement, graine : la zone et le bus sont déterministes pour tous),
+  `☁ Construction` + `☁ Construction2` (murs construits / détruits), `☁ Record` (meilleurs joueurs).
+  Les coups sont détectés par le tireur et appliqués par la victime ; les morts, mises à terre, émotes, pings et
+  messages sont déduits des changements de compteurs. Reconnexion : un emplacement portant ton pseudo est repris.
+- **Texte** : Scratch n'a pas de bloc texte ; un moteur de glyphes tamponne chaque caractère au stylo (FR/EN).
+- **Sons** : synthétisés en Python (WAV) ; volumes musique / effets / voix, panoramique selon la direction.
 
-### Réseau (variables cloud)
-- `☁ J1` … `☁ J6` : un **paquet de 50 chiffres** par joueur, réécrit dès qu'il change (max 10 fois/s) :
-
-  | Position | Champ |
-  |---|---|
-  | 1 | préfixe `1` (préserve les zéros de tête) |
-  | 2–5 / 6–9 | x, y × 100 |
-  | 10–12 | direction |
-  | 13–15 / 16–18 | PV, bouclier |
-  | 19–23 | battement de cœur (secondes) → un emplacement sans battement depuis 15 s est libre |
-  | 24 / 25–26 / 27–28 | cible touchée, n° de tir, dégâts (le **tireur** détecte la touche, la **victime** applique les dégâts quand elle voit un nouveau n° de tir qui la vise) |
-  | 29 / 30 | tueur, compteur de morts (permet de créditer l'élimination) |
-  | 31 / 32 | arme, état (1 vivant, 2 éliminé) |
-  | 33–48 | pseudo (8 lettres codées sur 2 chiffres) |
-  | 49–50 | éliminations (classement de fin de manche) |
-
-- `☁ Partie` : horodatage du début de manche (secondes) ; la zone, le compte à rebours et le classement en découlent,
-  donc tous les joueurs voient la même zone sans échange supplémentaire.
-- `☁ Construction` : liste des murs construits (`xxyy` par mur), remise à `1` à chaque manche.
-
-Points d'attention connus (choix assumés) : la comparaison `=` de Scratch étant numérique, les paquets sont
-comparés avec un préfixe `#` ; les horloges des joueurs peuvent différer, d'où un écart signé modulo 100000 s.
-
-## Regénérer / modifier
+## Développer
 
 ```bash
-python3 generer_projet.py
+python3 generer_projet.py              # construit le .sb3 et outils/contrat.json
+cd outils && npm install               # une fois (scratch-vm, playwright)
+node test_vm.js                        # tous les scénarios
+node capture.js captures_scripts/jeu_base.js   # captures réelles dans outils/captures/
 ```
-Le script écrit `Royale 3D.sb3`. Pour changer la carte, éditer `CARTE_ASCII` ; pour les armes, les listes
-`ArmeDegats`, `ArmeCadence`, `ArmePortee` ; pour le nombre de joueurs, `NB_JOUEURS` (10 variables cloud max par projet).
+Voir `docs/GUIDE_MODULES.md`.

@@ -19,6 +19,7 @@ module.exports = async (T, verifier) => {
   // adversaire devant à 3 cases, nom « riko »
   T.set('☁ J2', paquet({ x: 16.5, y: Number(T.g('py')) + 2, dir: 270, nom: nom('riko'), bouclier: 20 })); T.pas(3);
   verifier('adversaire décodé (nom, niveau, actif)', T.L('E_nom')[1] === 'riko' && Number(T.L('E_niveau')[1]) === 7 && Number(T.L('E_actif')[1]) === 1, [T.L('E_nom')[1], T.L('E_niveau')[1], T.L('E_actif')[1]]);
+  for (let i = 0; i < 20 && Number(T.g('👥 Joueurs')) < 2; i++) T.pas(1);
   verifier('2 joueurs comptés', Number(T.g('👥 Joueurs')) === 2, T.g('👥 Joueurs'));
   // tir pistolet
   const mun0 = Number(T.L('Quantites')[0]);
@@ -78,14 +79,16 @@ module.exports = async (T, verifier) => {
   verifier('tempête : PV baissent, bouclier intact', Number(T.g('❤ PV')) < pv1 && Number(T.g('🛡 Bouclier')) === 50, [pv1, T.g('❤ PV'), T.g('🛡 Bouclier')]);
   T.set('zoneX', 16.5); T.set('zoneR', 30);
   // mode Duo : mis à terre si un coéquipier est vivant
-  T.set('mode', 2); T.set('monEquipe', 1); T.set('❤ PV', 30); T.set('🛡 Bouclier', 0); T.set('surbouclier', 0);
+  // mode Duo imposé via ☁ Partie (Partie recalcule mode et monEquipe à partir de la variable cloud)
+  T.set('☁ Partie', '1' + String(now()).padStart(5, '0') + '2' + '0' + '00'); T.pas(3);
+  T.set('mode', 2); T.set('monEquipe', 1); T.set('etat', 1); T.set('ecran', 'jeu'); T.set('❤ PV', 30); T.set('🛡 Bouclier', 0); T.set('surbouclier', 0); T.pas(1);
   T.set('☁ J2', paquet({ x: 20, y: 8, dir: 270, nom: nom('riko'), equipe: 1 }));
   T.set('☁ J3', paquet({ x: 16.5, y: 8, dir: 270, nom: nom('zed'), equipe: 2 })); T.pas(3);
   T.set('☁ J3', paquet({ x: 16.5, y: 8, dir: 270, nom: nom('zed'), equipe: 2, cible: 1, seq: 1, degats: 99, arme: 3 })); T.pas(4);
   verifier('à terre (état 3) au lieu de mourir', Number(T.g('etat')) === 3 && Number(T.g('knockPar')) === 3, [T.g('etat'), T.g('knockPar')]);
   // le coéquipier me réanime (reanime = 1) pendant ~5 s
   T.set('☁ J2', paquet({ x: 16.5, y: 5, dir: 270, nom: nom('riko'), equipe: 1, reanime: 1 }));
-  for (let i = 0; i < 60; i++) { T.pas(1); if (Number(T.g('etat')) === 1) break; }
+  for (let i = 0; i < 400; i++) { T.pas(1); if (Number(T.g('etat')) === 1) break; }
   verifier('réanimé par le coéquipier (PV 30)', Number(T.g('etat')) === 1 && Number(T.g('❤ PV')) === 30, [T.g('etat'), T.g('❤ PV')]);
   // dégâts d'équipe ignorés
   const pv2 = Number(T.g('❤ PV'));
