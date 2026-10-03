@@ -35,6 +35,9 @@ Sprite « Sons » (`installer(P)`)
   PAN explicitement (comparé à `son_dernierPan`, lui aussi hérité) avant de jouer.
 - Seul l'original réagit à « demarrer » : un clone qui le reçoit (relance du jeu)
   se supprime, sinon il remettrait ses locales à zéro et se prendrait pour l'original.
+- Si le clone musique ne peut pas naître (limite de 300 clones atteinte par d'autres
+  sprites), la globale privée `son_musiqueLecteur` reste à 0 et l'original réessaie
+  toutes les 0,3 s ; un « son stop musique » volontaire la laisse à 1 (pas de reprise).
 - Musique : `quand je reçois "demarrer"` -> boucle qui surveille `ecran` ; sur les
   écrans connexion/salon/matchmaking/chargement et si `son_musiqueActive` = 0, un
   clone « musique » est créé et joue `musique_salon` jusqu'au bout en boucle (volume
@@ -816,6 +819,7 @@ def installer(P, banque=None):
     for nom, val in (("son_estClone", 0), ("son_musiqueActive", 0), ("son_role", ""),
                      ("son_niveauClone", 100), ("son_panClone", 0), ("son_dernierPan", 0)):
         S.var(nom, val)
+    P.stage.var("son_musiqueLecteur", 0)      # globale privée : le clone musique y écrit 1 à sa naissance
     V = Var
     init = [setv("son_estClone", 0), setv("son_musiqueActive", 0), setv("son_role", ""), setv("son_dernierPan", 0)]
 
@@ -823,11 +827,17 @@ def installer(P, banque=None):
     S.script(quand_drapeau(), list(init))
     # Les clones reçoivent aussi « demarrer » (relance sans drapeau vert) : ils se suppriment, et seul
     # l'original remet ses locales à zéro puis surveille l'écran (la musique repart proprement).
+    # Si « créer un clone » échoue (limite de 300 clones atteinte), le clone musique ne naît jamais : la globale
+    # son_musiqueLecteur (mise à 0 avant le clonage, à 1 par le clone à sa naissance) reste à 0 et l'original
+    # réessaie toutes les 0,3 s. Un « son stop musique » volontaire laisse son_musiqueLecteur à 1 : pas de reprise.
     S.script(quand_message("demarrer"), [si(eq(V("son_estClone"), 1), [supprimer_clone()], init + [
         volume(100), effet_son("PAN", 0),
         toujours([
             si(_sur_ecran_musique(),
-               [si(eq(V("son_musiqueActive"), 0), [setv("son_musiqueActive", 1)] + _cloner_avec_role("musique"))],
+               [si(eq(V("son_musiqueActive"), 0),
+                   [setv("son_musiqueActive", 1), setv("son_musiqueLecteur", 0)] + _cloner_avec_role("musique"),
+                   [si(eq(V("son_musiqueLecteur"), 0),
+                       [attendre(0.3), si(eq(V("son_musiqueLecteur"), 0), [setv("son_musiqueActive", 0)])])])],
                [si(eq(V("son_musiqueActive"), 1), [setv("son_musiqueActive", 0), diffuser("son stop musique")])]),
         ])])])
 
@@ -855,7 +865,8 @@ def installer(P, banque=None):
     jingles = [si(eq(V("son_role"), nom), [son_attendre(nom)]) for nom in contrat.SONS if categorie(nom) != "effets"]
     S.script(quand_clone(), [
         si(eq(V("son_role"), "musique"),
-           [si(non(eq(V("son_dernierPan"), 0)), [effet_son("PAN", 0)]),      # musique toujours au centre
+           [setv("son_musiqueLecteur", 1),                                   # « je suis né » (voir « demarrer »)
+            si(non(eq(V("son_dernierPan"), 0)), [effet_son("PAN", 0)]),      # musique toujours au centre
             volume(V("param_volumeMusique")), toujours([son_attendre("musique_salon")])],
            [si(non(eq(volume_actuel(), V("son_niveauClone"))), [volume(V("son_niveauClone"))]),
             si(non(eq(V("son_panClone"), V("son_dernierPan"))), [effet_son("PAN", V("son_panClone"))])]

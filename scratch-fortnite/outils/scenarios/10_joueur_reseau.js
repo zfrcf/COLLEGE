@@ -49,7 +49,8 @@ module.exports = async (T, verifier) => {
   T.set('☁ J2', paquet({ x: 16.5, y: 8, dir: 270, nom: nom('riko'), chat: 2, chatSeq: 1 })); T.pas(3);
   verifier('message rapide reçu « riko : Bien joué ! »', T.L('Chat').some(l => /riko : Bien joué/.test(l)), T.L('Chat'));
   // ping (Rumble : visible)
-  T.set('☁ J2', paquet({ x: 16.5, y: 8, dir: 270, nom: nom('riko'), pingX: 12, pingY: 20, pingSeq: 1 })); T.pas(3);
+  T.set('☁ J2', paquet({ x: 16.5, y: 8, dir: 270, nom: nom('riko'), pingX: 12, pingY: 20, pingSeq: 1 }));
+  for (let i = 0; i < 30 && T.L('Pings').length === 0; i++) T.pas(1);
   verifier('ping listé (15 car., emplacement 2)', T.L('Pings').length === 1 && String(T.L('Pings')[0]).length === 15 && String(T.L('Pings')[0])[0] === '2', T.L('Pings'));
   // coffre : se placer près du coffre 1 (3.5, 28.5) et tenir E 1,2 s
   T.set('px', 3.5); T.set('py', 27.6); T.set('dir', 90); T.pas(1);
@@ -72,7 +73,8 @@ module.exports = async (T, verifier) => {
   T.appui('g', 2); T.pas(3);
   verifier('mur retiré et suppression publiée', Number(T.L('Carte')[6 * 32 + 16]) === 0 && String(T.g('☁ Construction')) === '12160601606', T.g('☁ Construction'));
   // synchronisation : un autre joueur construit en (10,10) bois, via Construction2
-  T.set('☁ Construction2', '131010'); T.pas(3);
+  T.set('☁ Construction2', '131010');
+  for (let i = 0; i < 30 && Number(T.L('Carte')[10 * 32 + 10]) !== 4; i++) T.pas(1);
   verifier('mur distant appliqué depuis ☁ Construction2', Number(T.L('Carte')[10 * 32 + 10]) === 4, T.L('Carte')[10 * 32 + 10]);
   // tempête : hors zone → dégâts par seconde sans bouclier
   T.set('🛡 Bouclier', 50); T.set('zoneX', 60); T.set('zoneR', 10); T.set('zoneDegats', 5); const pv1 = Number(T.g('❤ PV')); T.pas(40);
@@ -84,7 +86,8 @@ module.exports = async (T, verifier) => {
   T.set('mode', 2); T.set('monEquipe', 1); T.set('etat', 1); T.set('ecran', 'jeu'); T.set('❤ PV', 30); T.set('🛡 Bouclier', 0); T.set('surbouclier', 0); T.pas(1);
   T.set('☁ J2', paquet({ x: 20, y: 8, dir: 270, nom: nom('riko'), equipe: 1 }));
   T.set('☁ J3', paquet({ x: 16.5, y: 8, dir: 270, nom: nom('zed'), equipe: 2 })); T.pas(3);
-  T.set('☁ J3', paquet({ x: 16.5, y: 8, dir: 270, nom: nom('zed'), equipe: 2, cible: 1, seq: 1, degats: 99, arme: 3 })); T.pas(4);
+  T.set('☁ J3', paquet({ x: 16.5, y: 8, dir: 270, nom: nom('zed'), equipe: 2, cible: 1, seq: 1, degats: 99, arme: 3 }));
+  for (let i = 0; i < 40 && Number(T.g('etat')) === 1; i++) T.pas(1);
   verifier('à terre (état 3) au lieu de mourir', Number(T.g('etat')) === 3 && Number(T.g('knockPar')) === 3, [T.g('etat'), T.g('knockPar')]);
   // le coéquipier me réanime (reanime = 1) pendant ~5 s
   T.set('☁ J2', paquet({ x: 16.5, y: 5, dir: 270, nom: nom('riko'), equipe: 1, reanime: 1 }));

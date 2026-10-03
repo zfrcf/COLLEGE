@@ -68,7 +68,7 @@ ONGLETS = ["accueil", "passe", "boutique", "casier", "quetes", "carriere", "para
 # États du joueur (variable `etat`, aussi dans le paquet)
 ETAT = {"vivant": 1, "mort": 2, "aterre": 3, "spectateur": 4, "salon": 5, "bus": 6,
         "parachute": 7, "prepartie": 8, "fin": 9}
-ETATS_VISIBLES_3D = [1, 3]      # états pour lesquels un joueur est rendu comme panneau 3D / cible
+ETATS_VISIBLES_3D = [1, 3, 8]   # états rendus comme panneau 3D (8 = île d'attente, invulnérable, pas une cible)
 # Protocoles (voir joueur.py) :
 # - Réanimation : le soigneur publie reanime = emplacement du coéquipier à terre tant qu'il tient « interagir »
 #   à moins de 1,5 case ; le joueur à terre accumule le temps où un coéquipier publie son numéro et se relève à 4,5 s.

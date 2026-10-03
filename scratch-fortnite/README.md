@@ -7,7 +7,11 @@ carrière, paramètres), matchmaking, île d'attente, bus de combat, parachute, 
 émotes, pings, spectateur, XP, saisons, succès… Le détail des 128 éléments demandés et leur statut
 (fait / adapté / impossible sur Scratch) est dans [`docs/CORRESPONDANCE.md`](docs/CORRESPONDANCE.md).
 
-![Jeu](outils/captures/jeu_base.png)
+| | | |
+|---|---|---|
+| ![Salon](docs/captures/parcours_02_salon.png) | ![Passe](docs/captures/parcours_03_passe.png) | ![Quêtes](docs/captures/parcours_06_quetes.png) |
+| ![Bus](docs/captures/parcours_12_bus.png) | ![Parachute](docs/captures/parcours_13_parachute.png) | ![Jeu](docs/captures/parcours_14_jeu.png) |
+| ![Carte](docs/captures/parcours_15_carte.png) | ![À terre](docs/captures/parcours_19_aterre.png) | ![Victoire](docs/captures/parcours_22_fin_victoire.png) |
 
 ## Fichiers
 
@@ -53,6 +57,8 @@ Limites imposées par Scratch (et contournements choisis) :
 Salon → **JOUER** → matchmaking → chargement → **île d'attente** (25 s, invulnérable) → **bus de combat**
 (trajectoire aléatoire, `Espace` pour sauter) → **parachute / planeur** → combat avec 5 phases de tempête
 (dégâts croissants, dernière zone en mouvement) → fin de partie et récapitulatif (XP, placement, **Victoire Royale**).
+La manche est **partagée par tout le serveur** : `☁ Partie` fixe l'heure de départ, le mode, l'événement et la graine ;
+un joueur qui arrive en cours de manche saute directement du bus au-dessus de la zone (ou observe pendant la dernière zone).
 Modes : Solo, Duo, Trio, Sections (à terre, réanimation, cartes et balises de redéploiement), Rumble (réapparition),
 Arène (points de hype et divisions). Événements limités : Pompes uniquement, Snipers uniquement, Tempête éclair,
 Munitions infinies, Gravité faible.
@@ -75,7 +81,7 @@ Munitions infinies, Gravité faible.
 ```bash
 python3 generer_projet.py              # construit le .sb3 et outils/contrat.json
 cd outils && npm install               # une fois (scratch-vm, playwright)
-node test_vm.js                        # tous les scénarios
+node test_vm.js                        # tous les scénarios (456 vérifications)
 node capture.js captures_scripts/jeu_base.js   # captures réelles dans outils/captures/
 ```
 Voir `docs/GUIDE_MODULES.md`.

@@ -516,7 +516,13 @@ def installer(cible, police="Sans Serif"):
     sentinelle = len(cible.costumes)              # numéro (1-based) du costume « g_ »
     largeurs.append(0)
     numeros = {}
-    for c in CARACTERES_POLICE:
+    for c in CARACTERES_POLICE + "−":
+        if c == "−" and "–" in pol["largeurs"]:          # signe moins typographique → glyphe du tiret demi-cadratin
+            svg, cx, cy = svg_glyphe("–", police)
+            cible.costume_svg("g_" + c, svg, cx, cy)
+            numeros[c] = len(cible.costumes)
+            largeurs.append(pol["largeurs"]["–"])
+            continue
         if c not in pol["largeurs"]:
             if c in SYMBOLES_SECOURS:             # dessin vectoriel de remplacement
                 svg, cx, cy, adv = svg_symbole(c, police)

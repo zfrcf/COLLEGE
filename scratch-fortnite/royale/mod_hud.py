@@ -9,10 +9,12 @@ possède le fond.
 
 Disposition (coordonnées Scratch, (0,0) au centre, tout mis à l'échelle par param_tailleHUD
 en gardant les ancrages aux bords) :
-  - bas gauche   : vie, bouclier, surbouclier, endurance
-  - bas centre   : barre d'inventaire (5 cases) + pioche
-  - bas droite   : munitions / rechargement, puis matériaux (bois, pierre, métal)
+  - bas gauche   : vie, bouclier, surbouclier, endurance, puis la barre d'inventaire (pioche + 5 cases) jusqu'à x = 82
+  - droite       : munitions / rechargement (y ≈ −62), puis matériaux (bois, pierre, métal) jusqu'à y ≈ 20
   - sous la minicarte : joueurs restants, éliminations, équipes vivantes
+  Les sprites passent au-dessus du stylo : le sprite Arme (vue subjective, x ≥ 60 et y ≤ −78 ; sa main x ∈ [84, 132],
+  y ≤ −125 ; consommable en cours d'utilisation x ∈ [7, 113], y ≤ −57) et la bannière Message (y ∈ [10, 110]) fixent
+  ces positions. Zones réservées à Social : messages du chat x ∈ [−235, −60], y ∈ [−115, −60] ; roues au centre.
   - haut centre  : boussole graduée (N = 90°, E = 0°), minuteur de tempête, temps de partie,
                    bandeaux d'état (pré-partie invulnérable, tempête), notifications
   - haut gauche  : panneau d'équipe puis journal d'éliminations
@@ -170,8 +172,6 @@ FONDS = [
                               'stroke="#cbd5e1" stroke-opacity="0.55" stroke-width="1.5"/>'), 16, 16),
     ("hud_case_active", S.svg(32, 32, '<rect x="1" y="1" width="30" height="30" rx="5" fill="#334155" fill-opacity="0.75" '
                                      'stroke="#facc15" stroke-width="2.5"/>'), 16, 16),
-    ("hud_rangee", S.svg(124, 24, '<rect x="0.5" y="0.5" width="123" height="23" rx="5" fill="#0f172a" fill-opacity="0.6" '
-                                 'stroke="#64748b" stroke-opacity="0.5" stroke-width="1"/>'), 62, 12),
     ("hud_panneau", S.svg(150, 46, '<rect x="0.5" y="0.5" width="149" height="45" rx="5" fill="#0f172a" fill-opacity="0.7" '
                                   'stroke="#64748b" stroke-opacity="0.6" stroke-width="1"/>'), 75, 23),
 ]
@@ -421,50 +421,53 @@ def construire(P):
         # vie
         O(T("❤", ax(-235, 4), ay(-178, 9), 13, "rouge", 0),
           T(rnd(V("❤ PV")), ax(-235, 20), ay(-178, 8), 15, V("cVie"), 0)),
-        barre(ax(-235, 58), ay(-178, 13), sc(93), sc(10), div(V("❤ PV"), 100), V("tVie"), 85, 85),
+        barre(ax(-235, 52), ay(-178, 13), sc(64), sc(10), div(V("❤ PV"), 100), V("tVie"), 85, 85),
         # bouclier
         icone("hud_bouclier", ax(-235, 10), ay(-178, 30), 13),
         O(T(rnd(V("🛡 Bouclier")), ax(-235, 20), ay(-178, 25), 15, "blanc", 0)),
-        barre(ax(-235, 58), ay(-178, 30), sc(93), sc(10), div(V("🛡 Bouclier"), 100), V("tBouclier"), 80, 95),
-        # surbouclier (fine, cyan) si > 0
-        si(gt(V("surbouclier"), 0), [
+        barre(ax(-235, 52), ay(-178, 30), sc(64), sc(10), div(V("🛡 Bouclier"), 100), V("tBouclier"), 80, 95),
+        # surbouclier (fine, cyan) s'il s'affiche au moins « +1 » (évite un « +0 » pendant la recharge)
+        si(gt(V("surbouclier"), 0.5), [
             O(T(join("+", rnd(V("surbouclier"))), ax(-235, 20), ay(-178, 39), 11, "cyan", 0)),
-            barre(ax(-235, 58), ay(-178, 42), sc(93), sc(4), div(V("surbouclier"), 50), V("tSur"), 70, 100),
+            barre(ax(-235, 52), ay(-178, 42), sc(64), sc(4), div(V("surbouclier"), 50), V("tSur"), 70, 100),
         ]),
         # endurance (fine, jaune) si < 100
         si(lt(V("endurance"), 100), [
-            barre(ax(-235, 58), ay(-178, 50), sc(93), sc(4), div(V("endurance"), 100), V("tEndu"), 90, 100),
+            barre(ax(-235, 52), ay(-178, 50), sc(64), sc(4), div(V("endurance"), 100), V("tEndu"), 90, 100),
         ]),
     ])
 
     # =============================================================================================
-    #  Barre d'inventaire : 5 cases de 32 px, pas 36 px  (ancre (-70, -178))
+    #  Barre d'inventaire : 5 cases de 30 px, pas 34 px, à droite du bloc vital (ancre (-235, -178)).
+    #  Elle s'arrête à x = 82 : la main du sprite Arme (au-dessus du stylo) occupe x ∈ [84, 132], y ≤ −125.
     # =============================================================================================
     H.proc("inventaire", [], [
         # pioche à gauche de la barre, surlignée si équipée
         si(eq(V("armeNum"), 8), [
-            couleur_hsbt(15, 90, 100, 20), taille_stylo(sc(22)), ligne(ax(-70, -11), ay(-178, 24), ax(-70, -11), ay(-178, 24)),
+            couleur_hsbt(15, 90, 100, 20), taille_stylo(sc(22)), ligne(ax(-235, 133), ay(-178, 24), ax(-235, 133), ay(-178, 24)),
         ]),
-        icone("hud_obj8", ax(-70, -11), ay(-178, 24), 17),
+        icone("hud_obj8", ax(-235, 133), ay(-178, 24), 17),
         setv("k", 1),
         repeter(5, [
-            setv("x", add(ax(-70, 18), mul(mul(sub(V("k"), 1), 36), s))),
+            setv("x", add(ax(-235, 166), mul(mul(sub(V("k"), 1), 34), s))),
             setv("y", ay(-178, 24)),
             si(eq(V("slotActif"), V("k")), [costume("hud_case_active")], [costume("hud_case")]),
-            taille(mul(100, s)), aller(V("x"), V("y")), tampon(),
+            taille(mul(94, s)), aller(V("x"), V("y")), tampon(),
             si(gt(item("Inventaire", V("k")), 0), [
-                costume(join("hud_obj", item("Inventaire", V("k")))), taille(mul(68, s)),
+                costume(join("hud_obj", item("Inventaire", V("k")))), taille(mul(64, s)),
                 aller(add(V("x"), sc(1)), add(V("y"), sc(2))), tampon(),
-                T(item("Quantites", V("k")), add(V("x"), sc(14)), sub(V("y"), sc(14)), 11, "blanc", 2),
+                T(item("Quantites", V("k")), add(V("x"), sc(13)), sub(V("y"), sc(13)), 11, "blanc", 2),
             ]),
-            T(V("k"), sub(V("x"), sc(13)), add(V("y"), sc(6)), 11, "gris", 0),
+            T(V("k"), sub(V("x"), sc(12)), add(V("y"), sc(5)), 11, "gris", 0),
             changev("k", 1),
         ]),
     ])
 
     # =============================================================================================
-    #  Munitions (ancre bas droite (235, -122)) et matériaux (ancre (235, -70))
+    #  Colonne droite : munitions puis matériaux, empilés au-dessus du sprite Arme (ancre (235, -72) :
+    #  le corps de l'arme monte jusqu'à y ≈ −78 pour x ≥ 60 ; en rechargement l'arme descend à y ≤ −150)
     # =============================================================================================
+    YD = -72
     H.proc("munitions", [], [
         si(et(gt(V("armeNum"), 0), lt(V("armeNum"), 4)), [
             si(eq(V("armeNum"), 1), [setv("reserve", V("munitions_legeres"))]),
@@ -473,54 +476,56 @@ def construire(P):
             si(eq(V("ltm"), 4), [setv("txt", join(item("Quantites", V("slotActif")), " | "))],
                [setv("txt", join(item("Quantites", V("slotActif")), join(" | ", V("reserve"))))]),
             M(V("txt"), 16),
-            fond(sub(ax(235, -4), add(V("w"), sc(26))), ay(-122, 42), ax(235, -4), sc(19)),
-            D(ax(235, -4), ay(-122, 37), 16, "blanc", 2),
-            si(eq(V("ltm"), 4), [icone("hud_infini", ax(235, -11), ay(-122, 42), 14)]),
+            fond(sub(ax(235, -4), add(V("w"), sc(26))), ay(YD, 10), ax(235, -4), sc(19)),
+            D(ax(235, -4), ay(YD, 5), 16, "blanc", 2),
+            si(eq(V("ltm"), 4), [icone("hud_infini", ax(235, -11), ay(YD, 10), 14)]),
             costume(join("hud_mun", V("armeNum"))), taille(mul(50, s)),
-            aller(sub(ax(235, -4), add(V("w"), sc(14))), ay(-122, 42)), tampon(),
-            # libellé : nom de l'arme, ou rechargement avec barre
+            aller(sub(ax(235, -4), add(V("w"), sc(14))), ay(YD, 10)), tampon(),
+            # libellé : nom de l'arme, ou rechargement avec barre (sous la pilule : l'arme est alors baissée)
             si(gt(V("rechargeFin"), 0), [
-                O(T(tr("RECHARGEMENT", "RELOADING"), ax(235, -4), ay(-122, 22), 11, "orange", 2)),
-                barre(ax(235, -82), ay(-122, 10), sc(78), sc(4),
+                O(T(tr("RECHARGEMENT", "RELOADING"), ax(235, -4), ay(YD, 24), 11, "orange", 2)),
+                barre(ax(235, -82), ay(YD, -7), sc(78), sc(4),
                       div(sub(chr_, V("rechargeDebut")), maximum(sub(V("rechargeFin"), V("rechargeDebut")), 0.1)), 9, 90, 100),
             ], [
-                O(T(item("ObjetNoms", V("armeNum")), ax(235, -4), ay(-122, 22), 11, "gris", 2)),
+                O(T(item("ObjetNoms", V("armeNum")), ax(235, -4), ay(YD, 24), 11, "gris", 2)),
             ]),
         ], [
             si(et(gt(V("armeNum"), 3), lt(V("armeNum"), 8)), [
                 setv("txt", join("×", item("Quantites", V("slotActif")))),
-                O(T(V("txt"), ax(235, -4), ay(-122, 37), 16, "blanc", 2),
-                  T(item("ObjetNoms", V("armeNum")), ax(235, -4), ay(-122, 22), 11, "gris", 2)),
+                O(T(V("txt"), ax(235, -4), ay(YD, 5), 16, "blanc", 2),
+                  T(item("ObjetNoms", V("armeNum")), ax(235, -4), ay(YD, 24), 11, "gris", 2)),
             ], [
-                si(eq(V("armeNum"), 8), O(T(tr("Pioche", "Pickaxe"), ax(235, -4), ay(-122, 22), 11, "gris", 2)),
-                   O(T(tr("Mains nues", "Unarmed"), ax(235, -4), ay(-122, 22), 11, "gris", 2))),
+                si(eq(V("armeNum"), 8), O(T(tr("Pioche", "Pickaxe"), ax(235, -4), ay(YD, 24), 11, "gris", 2)),
+                   O(T(tr("Mains nues", "Unarmed"), ax(235, -4), ay(YD, 24), 11, "gris", 2))),
             ]),
         ]),
     ])
 
     def rangee_materiau(m, var, dy):
-        y = ay(-70, dy)
+        y = ay(YD, dy)
         return [
             si(eq(V("materiauActif"), m), [
-                couleur_hsbt(15, 85, 100, 0), taille_stylo(sc(17)), ligne(ax(235, -73), y, ax(235, -11), y),
-                couleur_hsbt(0, 0, 10, 10), taille_stylo(sc(14)), ligne(ax(235, -73), y, ax(235, -11), y),
+                couleur_hsbt(15, 85, 100, 0), taille_stylo(sc(16)), ligne(ax(235, -73), y, ax(235, -11), y),
+                couleur_hsbt(0, 0, 10, 10), taille_stylo(sc(13)), ligne(ax(235, -73), y, ax(235, -11), y),
             ], [
-                couleur_hsbt(0, 0, 8, 42), taille_stylo(sc(14)), ligne(ax(235, -73), y, ax(235, -11), y),
+                couleur_hsbt(0, 0, 8, 42), taille_stylo(sc(13)), ligne(ax(235, -73), y, ax(235, -11), y),
             ]),
             icone("hud_mat%d" % m, ax(235, -71), y, 13),
             T(V(var), ax(235, -6), sub(y, sc(4)), 12, "blanc", 2),
         ]
 
+    # pas de 14 px entre rangées (épaisseur 13) ; la tête de colonne reste sous « n équipes » (jambages jusqu'à
+    # y ≈ 35 à 120 %)
     H.proc("materiaux", [], [
         si(eq(V("modeConstruction"), 1), [
-            O(T(join(tr("CONSTRUCTION  -", "BUILD  -"), C.COUT_MUR), ax(235, -4), ay(-70, 51), 11, "jaune", 2)),
+            O(T(join(tr("CONSTRUCTION  -", "BUILD  -"), C.COUT_MUR), ax(235, -4), ay(YD, 79), 11, "jaune", 2)),
         ], [
-            icone("hud_brique", ax(235, -40), ay(-70, 55), 12),
-            O(T(V("🧱 Matériaux"), ax(235, -4), ay(-70, 51), 11, "gris", 2)),
+            icone("hud_brique", ax(235, -40), ay(YD, 83), 12),
+            O(T(V("🧱 Matériaux"), ax(235, -4), ay(YD, 79), 11, "gris", 2)),
         ]),
-        rangee_materiau(1, "mat_bois", 38),
-        rangee_materiau(2, "mat_pierre", 22),
-        rangee_materiau(3, "mat_metal", 6),
+        rangee_materiau(1, "mat_bois", 70),
+        rangee_materiau(2, "mat_pierre", 56),
+        rangee_materiau(3, "mat_metal", 42),
     ])
 
     # =============================================================================================
@@ -623,14 +628,14 @@ def construire(P):
                 ], [
                     si(eq(V("zoneEnMouvement"), 1), [
                         appel("mmss", V("tempsPhase")),
-                        setv("txt", join(tr("Zone en mouvement   ", "Zone moving   "), V("mmss"))), setv("cMin", "violet"),
+                        setv("txt", join(tr("Zone en mouvement  ", "Zone moving  "), V("mmss"))), setv("cMin", "violet"),
                     ], [
                         si(gt(V("tempsAvantZone"), 0), [
                             appel("mmss", V("tempsAvantZone")),
-                            setv("txt", join(tr("Zone se referme dans   ", "Zone closes in   "), V("mmss"))),
+                            setv("txt", join(tr("Zone se referme dans  ", "Zone closes in  "), V("mmss"))),
                         ], [
                             appel("mmss", V("tempsPhase")),
-                            setv("txt", join(tr("La zone se referme !   ", "The zone is closing!   "), V("mmss"))), setv("cMin", "orange"),
+                            setv("txt", join(tr("La zone se referme !  ", "The zone is closing!  "), V("mmss"))), setv("cMin", "orange"),
                         ]),
                     ]),
                 ]),
@@ -638,18 +643,20 @@ def construire(P):
         ]),
     ])
 
+    # pilule centrée en x = 10·s (texte + icône) : à 120 % elle reste à droite des rangées d'équipe (x ≤ −111)
+    # et à gauche de la minicarte (x ≥ 136)
     H.proc("minuteur", [], [
         appel("texte minuteur"),
         M(V("txt"), 12),
-        setv("y", ay(176, -42)),
-        fond(sub(mul(V("w"), -0.5), sc(18)), V("y"), add(mul(V("w"), 0.5), sc(8)), sc(18)),
+        setv("y", ay(176, -42)), setv("x", sub(sc(14), mul(V("w"), 0.5))),     # x : début du texte
+        fond(sub(V("x"), sc(18)), V("y"), add(add(V("x"), V("w")), sc(4)), sc(18)),
         si(ge(V("phase"), 2), [
-            si(eq(V("horsZone"), 1), [icone("hud_zone_rouge", sub(mul(V("w"), -0.5), sc(8)), V("y"), 13)],
-               [icone("hud_zone", sub(mul(V("w"), -0.5), sc(8)), V("y"), 13)]),
+            si(eq(V("horsZone"), 1), [icone("hud_zone_rouge", sub(V("x"), sc(8)), V("y"), 13)],
+               [icone("hud_zone", sub(V("x"), sc(8)), V("y"), 13)]),
         ], [
-            icone("hud_horloge", sub(mul(V("w"), -0.5), sc(8)), V("y"), 12),
+            icone("hud_horloge", sub(V("x"), sc(8)), V("y"), 12),
         ]),
-        D(sc(4), sub(V("y"), sc(4)), 12, V("cMin"), 1),
+        D(sc(14), sub(V("y"), sc(4)), 12, V("cMin"), 1),
         # temps de partie : petit, à droite de la bande de boussole (x ∈ [110, 148] reste hors de la minicarte)
         si(gt(V("tempsPartie"), 0), [
             appel("mmss", V("tempsPartie")),
@@ -668,20 +675,21 @@ def construire(P):
             repeter(C.NB_JOUEURS, [
                 si(et3(non(eq(V("k"), V("monSlot"))), eq(item("E_actif", V("k")), 1), eq(item("E_equipe", V("k")), V("monEquipe"))), [
                     setv("y", sub(ay(176, -15), mul(mul(V("lig"), 26), s))),
-                    costume("hud_rangee"), taille(mul(100, s)), aller(ax(-235, 65), V("y")), tampon(),
-                    TT(item("E_nom", V("k")), ax(-235, 7), sub(V("y"), sc(4)), 11, V("cEquipe"), 0, 54),
+                    # rangée de largeur fixe (x ∈ [−231, −111]) : à la même hauteur que le minuteur (x ≥ −104) à toute échelle
+                    fond(add(-231, sc(12)), V("y"), sub(-111, sc(12)), sc(24), 6, 40),
+                    TT(item("E_nom", V("k")), ax(-235, 7), sub(V("y"), sc(4)), 11, V("cEquipe"), 0, 50),
                     si(eq(item("E_etat", V("k")), 3), [
-                        T(tr("À TERRE", "KNOCKED"), ax(-235, 123), sub(V("y"), sc(4)), 11, "orange", 2),
+                        T(tr("À TERRE", "KNOCKED"), -116, sub(V("y"), sc(4)), 11, "orange", 2),
                     ], [
                         si(eq(item("E_etat", V("k")), 2), [
-                            T(tr("MORT", "DEAD"), ax(-235, 123), sub(V("y"), sc(4)), 11, "rouge", 2),
-                            si(contient("CartesRamassees", V("k")), [icone("hud_carte", ax(-235, 76), V("y"), 14)]),
+                            T(tr("MORT", "DEAD"), -116, sub(V("y"), sc(4)), 11, "rouge", 2),
+                            si(contient("CartesRamassees", V("k")), [icone("hud_carte", -162, V("y"), 14)]),
                         ], [
                             si(gt(item("E_altitude", V("k")), 0), [
-                                T(tr("EN L'AIR", "AIRBORNE"), ax(-235, 123), sub(V("y"), sc(4)), 11, "cyan", 2),
+                                T(tr("EN L'AIR", "AIRBORNE"), -116, sub(V("y"), sc(4)), 11, "cyan", 2),
                             ], [
-                                barre(ax(-235, 64), add(V("y"), sc(3)), sc(58), sc(5), div(item("E_pv", V("k")), 100), V("tVie"), 85, 85),
-                                barre(ax(-235, 64), sub(V("y"), sc(4)), sc(58), sc(5), div(item("E_bouclier", V("k")), 100), V("tBouclier"), 80, 95),
+                                barre(-174, add(V("y"), sc(3)), sc(49), sc(5), div(item("E_pv", V("k")), 100), V("tVie"), 85, 85),
+                                barre(-174, sub(V("y"), sc(4)), sc(49), sc(5), div(item("E_bouclier", V("k")), 100), V("tBouclier"), 80, 95),
                             ]),
                         ]),
                     ]),
@@ -705,7 +713,7 @@ def construire(P):
                 # texte tronqué mis en cache (hud_jt : source, hud_jw : tronqué) : recalculé quand la ligne change
                 si(non(eq_txt(item("hud_jt", V("k")), join(V("s"), V("e")))), [
                     remplacer("hud_jt", V("k"), join(V("s"), V("e"))),
-                    appel("tronquer", V("e"), 125),
+                    appel("tronquer", V("e"), 118),       # pilule ≤ x = −107 : la bande de boussole commence à −104
                     remplacer("hud_jw", V("k"), V("e")),
                 ]),
                 M(item("hud_jw", V("k")), 11),
@@ -799,16 +807,18 @@ def construire(P):
         ]),
         si(gt(V("utilisationFin"), 0), [
             setv("p", div(sub(chr_, V("utilisationDebut")), maximum(sub(V("utilisationFin"), V("utilisationDebut")), 0.1))),
-            setv("y", ay(-62, 0)),
+            # au-dessus du consommable en vue subjective (sprite Arme : y ≤ −57 pendant l'utilisation)
+            setv("y", ay(-52, 0)),
             si(gt(V("interactionType"), 0), [setv("y", ay(-40, 28))]),
             O(T(item("ObjetNoms", V("utilisationObjet")), 0, add(V("y"), sc(6)), 11, "vert", 1)),
             barre(sc(-50), sub(V("y"), sc(2)), sc(100), sc(5), V("p"), 33, 85, 90),
         ]),
     ])
 
-    # bandeaux du haut (pré-partie invulnérable, tempête) : empilés sous le minuteur ; yTop = prochaine ligne libre
+    # bandeaux du haut (pré-partie invulnérable, tempête) : empilés sous le minuteur (pilule jusqu'à y = 176 − 51·s) ;
+    # yTop = prochaine ligne libre
     H.proc("bandeaux", [], [
-        setv("y", ay(176, -62)), setv("yTop", ay(100, -8)),
+        setv("y", ay(176, -70)), setv("yTop", ay(100, -8)),
         si(et(eq(V("invulnerable"), 1), non(eq(V("etat"), 2))), [
             setv("txt", tr("PRÉ-PARTIE — invulnérable", "PRE-GAME — invulnerable")),
             M(V("txt"), 12),
@@ -832,13 +842,15 @@ def construire(P):
 
     H.proc("etats", [], [
         # à terre
+        # (sous la bannière « À TERRE ! » du sprite Message, qui occupe y ∈ [10, 110] : pilule de −17 à 9 ; la barre
+        # d'interaction (y ≤ −23) et la barre de soin ne sont jamais affichées à terre)
         si(eq(V("etat"), 3), [
-            fond(sc(-112), 32, sc(112), sc(26), 5, 35),
-            T(join(tr("À TERRE — ", "KNOCKED — "), rnd(V("pvAterre"))), 0, 27, 16, "orange", 1),
-            barre(sc(-92), 14, sc(184), sc(6), div(V("pvAterre"), 100), 9, 90, 100),
+            fond(sc(-112), -4, sc(112), sc(26), 5, 35),
+            T(join(tr("À TERRE — ", "KNOCKED — "), rnd(V("pvAterre"))), 0, -9, 16, "orange", 1),
+            barre(sc(-92), -22, sc(184), sc(6), div(V("pvAterre"), 100), 9, 90, 100),
             si(gt(V("reanimationProgres"), 0), [
-                O(T(tr("Réanimation en cours…", "Being revived…"), 0, -4, 12, "vert", 1)),
-                barre(sc(-92), -14, sc(184), sc(6), div(V("reanimationProgres"), 4.5), V("tVie"), 85, 90),
+                O(T(tr("Réanimation en cours…", "Being revived…"), 0, -35, 12, "vert", 1)),
+                barre(sc(-92), -42, sc(184), sc(6), div(V("reanimationProgres"), 4.5), V("tVie"), 85, 90),
             ]),
         ]),
         # mort
@@ -886,15 +898,16 @@ def construire(P):
             ]),
             O(T(V("txt"), 0, ay(-178, 54), 11, "gris", 1)),
         ]),
+        # panneau au-dessus de la zone des messages du chat (Social : y ∈ [−115, −60]) à toute échelle
         si(eq(V("param_infosReseau"), 1), [
-            costume("hud_panneau"), taille(mul(100, s)), aller(ax(-235, 77), -35), tampon(),
+            costume("hud_panneau"), taille(mul(100, s)), aller(ax(-235, 77), ay(-60, 25)), tampon(),
             T(joins(tr("Empl. ", "Slot "), V("monSlot"), "  ·  ", rnd(V("latence")), " ms"),
-              ax(-235, 7), -25, 11, "blanc", 0),
+              ax(-235, 7), ay(-60, 35), 11, "blanc", 0),
             T(joins("↑", V("paquetsEnvoyes"), "  ↓", V("paquetsRecus"), "  ·  ", V("👥 Joueurs"), tr(" joueurs", " players")),
-              ax(-235, 7), -38, 11, "gris", 0),
+              ax(-235, 7), ay(-60, 22), 11, "gris", 0),
             T(joins(item("ModeNoms", add(V("mode"), mul(6, V("param_langue")))), "  ·  ", tr("phase ", "phase "), V("phase"),
                     "  ·  ", V("colonnes"), tr(" col.", " col.")),
-              ax(-235, 7), -51, 11, "gris", 0),
+              ax(-235, 7), ay(-60, 9), 11, "gris", 0),
         ]),
     ])
 
@@ -915,9 +928,10 @@ def construire(P):
     def y_alt(v):
         return add(sc(-110), mul(sc(220), div(v, 99)))
 
-    # Partie écrit l'altitude en grand à gauche (x ≈ −200) et « Zone dans » / « En vie » centrés en x ≈ 200 :
-    # la piste se colle au bord droit (x = 232), graduations 0/50/99 (+ seuil 30) à gauche sur des hauteurs
-    # libres, curseur-pilule à gauche de la piste, planeur plus à gauche (x ≈ 172).
+    # Partie écrit l'altitude en grand à gauche (x ≈ −200), « PLANEUR » / « CHUTE LIBRE » en haut et sa colonne
+    # « Zone dans » / « Joueurs » en x = 185 (nombres de 24 px jusqu'à x ≈ 203) : tout l'altimètre reste en x > 204 ;
+    # piste collée au bord droit (x = 232), graduations 0/50/99 (+ seuil 30) à gauche, curseur-pilule à gauche de
+    # la piste (orange, puis cyan avec l'icône de planeur au-dessus quand le planeur est ouvert).
     H.proc("altimetre", [], [
         setv("hud_glyphes", 0), setv("txt_ombre", 1),
         setv("s", div(V("param_tailleHUD"), 100)),
@@ -942,14 +956,17 @@ def construire(P):
         si(lt(V("y"), sc(-110)), [setv("y", sc(-110))]), si(gt(V("y"), sc(110)), [setv("y", sc(110))]),
         couleur_hsbt(0, 0, 100, 0), taille_stylo(sc(3)), ligne(sub(V("x"), sc(7)), V("y"), add(V("x"), sc(7)), V("y")),
         couleur_hsbt(0, 0, 0, 30), taille_stylo(sc(19)), ligne(sub(V("x"), sc(27)), V("y"), sub(V("x"), sc(13)), V("y")),
-        couleur_hsbt(12, 90, 100, 0), taille_stylo(sc(15)), ligne(sub(V("x"), sc(27)), V("y"), sub(V("x"), sc(13)), V("y")),
+        si(et(lt(V("altitude"), 30), gt(V("altitude"), 0)),
+           couleur_hsbt(52, 85, 100, 0),          # planeur ouvert : pilule cyan
+           couleur_hsbt(12, 90, 100, 0)),
+        taille_stylo(sc(15)), ligne(sub(V("x"), sc(27)), V("y"), sub(V("x"), sc(13)), V("y")),
         setv("txt_ombre", 0),
         T(rnd(V("altitude")), sub(V("x"), sc(20)), sub(V("y"), sc(5)), 13, "noir", 1),
         setv("txt_ombre", 1),
-        # planeur ouvert sous 30 : icône + libellé plus à gauche
+        # planeur ouvert : icône sous la pilule (Partie écrit déjà « PLANEUR » en haut de l'écran ; au-dessus elle
+        # recouvrirait la graduation 30) ; tamponnée en dernier : le costume courant du sprite en témoigne (scénario 50_hud)
         si(et(lt(V("altitude"), 30), gt(V("altitude"), 0)), [
-            icone("hud_planeur", sub(V("x"), sc(60)), add(V("y"), sc(6)), 22),
-            T(tr("PLANEUR", "GLIDER"), sub(V("x"), sc(60)), sub(V("y"), sc(16)), 11, "cyan", 1),
+            icone("hud_planeur", sub(V("x"), sc(20)), sub(V("y"), sc(18)), 16),
         ]),
     ])
 

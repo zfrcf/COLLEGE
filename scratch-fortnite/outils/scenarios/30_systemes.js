@@ -33,6 +33,7 @@ module.exports = async (T, verifier) => {
   verifier('PasseRecompenses : 100 entrées type|id', passe.length === 100 && passe.every((e) => /^(skin|pioche|planeur|spray|emote|banniere|jetons|style)\|\d+$/.test(e)), passe.slice(0, 12));
   verifier('passe : tous les types présents, skin|2 au palier 1, style|1 au palier 100', typesPasse.size === 8 && passe[0] === 'skin|2' && passe[99] === 'style|1' && passe[9] === 'style|2', [passe[0], passe[9], passe[99]]);
   const boutique = T.L('Boutique').map((e) => String(e).split('|'));
+  const boutique0 = T.L('Boutique').join(',');
   verifier('Boutique : 6 objets du jour type|id|prix (200-1500), distincts', boutique.length === 6 && boutique.every((b) => b.length === 3 && N(b[2]) >= 200 && N(b[2]) <= 1500 && /^(pioche|planeur|spray|banniere)$/.test(b[0])) && new Set(boutique.map((b) => b[0] + b[1])).size === 6, T.L('Boutique'));
   verifier('Succes : 21 entrées « index|0 »', T.L('Succes').length === 21 && T.L('Succes').every((e, i) => e === (i + 1) + '|0'), T.L('Succes').slice(0, 4));
   verifier('sys_SuccesTitres / Descriptions / DivisionNoms', T.L('sys_SuccesTitres').length === 42 && T.L('sys_SuccesDescriptions').length === 42 && T.L('sys_DivisionNoms').length === 14 && T.L('sys_DivisionNoms')[2] === 'Or', T.L('sys_DivisionNoms'));
@@ -86,6 +87,7 @@ module.exports = async (T, verifier) => {
   T.set(stat9, N(T.g(stat9)) + N(qObjectif[q9 - 1]) - 1);
   await attendre(1100); T.pas(3);
   verifier('quête 9 : progression objectif−1, état 0', actives()[8][2] === N(qObjectif[q9 - 1]) - 1 && actives()[8][4] === 0, T.L('QuetesActives')[8]);
+  verifier('boutique du jour stable après un tick de la seconde', T.L('Boutique').join(',') === boutique0, T.L('Boutique'));
   T.set(stat9, N(T.g(stat9)) + 1);
   await attendre(1100); T.pas(3);
   verifier('quête 9 terminée (état 1) + notification', actives()[8][4] === 1 && actives()[8][2] === N(qObjectif[q9 - 1]) && /Quête terminée/.test(notifs()), [T.L('QuetesActives')[8], notifs()]);
@@ -105,8 +107,24 @@ module.exports = async (T, verifier) => {
   verifier('récap « Quêtes ×1 »', T.L('RecapLignes').some((l) => /^Quêtes ×1 : \+\d+ XP$/.test(l)), T.L('RecapLignes'));
   diffuser('quete reclamer', 9);
   verifier('réclamation refusée si non terminée', N(T.g('xp')) === xp, T.g('xp'));
+  // double réclamation d'une quête quotidienne (état 2) : une position 1-3 dont la statistique n'est pas le temps de survie
+  const nbSucces = () => T.L('Succes').filter((e) => String(e).endsWith('|1')).length;
+  const posQ = 1 + qa0.slice(0, 3).findIndex((q) => STATS[N(qStat[q[0] - 1]) - 1] !== 'stat_tempsSurvie');
+  const qQ = qa0[posQ - 1][0]; const statQ = STATS[N(qStat[qQ - 1]) - 1];
+  T.set(statQ, N(T.g(statQ)) + N(qObjectif[qQ - 1]));
+  await attendre(1100); T.pas(3);
+  verifier('quotidienne ' + posQ + ' terminée par sa statistique (état 1, progression = objectif)', actives()[posQ - 1][4] === 1 && actives()[posQ - 1][2] === N(qObjectif[qQ - 1]), T.L('QuetesActives')[posQ - 1]);
+  const jetonsQ = N(T.g('jetons')), xpQ = xp, succesQ = nbSucces();
+  diffuser('quete reclamer', posQ);
+  xp += Math.round(N(qXp[qQ - 1]) * 1.5);
+  const jetonsQAttendus = jetonsQ + N(qJetons[qQ - 1]) + 100 * (niveauDe(xp) - niveauDe(xpQ)) + jetonsPaliers(niveauDe(xpQ), niveauDe(xp)) + 50 * (nbSucces() - succesQ);
+  verifier('quotidienne réclamée : état 2, XP et jetons crédités', actives()[posQ - 1][4] === 2 && N(T.g('xp')) === xp && N(T.g('jetons')) === jetonsQAttendus, [T.L('QuetesActives')[posQ - 1], T.g('xp'), xp, T.g('jetons'), jetonsQAttendus]);
+  diffuser('quete reclamer', posQ);
+  verifier('double réclamation refusée (état 2 : rien de crédité)', actives()[posQ - 1][4] === 2 && N(T.g('xp')) === xp && N(T.g('jetons')) === jetonsQAttendus, [T.g('xp'), T.g('jetons')]);
   diffuser('quete partager', 2);
   verifier('partage : chat = 20 + index, chatSeq = 1', N(T.g('chat')) === 20 + qa0[1][0] && N(T.g('chatSeq')) === 1, [T.g('chat'), T.g('chatSeq')]);
+  diffuser('quete partager', 0); diffuser('quete partager', 12); diffuser('quete reclamer', 0); diffuser('quete reclamer', 99); diffuser('quete reclamer', 'abc');
+  verifier('positions invalides (0, 12, 99, texte) : chat, chatSeq et XP inchangés', N(T.g('chat')) === 20 + qa0[1][0] && N(T.g('chatSeq')) === 1 && N(T.g('xp')) === xp, [T.g('chat'), T.g('chatSeq'), T.g('xp')]);
 
   // ---------------------------------------------------------------- fin de manche (victoire) et récapitulatif
   T.set('stat_tempsSurvie', N(T.g('stat_tempsSurvie')) + 120);
@@ -131,15 +149,23 @@ module.exports = async (T, verifier) => {
   const niveauAvant = N(T.g('niveau'));
   verifier('niveau cohérent avec l\'XP', niveauAvant === 1 + Math.floor(xp / 1000) && N(T.g('xpNiveau')) === xp % 1000 && N(T.g('xpSuivant')) === 1000, [niveauAvant, xp]);
   const jetonsN = N(T.g('jetons'));
-  T.set('xp', 2990); diffuser('evt knock'); xp = 3015;
-  verifier('passage de niveau : niveau 4, +100 jetons par niveau (+ paliers), message « niveau »', N(T.g('niveau')) === 4 && N(T.g('jetons')) === jetonsN + 100 * (4 - niveauAvant) + jetonsPaliers(niveauAvant, 4) && (T.g('message') === 'niveau' || T.l('Systemes', 'messageAttente') === 'niveau'), [T.g('niveau'), T.g('jetons'), T.g('message'), jetonsN]);
-  verifier('notification « Niveau 4 atteint ! +' + 100 * (4 - niveauAvant) + ' jetons » (plusieurs niveaux d\'un coup)', new RegExp('Niveau 4 atteint ! \\+' + 100 * (4 - niveauAvant) + ' jetons').test(notifs()), notifs());
+  // deux niveaux d'un coup (niveauAvant dépend des quêtes du jour : 2 à 4)
+  const cible = niveauAvant + 2;
+  T.set('xp', 1000 * (cible - 1) - 10); diffuser('evt knock'); xp = 1000 * (cible - 1) + 15;     // niveau = 1 + xp ÷ 1000
+  verifier('passage de niveau ' + niveauAvant + ' → ' + cible + ' : +100 jetons par niveau (+ paliers), message « niveau »', N(T.g('niveau')) === cible && N(T.g('jetons')) === jetonsN + 200 + jetonsPaliers(niveauAvant, cible) && (T.g('message') === 'niveau' || T.l('Systemes', 'messageAttente') === 'niveau'), [T.g('niveau'), T.g('jetons'), T.g('message'), jetonsN]);
+  verifier('notification « Niveau ' + cible + ' atteint ! +200 jetons » (deux niveaux d\'un coup)', new RegExp('Niveau ' + cible + ' atteint ! \\+200 jetons').test(notifs()), notifs());
   T.pas(2);
-  verifier('evt niveau différé : evt_valeur = 4', N(T.g('evt_valeur')) === 4, T.g('evt_valeur'));
-  verifier('passeNiveau 4, étoiles 0, récompenses des paliers 2-4 débloquées', N(T.g('passeNiveau')) === 4 && N(T.g('etoiles')) === 0 && passe.slice(0, 4).filter((e) => !e.startsWith('jetons')).every((e) => T.L('Possedes').includes(e)), [T.g('passeNiveau'), passe.slice(0, 4), T.L('Possedes')]);
+  verifier('evt niveau différé : evt_valeur = ' + cible, N(T.g('evt_valeur')) === cible, T.g('evt_valeur'));
+  verifier('passeNiveau ' + cible + ', étoiles 0, récompenses des paliers 2-' + cible + ' débloquées', N(T.g('passeNiveau')) === cible && N(T.g('etoiles')) === 0 && passe.slice(0, cible).filter((e) => !e.startsWith('jetons')).every((e) => T.L('Possedes').includes(e)), [T.g('passeNiveau'), passe.slice(0, cible), T.L('Possedes')]);
   verifier('notification de palier du passe', /Passe de combat — palier/.test(notifs()), notifs());
+  const jetons4 = N(T.g('jetons')), succes4 = nbSucces();
   T.set('xp', 9450); diffuser('evt knock');
   verifier('niveau 10 : étoiles 2 (475/200), style|2 (palier 10) débloqué, succès « Niveau 10 »', N(T.g('niveau')) === 10 && N(T.g('etoiles')) === 2 && T.L('Possedes').includes('style|2') && T.L('Succes')[15] === '16|1', [T.g('niveau'), T.g('etoiles'), T.L('Succes')[15]]);
+  verifier((10 - cible) + ' niveaux d\'un coup (' + cible + ' → 10) : +' + 100 * (10 - cible) + ' jetons + lots des paliers + 50 par succès ; 4 dernières notifications = paliers 7-10',
+    N(T.g('jetons')) === jetons4 + 100 * (10 - cible) + jetonsPaliers(cible, 10) + 50 * (nbSucces() - succes4) && T.L('Notifications').length === 4 && [7, 8, 9, 10].every((p) => new RegExp('palier ' + p + ' :').test(notifs())), [T.g('jetons'), jetons4, jetonsPaliers(cible, 10), notifs()]);
+  verifier('paliers ' + (cible + 1) + '-10 tous débloqués (cosmétiques dans Possedes)', passe.slice(cible, 10).filter((e) => !e.startsWith('jetons')).every((e) => T.L('Possedes').includes(e)), [passe.slice(cible, 10), T.L('Possedes')]);
+  T.pas(2);
+  verifier('événements différés : « evt niveau » (10) puis « evt succes » (16) émis un par image, file vide', N(T.g('evt_valeur')) === 16 && T.l('Systemes', 'evtCode').length === 0, [T.g('evt_valeur'), T.l('Systemes', 'evtCode')]);
 
   // ---------------------------------------------------------------- boutique
   T.set('jetons', 5000);
@@ -155,6 +181,12 @@ module.exports = async (T, verifier) => {
   diffuser('boutique acheter', 2);
   verifier('achat refusé « Pas assez de jetons »', N(T.g('jetons')) === 10 && !T.L('Possedes').includes(boutique[1][0] + '|' + boutique[1][1]) && /Pas assez de jetons/.test(notifs()), notifs());
   T.set('jetons', j2);
+  const possN = T.L('Possedes').length, notifN = T.L('Notifications').length;
+  diffuser('boutique acheter', 0); diffuser('boutique acheter', 7); diffuser('boutique acheter', 'x');
+  verifier('index de boutique invalides (0, 7, texte) : rien', N(T.g('jetons')) === j2 && T.L('Possedes').length === possN && T.L('Notifications').length === notifN, [T.g('jetons'), T.L('Notifications')]);
+  T.L('Boutique').splice(0);     // liste vidée par accident : aucun achat, aucune erreur
+  diffuser('boutique acheter', 1);
+  verifier('Boutique vide : achat ignoré sans erreur', N(T.g('jetons')) === j2 && T.L('Possedes').length === possN && T.erreurs.length === 0, T.erreurs);
 
   // ---------------------------------------------------------------- casier
   diffuser('casier equiper', 2, 0, 'skin');
@@ -176,12 +208,25 @@ module.exports = async (T, verifier) => {
   }
   diffuser('casier equiper', 7, 0, 'banniere');
   verifier('bannière 7 refusée (non possédée)', N(T.g('banniere')) !== 7, T.g('banniere'));
+  const equipAvant = [T.g('skin'), T.g('pioche'), T.g('planeur'), T.g('spray'), T.g('banniere'), T.g('styleSkin'), T.L('EmotesEquipees').join(',')].join('/');
+  diffuser('casier equiper', 1, 0, 'chapeau'); diffuser('casier equiper', 2, 0, 'emote'); diffuser('casier equiper', 2, 9, 'emote'); diffuser('casier equiper', 0, 0, 'skin');
+  verifier('type inconnu, émote sans case valide (0, 9), skin 0 : rien d\'équipé, « Non possédé »', [T.g('skin'), T.g('pioche'), T.g('planeur'), T.g('spray'), T.g('banniere'), T.g('styleSkin'), T.L('EmotesEquipees').join(',')].join('/') === equipAvant && /Non possédé/.test(notifs()), [equipAvant, notifs()]);
 
   // ---------------------------------------------------------------- saison / chapitre
   const jours = Math.floor((Date.now() - Date.UTC(2000, 0, 1)) / 86400000);
   const n = Math.max(0, jours - 9497);
   const saisonGlobale = 1 + Math.floor(n / 70);
   verifier('saison/chapitre/jours restants cohérents avec la date', N(T.g('chapitre')) === 1 + Math.floor((saisonGlobale - 1) / 4) && N(T.g('saison')) === 1 + ((saisonGlobale - 1) % 4) && N(T.g('joursSaison')) === 70 - (n % 70), [T.g('saison'), T.g('chapitre'), T.g('joursSaison'), saisonGlobale]);
+
+  // ---------------------------------------------------------------- graine quotidienne : stable sur la journée, déterministe
+  verifier('jourCourant = jours depuis 2000 (UTC), semaineCourante = jour ÷ 7', N(T.l('Systemes', 'jourCourant')) === jours && N(T.l('Systemes', 'semaineCourante')) === Math.floor(jours / 7), [T.l('Systemes', 'jourCourant'), jours]);
+  const dailiesAvant = actives().slice(0, 3).map((q) => q[0]).join(',');
+  const hebdoAvant = T.L('QuetesActives').slice(3, 8).join(',');
+  // changement de jour simulé : « hier » → le tick suivant reconstruit boutique et quotidiennes pour aujourd'hui
+  T.sprite('Systemes').lookupVariableByNameAndType('jourCourant', '').value = jours - 1;
+  await attendre(1100); T.pas(3);
+  verifier('changement de jour : jourCourant revenu à aujourd\'hui, boutique (vidée plus haut) reconstruite à l\'identique (graine = jour)', N(T.l('Systemes', 'jourCourant')) === jours && T.L('Boutique').join(',') === boutique0, [T.L('Boutique'), boutique0]);
+  verifier('changement de jour : mêmes 3 quotidiennes (même jour), remises à zéro (état 0, progression 0), hebdomadaires intactes', actives().slice(0, 3).map((q) => q[0]).join(',') === dailiesAvant && actives().slice(0, 3).every((q) => q[2] === 0 && q[4] === 0) && T.L('QuetesActives').slice(3, 8).join(',') === hebdoAvant, [T.L('QuetesActives').slice(0, 3), dailiesAvant]);
 
   // ---------------------------------------------------------------- Arène (mode 6) : hype et divisions
   T.set('mode', 6); T.diffuser('evt nouvelle manche'); T.pas(2);
@@ -234,14 +279,48 @@ module.exports = async (T, verifier) => {
   verifier('code altéré refusé (« Code invalide »), xp inchangé', N(T.g('xp')) === 123 && /Code invalide/.test(notifs()), [T.g('xp'), notifs()]);
   T.diffuser('sauvegarde charger'); T.repondre('0123'); T.pas(3);
   verifier('code trop court refusé', N(T.g('xp')) === 123, T.g('xp'));
+  let v02 = '02' + code.slice(2, 74); v02 += String([...v02].reduce((a, c) => a + N(c), 0) % 97).padStart(2, '0');
+  T.diffuser('sauvegarde charger'); T.repondre(v02); T.pas(3);
+  verifier('version « 02 » refusée malgré une somme de contrôle juste', N(T.g('xp')) === 123, T.g('xp'));
+  const skin99 = code.slice(0, 66) + '99' + code.slice(68, 74);     // skin 99 : hors catalogue
+  T.diffuser('sauvegarde charger'); T.repondre(skin99 + String([...skin99].reduce((a, c) => a + N(c), 0) % 97).padStart(2, '0')); T.pas(3);
+  verifier('code valide avec skin 99 : chargé, équipement ramené au défaut (skin 1, style 0)', N(T.g('xp')) === xp && N(T.g('skin')) === 1 && N(T.g('styleSkin')) === 0, [T.g('xp'), T.g('skin'), T.g('styleSkin')]);
+
+  // ---------------------------------------------------------------- bornes : XP, niveau max, jetons, hype
+  const jetonsMax = N(T.g('jetons')), niveauMax = N(T.g('niveau')), succesMax = nbSucces();
+  T.set('xp', 9999990); diffuser('evt knock');
+  verifier('XP bornée à 9 999 999, niveau 200 (max), passeNiveau 100, étoiles 4', N(T.g('xp')) === 9999999 && N(T.g('niveau')) === 200 && N(T.g('passeNiveau')) === 100 && N(T.g('etoiles')) === 4, [T.g('xp'), T.g('niveau'), T.g('passeNiveau'), T.g('etoiles')]);
+  verifier('saut au niveau 200 : +100 jetons par niveau + lots des paliers restants + 50 par succès (Niveau 25, 50), style|1 (palier 100)', N(T.g('jetons')) === jetonsMax + 100 * (200 - niveauMax) + jetonsPaliers(niveauMax, 100) + 50 * (nbSucces() - succesMax) && T.L('Possedes').includes('style|1') && T.L('Succes')[16] === '17|1' && T.L('Succes')[17] === '18|1', [T.g('jetons'), jetonsMax, niveauMax, nbSucces() - succesMax, T.L('Succes')[17]]);
+  T.diffuser('sauvegarde generer'); T.pas(2);
+  verifier('code : xp 9999999 sur 7 chiffres', String(T.g('codeSauvegarde')).slice(2, 9) === '9999999', T.g('codeSauvegarde'));
+  T.set('jetons', 150000); T.pas(2);
+  verifier('jetons bornés à 99 999 (5 chiffres du code)', N(T.g('jetons')) === 99999, T.g('jetons'));
+  T.set('mode', 6); T.set('hype', 99990); T.diffuser('evt nouvelle manche'); T.pas(2); diffuser('evt fin manche', 1);
+  verifier('hype bornée à 99 999, division 7 (Irréel)', N(T.g('hype')) === 99999 && N(T.g('division')) === 7 && /Division : Irréel/.test(notifs()), [T.g('hype'), T.g('division')]);
+  T.set('mode', 5); T.set('hype', 1590); T.set('jetons', jetonsCode);
 
   // ---------------------------------------------------------------- code créateur
   diffuser('createur definir', undefined, undefined, 'antoine');
   verifier('code créateur défini + notification « Tu soutiens antoine »', T.g('codeCreateur') === 'antoine' && /Tu soutiens antoine/.test(notifs()), [T.g('codeCreateur'), notifs()]);
 
   // ---------------------------------------------------------------- redémarrage : la progression de la session est conservée
+  // une quotidienne terminée et réclamée juste avant le drapeau (les quotidiennes ont été remises à zéro par le
+  // changement de jour simulé) ; QuetesActives vidée « par accident » : le drapeau la réécrit depuis les listes locales
+  T.set(statQ, N(T.g(statQ)) + N(qObjectif[qQ - 1]));
+  await attendre(1100); T.pas(3);
+  diffuser('quete reclamer', posQ);
+  verifier('quotidienne ' + posQ + ' réclamée avant le drapeau (état 2)', actives()[posQ - 1][4] === 2, T.L('QuetesActives')[posQ - 1]);
+  const quetesAvantDrapeau = T.L('QuetesActives').join(',');
+  T.L('QuetesActives').splice(0);
+  diffuser('quete reclamer', posQ);
+  verifier('QuetesActives vide : réclamation ignorée sans erreur', T.erreurs.length === 0 && T.L('QuetesActives').length === 0, T.erreurs);
   T.set('xp', xp);
   T.drapeau(); T.pas(8);
   verifier('nouveau drapeau : xp et possessions conservés, bonusXP 1, quêtes réactivées', N(T.g('xp')) === xp && N(T.g('niveau')) === niveauDe(xp) && T.L('Possedes').includes(b1[0] + '|' + b1[1]) && N(T.g('bonusXP')) === 1 && actives().length === 11, [T.g('xp'), T.g('niveau'), T.g('bonusXP')]);
-  verifier('aucune liste du contrat en désordre (PasseRecompenses 100, Boutique 6, Succes 21)', T.L('PasseRecompenses').length === 100 && T.L('Boutique').length === 6 && T.L('Succes').length === 21 && T.L('Succes')[0] === '1|1');
+  verifier('nouveau drapeau : quêtes identiques (réclamations conservées : pas de double réclamation), histoire 26 en position 9', T.L('QuetesActives').join(',') === quetesAvantDrapeau && actives()[posQ - 1][4] === 2 && actives()[8][0] === 26, [T.L('QuetesActives'), quetesAvantDrapeau]);
+  const xpR = N(T.g('xp')), jetonsR = N(T.g('jetons'));
+  diffuser('quete reclamer', posQ);
+  verifier('nouveau drapeau : réclamer à nouveau la quotidienne ne donne rien', N(T.g('xp')) === xpR && N(T.g('jetons')) === jetonsR, [T.g('xp'), T.g('jetons')]);
+  verifier('aucune liste du contrat en désordre (PasseRecompenses 100, Boutique 6 identique, Succes 21)', T.L('PasseRecompenses').length === 100 && T.L('Boutique').join(',') === boutique0 && T.L('Succes').length === 21 && T.L('Succes')[0] === '1|1', T.L('Boutique'));
+  verifier('aucune erreur VM', T.erreurs.length === 0, T.erreurs);
 };

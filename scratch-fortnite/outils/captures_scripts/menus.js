@@ -98,12 +98,45 @@ module.exports = async (A) => {
   await A.capture('menus_pause'); await mesurer('pause');
   await A.clic(0, 18); await A.attendre(600); await A.capture('menus_pause_parametres'); await mesurer('pause + paramètres');
   await A.clic(0, -135); await A.attendre(300);
-  // --- fin : victoire puis défaite ---
+  // --- signalement ouvert sur la pause : Social dessine son panneau, Menus seulement un voile autour ---
+  await set({ ecran: 'jeu', superposition: 'signaler' }); await A.attendre(300);   // Social mémorise la superposition
+  await set({ ecran: 'pause', ecranPrecedent: 'jeu', message: '' }); await A.attendre(600);
+  console.log('ecran pause + signaler :', await get('ecran'), await get('superposition'));
+  await A.capture('menus_pause_signaler');
+  await set({ superposition: '' }); await A.attendre(300);
+  // --- fin : victoire puis défaite (lignes de récapitulatif garanties) ---
+  await A.evaluer((vm, V) => { if (!V('RecapLignes').value.length) V('RecapLignes').value = ['Éliminations ×3 : +150 XP', 'Survie 4:12 : +120 XP', 'Top 1 : +300 XP', 'Coffres ×4 : +40 XP']; });
   await set({ ecran: 'fin', victoire: 1, rang: 1, participants: 6, '💀 Éliminations': 3, xpGagne: 610, mode: 6, menu_sale: 1 });
   await A.attendre(700); await A.capture('menus_fin_victoire'); await mesurer('fin victoire');
   await set({ victoire: 0, rang: 4, mode: 1 });
   await A.attendre(500); await A.capture('menus_fin_defaite');
+  // --- signalement ouvert dans le salon (depuis le menu « … » d'un ami) : Menus ignore les clics sous le panneau ---
+  await set({ ecran: 'salon', onglet: 'parametres', etat: 5, enPartie: 0, menu_sale: 1 }); await A.attendre(500);
+  await set({ superposition: 'signaler' }); await A.attendre(600);
+  const ct0 = await get('param_constructionTurbo');
+  await A.clic(110, 80); await A.attendre(400);
+  console.log('clic sous le panneau de signalement : Construction turbo', ct0, '→', await get('param_constructionTurbo'));
+  await A.capture('menus_salon_signaler');
+  await set({ superposition: '' }); await A.attendre(300);
   // --- anglais ---
   await set({ ecran: 'salon', onglet: 'accueil', param_langue: 1, menu_sale: 1 });
   await A.attendre(700); await A.capture('menus_salon_en'); await mesurer('salon au repos');
+  await A.clic(-126, 163); await A.attendre(500); await A.capture('menus_salon_passe_en');
+  await A.clic(9, 163); await A.attendre(500); await A.capture('menus_salon_casier_en');
+  await A.clic(64, 163); await A.attendre(500); await A.capture('menus_salon_quetes_en');
+  await A.clic(123, 163); await A.attendre(300); await A.clic(60, 129); await A.attendre(500); await A.capture('menus_carriere_classement_en');
+  await A.clic(196, 163); await A.attendre(300); await A.clic(-188, 98); await A.attendre(500); await A.capture('menus_parametres_commandes_en');
+  await A.clic(-188, -14); await A.attendre(500); await A.capture('menus_parametres_compte_en');
+  await set({ ecran: 'connexion', menu_sale: 1, message: '' }); await A.attendre(600); await A.capture('menus_connexion_en');
+  // entrée tardive : une partie est en cours (☁ Partie commencée il y a 70 s → phase 2, calculée par Partie)
+  const now3 = await A.evaluer((vm, V) => Math.floor(Number(V('maintenant').value)));
+  await set({ '☁ Partie': '1' + pad(now3 - 70, 5) + '5' + '0' + '07' }); await A.attendre(400);
+  await set({ ecran: 'matchmaking', menu_sale: 1 }); await local({ tCompte: 1e9 }); await A.attendre(600);
+  console.log('phase (entrée tardive) :', await get('phase'));
+  await A.capture('menus_matchmaking_tardif_en');
+  await set({ '☁ Partie': '0' }); await A.attendre(300);
+  await set({ ecran: 'jeu', etat: 2, phase: 2, superposition: '' }); await A.attendre(300);
+  await set({ ecran: 'pause', ecranPrecedent: 'jeu' }); await A.attendre(500); await A.capture('menus_pause_mort_en');
+  await set({ ecran: 'fin', victoire: 1, rang: 1 }); await A.attendre(600); await A.capture('menus_fin_victoire_en');
+  await set({ ecran: 'salon', etat: 5, param_langue: 0, menu_sale: 1 }); await A.attendre(300);
 };

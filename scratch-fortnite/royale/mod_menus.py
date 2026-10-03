@@ -22,6 +22,10 @@ Principes de dessin
   le survol est recalculé quand la souris bouge, le clic (front descendant de « souris pressée ») cherche le
   bouton sous la souris et appelle le bloc « action » avec son identifiant.
 
+- Signalement (superposition = "signaler", panneau central x ∈ [−130, 130], y ∈ [−90, 90] dessiné par Social AVANT
+  Menus dans l'image) : sur l'écran pause, Menus ne dessine qu'un voile sombre troué et aucun bouton (clics et
+  touche pause ignorés) ; dans le salon, aucun bouton n'est trouvé sous la souris quand elle est sur le panneau.
+
 Variables globales privées (préfixe menu_) : menu_survolId (identifiant du bouton survolé, pour Social).
 Diffusions émises : evt changement ecran, sauvegarde charger, sauvegarde generer, createur definir,
 boutique acheter, casier equiper, quete reclamer, quete partager, son clic, son survol.
@@ -298,6 +302,7 @@ SECTIONS = [("jeu", "Jeu", "Game"), ("commandes", "Commandes", "Controls"), ("vi
 ZT_Y1, ZT_Y2 = 146, 180                 # barre d'onglets
 ZC_X1, ZC_X2, ZC_Y1, ZC_Y2 = -236, 144, -106, 142   # contenu central
 ZS_X1, ZS_X2, ZS_Y1, ZS_Y2 = 150, 235, -150, 120    # barre sociale (module Social)
+SIG_X1, SIG_X2, SIG_Y1, SIG_Y2 = -130, 130, -90, 90  # panneau central de signalement (dessiné par Social, superposition "signaler")
 
 
 def centre_y(cy, taille_txt):
@@ -369,6 +374,12 @@ class Menus:
             K.icone("m_perso_%d_1" % n, _ui("personnage", n, "debout", 1), 120)
         K.icone("m_carte", _ui("carte_complete", 5), 160)
         K.icone("m_banniere_grande", _ui("banniere", 1), 48)
+        # voile sombre plein écran troué à l'emplacement du panneau de signalement de Social (pause + "signaler") ;
+        # le trou est rentré de 8 px : le bord du panneau (traits de stylo à bouts ronds) est recouvert, pas la zone utile
+        r = 8
+        K.plein_ecran("m_voile_signaler", S.svg(C.LARGEUR, C.HAUTEUR,
+                      '<path fill-rule="evenodd" fill="#000000" fill-opacity="0.55" d="M0 0 H%d V%d H0 Z M%d %d H%d V%d H%d Z"/>'
+                      % (C.LARGEUR, C.HAUTEUR, 240 + SIG_X1 + r, 180 - SIG_Y2 + r, 240 + SIG_X2 - r, 180 - SIG_Y1 - r, 240 + SIG_X1 + r)))
 
     # ----------------------------------------------------------------------
     #  Primitives de dessin (listes de blocs)
@@ -470,6 +481,10 @@ class Menus:
         # bouton sous la souris → clicId ("" si aucun) et survolN (index)
         M.proc("chercher bouton", [], [
             setv("clicId", ""), setv("survolN", 0), setv("k", long_liste("menu_bid")),
+            # salon + panneau de signalement de Social ouvert : rien sous la souris si elle est sur le panneau central
+            si(et(eq(V("superposition"), "signaler"), eq(V("ecran"), "salon")), [
+                si(et4(ge(souris_x(), SIG_X1), le(souris_x(), SIG_X2), ge(souris_y(), SIG_Y1), le(souris_y(), SIG_Y2)), [setv("k", 0)]),
+            ]),
             repeter_jusqua(ou(lt(V("k"), 1), gt(longueur(V("clicId")), 0)), [
                 si(et4(ge(souris_x(), item("menu_bx1", V("k"))), le(souris_x(), item("menu_bx2", V("k"))),
                        ge(souris_y(), item("menu_by1", V("k"))), le(souris_y(), item("menu_by2", V("k")))), [
@@ -614,7 +629,11 @@ class Menus:
     def ecran_pause(self):
         def b(ident, cy, libelle, couleur=BOUTON):
             return self.bouton(ident, -100, cy - 13, 100, cy + 13, libelle, 14, couleur)
-        return [
+        # signalement ouvert depuis la pause : Social (calque 89) a déjà dessiné son panneau central
+        # (x ∈ [−130, 130], y ∈ [−90, 90]) AVANT moi dans l'image → je ne dessine qu'un voile sombre
+        # tout autour (quatre rectangles) et aucun bouton : les clics sont ignorés.
+        voile = [self.icone("m_voile_signaler", 0, 0)]      # un seul costume troué : pas de raccord visible entre rectangles
+        return [si(eq(V("superposition"), "signaler"), voile, [
             si(eq(V("pauseParam"), 1), [
                 self.rect(-200, -152, 200, 152, PANNEAU, 12, "#64748b", 2, 0.94),
                 setv("ox", 46), self.panneau_parametres(),
@@ -630,7 +649,7 @@ class Menus:
                 b("quitter", -90, tr("Quitter la partie", "Leave match"), ROUGE),
                 self.txt(join(tr("Touche ", "Key "), join(C.touche_config("pause"), tr(" : reprendre", ": resume"))), 0, -122, 11, "gris", 1),
             ]),
-        ]
+        ])]
 
     # ======================================================================
     #  ÉCRAN FIN (superposé au 3D, chaque image) — textes sans ombre sauf le titre
@@ -663,7 +682,7 @@ class Menus:
             # colonne droite : XP (3 lignes de récapitulatif au plus)
             self.txt(join(tr("XP gagnée : +", "XP earned: +"), V("xpGagne")), 4, 48, 13, "jaune", 0),
             setv("k", 1), setv("y", 28),
-            repeter_jusqua(ou(gt(V("k"), long_liste("RecapLignes")), gt(V("k"), 3)), [
+            repeter_jusqua(ou(gt(V("k"), long_liste("RecapLignes")), gt(V("k"), 4)), [
                 self.txt_tr(item("RecapLignes", V("k")), 4, V("y"), 11, "blanc", 0, 196),
                 changev("y", -15), changev("k", 1),
             ]),
@@ -809,6 +828,7 @@ class Menus:
                 self.texte_table(self.k_astuces_l1, V("astuce")),
                 self.texte_table(self.k_astuces_l2, V("astuce")),
                 self.texte_table(self.k_astuces_l3, V("astuce")),
+                self.texte_table(self.k_astuces_l4, V("astuce")),
             ]),
         ]
 
@@ -889,10 +909,10 @@ class Menus:
                 self.nom_cosmetique(),
                 self.txt_tr(joins(tr("Palier ", "Tier "), add(V("passeNiveau"), 1), " : ", V("txt")), -196, -88, 12, "blanc", 0, 200),
             ], [self.txt(tr("Passe terminé — bravo !", "Pass complete — well done!"), -196, -88, 12, "blanc", 0)]),
-            self.rect(14, -92, 28, -78, OR, 3),
-            self.txt(tr("Récompense de style", "Style reward"), 34, -88, 11, "gris", 0),
-            self.icone("m_cadenas", 21, -68, 36),
-            self.txt(tr("Verrouillé", "Locked"), 34, -72, 11, "gris", 0),
+            self.icone("m_cadenas", 17, -74, 36),
+            self.txt(tr("Verrouillé", "Locked"), 30, -78, 11, "gris", 0),
+            self.rect(10, -99, 24, -85, OR, 3),
+            self.txt(tr("Récompense de style", "Style reward"), 30, -95, 11, "gris", 0),
             self.txt(join(tr("Bonus d'XP de session : +", "Session XP bonus: +"), join(V("bonusXP"), " %")), 142, -62, 11, "vert", 2),
         ]
 
@@ -921,7 +941,7 @@ class Menus:
                     self.nom_icone_recompense(),
                     self.icone_dyn(V("txt"), V("cx"), add(V("cy"), 26), 140),
                     self.nom_cosmetique(),
-                    self.txt_tr(V("txt"), V("cx"), sub(V("cy"), 12), 12, "blanc", 1, 112),
+                    self.txt_tr(V("txt"), V("cx"), sub(V("cy"), 12), 11, "blanc", 1, 114),
                     self.icone("m_jeton", sub(V("cx"), 20), sub(V("cy"), 24), 40),
                     self.txt(V("p"), sub(V("cx"), 10), sub(V("cy"), 28), 12, "jaune", 0),
                     si(contient("Possedes", join(V("txt2"), join("|", V("tmp")))), [
@@ -998,17 +1018,19 @@ class Menus:
             ]),
             # cases de la roue d'émotes
             si(eq(V("categorie"), 5), [
-                self.txt(tr("Case de la roue :", "Wheel slot:"), -120, -42, 11, "blanc", 0),
-            ] + [si(eq(V("caseEmote"), k), [self.bouton("case %d" % k, -30 + 20 * k, -48, -14 + 20 * k, -32, str(k), 11, BOUTON)],
-                     [self.bouton("case %d" % k, -30 + 20 * k, -48, -14 + 20 * k, -32, str(k), 11, BOUTON_SOMBRE)]) for k in range(1, 7)]
-            + [self.txt(tr("Clique une émote pour l'y placer", "Click an emote to put it there"), -120, -58, 11, "gris", 0)]),
-            # code de sauvegarde
-            self.rect(-120, -106, 144, -62, PANNEAU, 8),
-            self.txt(tr("Code de sauvegarde", "Save code"), -112, -74, 11, "cyan", 0),
-            self.bouton("regenerer", 74, -80, 140, -64, tr("Régénérer", "Regenerate"), 11, BOUTON_SOMBRE),
-            si(gt(longueur(V("codeSauvegarde")), 0), [self.txt_tr(V("codeSauvegarde"), -112, -88, 11, "blanc", 0, 250)],
-               [self.txt(tr("(en attente du module Systèmes)", "(waiting for the Systems module)"), -112, -88, 11, "gris", 0)]),
-            self.txt(tr("Copie ce code pour garder ta progression.", "Copy this code to keep your progress."), -112, -101, 11, "gris", 0),
+                self.txt(tr("Case de la roue :", "Wheel slot:"), -120, -26, 11, "blanc", 0),
+            ] + [si(eq(V("caseEmote"), k), [self.bouton("case %d" % k, -30 + 20 * k, -32, -14 + 20 * k, -16, str(k), 11, BOUTON)],
+                     [self.bouton("case %d" % k, -30 + 20 * k, -32, -14 + 20 * k, -16, str(k), 11, BOUTON_SOMBRE)]) for k in range(1, 7)]
+            + [self.txt(tr("Clique une émote pour l'y placer", "Click an emote to put it there"), -120, -42, 11, "gris", 0)]),
+            # code de sauvegarde (complet, sur deux lignes de 38 caractères comme dans Paramètres › Compte)
+            self.rect(-120, -106, 144, -52, PANNEAU, 8),
+            self.txt(tr("Code de sauvegarde", "Save code"), -112, -62, 11, "cyan", 0),
+            self.bouton("regenerer", 70, -70, 140, -56, tr("Régénérer", "Regenerate"), 11, BOUTON_SOMBRE),
+            si(gt(longueur(V("codeSauvegarde")), 0), [
+                self.txt(C.sous_chaine(V("codeSauvegarde"), 1, 38), -112, -82, 11, "blanc", 0),
+                self.txt(C.sous_chaine(V("codeSauvegarde"), 39, 38), -112, -94, 11, "blanc", 0),
+            ], [self.txt(tr("(en attente du module Systèmes)", "(waiting for the Systems module)"), -112, -82, 11, "gris", 0)]),
+            self.txt(tr("Copie ce code pour garder ta progression.", "Copy this code to keep your progress."), -112, -104, 10, "gris", 0),
         ]
         return corps
 
@@ -1043,9 +1065,9 @@ class Menus:
                     self.barre(-206, sub(V("cy"), 8), 120, 7, div(V("x"), V("y")), "#1e293b", "#22c55e"),
                     self.txt(join(V("x"), join("/", V("y"))), -80, sub(V("cy"), 11), 11, "gris", 0),
                     self.txt(join("+", join(V("tmp"), " XP")), -20, sub(V("cy"), 4), 12, "jaune", 0),
-                    si(eq(V("n"), 1), [self.bouton_a(join("quete reclamer ", V("k")), 56, 22, 62, V("cy"), tr("Réclamer", "Claim"), 11, VERT)]),
-                    si(eq(V("n"), 2), [self.icone("m_coche", 42, V("cy"), 55), self.txt(tr("Réclamée", "Claimed"), 52, sub(V("cy"), 4), 11, "vert", 0)]),
-                    self.bouton_a(join("quete partager ", V("k")), 50, 22, 119, V("cy"), tr("Partager", "Share"), 11, BOUTON_SOMBRE),
+                    si(eq(V("n"), 1), [self.bouton_a(join("quete reclamer ", V("k")), 56, 22, 56, V("cy"), tr("Réclamer", "Claim"), 11, VERT)]),
+                    si(eq(V("n"), 2), [self.icone("m_coche", 34, V("cy"), 50), self.txt(tr("Réclamée", "Claimed"), 60, sub(V("cy"), 4), 10, "vert", 1)]),
+                    self.bouton_a(join("quete partager ", V("k")), 58, 22, 115, V("cy"), tr("Partager", "Share"), 11, BOUTON_SOMBRE),
                     changev("j", 1),
                 ]),
             ]),
@@ -1093,8 +1115,8 @@ class Menus:
             # --- arène + classement ---
             self.rect(-52, -44, 144, 112, PANNEAU, 8),
             si(eq(V("vueClassement"), 1), [
-                self.txt(join(tr("Classement de fin de saison ", "End-of-season ranking "), V("saison")), -44, 98, 12, "cyan", 0),
-                self.txt(join(V("joursSaison"), tr(" j avant la fin de saison", " d before season end")), 136, 98, 11, "gris", 2),
+                self.txt(join(tr("Classement S", "Ranking S"), V("saison")), -44, 98, 12, "cyan", 0),
+                self.txt(join(tr("fin dans ", "ends in "), join(V("joursSaison"), tr(" j", " d"))), 136, 98, 11, "gris", 2),
             ], [
                 self.txt(tr("Arène", "Arena"), -44, 98, 12, "cyan", 0),
                 self.icone_dyn(join("m_division_", V("division")), 4, 101, 60),
@@ -1110,7 +1132,7 @@ class Menus:
                 ], [self.txt(join(V("k"), tr(". (libre)", ". (open)")), -44, sub(80, mul(13, V("k"))), 11, "gris", 0)]),
                 changev("k", 1),
             ]),
-            self.txt(tr("Joueurs connectés (par éliminations)", "Online players (by eliminations)"), -44, 24, 11, "orange", 0),
+            self.txt(tr("Connectés (par éliminations)", "Online players (by eliminations)"), -44, 24, 11, "orange", 0),
             # tri des emplacements actifs (dont moi) par éliminations décroissantes
             vider("menu_ordre"), setv("k", 1),
             repeter(C.NB_JOUEURS, [
@@ -1204,7 +1226,7 @@ class Menus:
         elif genre == "num":
             corps += [
                 self.txt(V(var), add(84, ox), y - 4, 12, "jaune", 2),
-                self.bouton(ident + " -", 92, y - 8, 108, y + 8, "−", 13, BOUTON_SOMBRE, "blanc", 4, ox),
+                self.bouton(ident + " -", 92, y - 8, 108, y + 8, "–", 13, BOUTON_SOMBRE, "blanc", 4, ox),   # « – » : le signe moins U+2212 n'a pas de glyphe
                 self.bouton(ident + " +", 112, y - 8, 128, y + 8, "+", 13, BOUTON_SOMBRE, "blanc", 4, ox),
             ]
             if var.startswith("param_volume"):
@@ -1255,7 +1277,7 @@ class Menus:
             if code == "audio":
                 lignes.append(self.txt_tr(tr("Les volumes s'appliquent immédiatement.", "Volumes apply immediately."), add(-126, ox), y - 2, 11, "gris", 0, 268))
             if code == "acces":
-                lignes.append(self.txt_tr(tr("Daltonisme : change la couleur de la tempête et des marqueurs.", "Colour blindness: changes storm and marker colours."),
+                lignes.append(self.txt_tr(tr("Daltonisme : couleurs de tempête et marqueurs.", "Colour-blind: storm and marker colours."),
                                           add(-126, ox), y - 2, 11, "gris", 0, 268))
             if code == "compte":
                 lignes += [
@@ -1263,8 +1285,8 @@ class Menus:
                     self.txt(join(tr("Nom d'affichage : ", "Display name: "), V("txt")), add(-126, ox), y - 4, 12, "blanc", 0),
                     self.txt(join(tr("Niveau de compte : ", "Account level: "), V("niveau")), add(-126, ox), y - 28, 12, "blanc", 0),
                     self.txt(tr("Code de sauvegarde", "Save code"), add(-126, ox), y - 52, 12, "blanc", 0),
-                    self.bouton("charger sauvegarde", 16, y - 60, 76, y - 42, tr("Charger", "Load"), 11, BOUTON, "blanc", 5, ox),
-                    self.bouton("regenerer", 80, y - 60, 140, y - 42, tr("Régénérer", "Regenerate"), 11, BOUTON_SOMBRE, "blanc", 5, ox),
+                    self.bouton("charger sauvegarde", 6, y - 60, 60, y - 42, tr("Charger", "Load"), 11, BOUTON, "blanc", 5, ox),
+                    self.bouton("regenerer", 64, y - 60, 140, y - 42, tr("Régénérer", "Regenerate"), 11, BOUTON_SOMBRE, "blanc", 5, ox),
                     si(gt(longueur(V("codeSauvegarde")), 0), [
                         self.txt(C.sous_chaine(V("codeSauvegarde"), 1, 38), add(-126, ox), y - 68, 11, "cyan", 0),
                         self.txt(C.sous_chaine(V("codeSauvegarde"), 39, 38), add(-126, ox), y - 82, 11, "cyan", 0),
@@ -1579,6 +1601,7 @@ class Menus:
         self.k_astuces_l1 = self.table([(l[0][0], l[1][0]) for l in lignes])
         self.k_astuces_l2 = self.table([(l[0][1], l[1][1]) for l in lignes])
         self.k_astuces_l3 = self.table([(l[0][2], l[1][2]) for l in lignes])
+        self.k_astuces_l4 = self.table([(l[0][3], l[1][3]) for l in lignes])
         self.k_regions = self.table(REGIONS)
         self.k_confid = self.table(CONFIDENTIALITES)
         self.k_types = self.table([(fr, en) for _, fr, en, _ in COSMETIQUES])
@@ -1589,8 +1612,8 @@ class Menus:
         self._scripts()
 
 
-def _couper(fr, en, largeur=112, taille_px=11):
-    """Coupe une astuce en 3 lignes de `largeur` px max (chaque langue)."""
+def _couper(fr, en, largeur=112, taille_px=11, nb=4):
+    """Coupe une astuce en `nb` lignes de `largeur` px max (chaque langue)."""
     def lignes(t):
         mots, out, cour = t.split(" "), [], ""
         for m in mots:
@@ -1602,10 +1625,10 @@ def _couper(fr, en, largeur=112, taille_px=11):
                 cour = m
         if cour:
             out.append(cour)
-        while len(out) < 3:
+        while len(out) < nb:
             out.append(" ")
-        if len(out) > 3:
-            out = out[:2] + [" ".join(out[2:])]
+        if len(out) > nb:
+            out = out[:nb - 1] + [" ".join(out[nb - 1:])]
         return out
     return lignes(fr), lignes(en)
 

@@ -8,7 +8,8 @@ CarteRedeploiement, Spray).
   minicarte circulaire (en haut à droite) avec zone, prochaine zone, joueurs, coéquipiers, pings.
 - Les panneaux se placent par projection caméra et sont masqués par les murs grâce à `Profondeur`.
 - Ne rend que si `ecran` ∈ contrat.ECRANS_RENDU_3D ; les autres écrans sont dessinés par leurs
-  propriétaires (Menus, Partie).
+  propriétaires (Menus, Partie). Les panneaux (sprites, donc au-dessus du stylo) se cachent dès qu'une
+  `superposition` est ouverte et sur les écrans « pause » / « fin », où Menus dessine ses panneaux au stylo.
 """
 from .dsl import *  # noqa: F401,F403
 from . import contrat as C
@@ -251,8 +252,9 @@ def installer_billboard(cible, ex, ey, taille_num, decal_y, condition, avant=Non
     for v in ["dx", "dy", "f", "r", "sx", "col"]:
         cible.var(v, 0)
     cible.proc("afficher", [], [
-        # masqué dès qu'une superposition au stylo (chat, roues, signalement) est ouverte : les sprites passent au-dessus du stylo
-        si(et3(condition, est_ecran_rendu(), eq(V("superposition"), "")), [
+        # masqué dès qu'une superposition au stylo (chat, roues, signalement) est ouverte, et sur les écrans « pause » /
+        # « fin » où Menus dessine ses panneaux au stylo : les sprites passent au-dessus du stylo
+        si(et4(condition, est_ecran_rendu(), eq(V("superposition"), ""), non(ou(eq(V("ecran"), "pause"), eq(V("ecran"), "fin")))), [
             setv("dx", sub(ex, V("px"))), setv("dy", sub(ey, V("py"))),
             setv("f", add(mul(V("dx"), cos(V("dir"))), mul(V("dy"), sin(V("dir"))))),
             setv("r", sub(mul(V("dx"), sin(V("dir"))), mul(V("dy"), cos(V("dir"))))),
@@ -293,7 +295,7 @@ def construire_panneaux(P):
     installer_billboard(
         E, item("E_x", V("monIndex")), item("E_y", V("monIndex")), 224, 48,
         et3(non(eq(V("monIndex"), V("monSlot"))), eq(item("E_actif", V("monIndex")), 1),
-            ou(eq(item("E_etat", V("monIndex")), 1), eq(item("E_etat", V("monIndex")), 3))),
+            ou3(eq(item("E_etat", V("monIndex")), 1), eq(item("E_etat", V("monIndex")), 3), eq(item("E_etat", V("monIndex")), 8))),
         avant=[
             # pose : à terre / émote / debout
             setv("pose", "debout"),
@@ -313,6 +315,7 @@ def construire_panneaux(P):
         apres_cache=[dire("")])
     E.script(quand_drapeau(), [cacher()])
     E.script(quand_message("demarrer"), [
+        si(gt(V("monIndex"), 0), [supprimer_clone()]),      # un clone existant disparaît, l'original recrée la série
         cacher(), setv("monIndex", 0),
         repeter(C.NB_JOUEURS, [changev("monIndex", 1), cloner_moi()]),
     ])
@@ -334,6 +337,7 @@ def construire_panneaux(P):
                         avant=[si(contient("CoffresPris", V("monIndex")), [costume("ouvert")], [costume("ferme")])])
     Co.script(quand_drapeau(), [cacher()])
     Co.script(quand_message("demarrer"), [
+        si(gt(V("monIndex"), 0), [supprimer_clone()]),      # un clone existant disparaît, l'original recrée la série
         cacher(), setv("monIndex", 0),
         repeter(C.NB_COFFRES, [changev("monIndex", 1), cloner_moi()]),
     ])
@@ -352,6 +356,7 @@ def construire_panneaux(P):
                         et(gt(V("monIndex"), 0), gt(V("monEquipe"), 0)))
     B.script(quand_drapeau(), [cacher()])
     B.script(quand_message("demarrer"), [
+        si(gt(V("monIndex"), 0), [supprimer_clone()]),      # un clone existant disparaît, l'original recrée la série
         cacher(), setv("monIndex", 0),
         repeter(C.NB_BALISES, [changev("monIndex", 1), cloner_moi()]),
     ])
@@ -373,6 +378,7 @@ def construire_panneaux(P):
                             non(contient("CartesRamassees", V("monIndex")))))
     CR.script(quand_drapeau(), [cacher()])
     CR.script(quand_message("demarrer"), [
+        si(gt(V("monIndex"), 0), [supprimer_clone()]),      # un clone existant disparaît, l'original recrée la série
         cacher(), setv("monIndex", 0),
         repeter(C.NB_JOUEURS, [changev("monIndex", 1), cloner_moi()]),
     ])
@@ -404,6 +410,7 @@ def construire_panneaux(P):
     installer_billboard(Mq, V("mx"), V("my"), 260, -40, gt(longueur(V("entree")), 14))
     Mq.script(quand_drapeau(), [cacher()])
     Mq.script(quand_message("demarrer"), [
+        si(gt(V("monIndex"), 0), [supprimer_clone()]),      # un clone existant disparaît, l'original recrée la série
         cacher(), setv("monIndex", 0),
         repeter(C.NB_JOUEURS, [changev("monIndex", 1), cloner_moi()]),
     ])
@@ -432,6 +439,7 @@ def construire_panneaux(P):
     installer_billboard(Sp, V("mx"), V("my"), 200, 60, gt(longueur(V("entree")), 11))
     Sp.script(quand_drapeau(), [cacher()])
     Sp.script(quand_message("demarrer"), [
+        si(gt(V("monIndex"), 0), [supprimer_clone()]),      # un clone existant disparaît, l'original recrée la série
         cacher(), setv("monIndex", 0),
         repeter(10, [changev("monIndex", 1), cloner_moi()]),
     ])

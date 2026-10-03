@@ -37,6 +37,8 @@ FORMATS
   QueteTitres      : 32 titres FR puis 32 EN (12 quotidiennes, 10 hebdomadaires, 10 d'histoire).
   QuetesActives    : "index|type|progression|objectif|etat|xp" — positions 1-3 quotidiennes
                      (graine = jour), 4-8 hebdomadaires (graine = semaine), 9-11 histoire.
+                     Les quêtes (progression, réclamations) et les succès sont conservés d'un drapeau vert à
+                     l'autre dans la même session ; seules les quotidiennes/hebdomadaires changent avec le jour.
   Succes           : 21 entrées "index|etat".
   PasseRecompenses : 100 entrées "type|id" (type : skin, pioche, planeur, spray, emote, banniere,
                      jetons, style).
@@ -120,6 +122,8 @@ PREMIERE_HISTOIRE = len(QUOTIDIENNES) + len(HEBDOMADAIRES) + 1   # 23
 NB_QUOT, NB_HEBDO, NB_HIST = len(QUOTIDIENNES), len(HEBDOMADAIRES), len(HISTOIRE)
 PAS_JOUR = [1, 5, 7, 11]                    # premiers avec 12 → 3 quotidiennes distinctes
 PAS_SEMAINE = [1, 3, 7, 9]                  # premiers avec 10 → 5 hebdomadaires distinctes
+NB_ACTIVES = 3 + 5 + 3                      # positions de QuetesActives (quotidiennes, hebdomadaires, histoire)
+JETONS_MAX = 99999                          # 5 chiffres dans le code de sauvegarde
 
 # Succès : (titre FR, titre EN, description FR, description EN, code de statistique, seuil)
 SUCCES = [
@@ -740,10 +744,20 @@ def construire(P):
         appel("valider equipement"),
         appel("mettre a jour division", 1),
         # jour / semaine, boutique, quêtes
-        setv("jourCourant", floor(jours2000())), setv("semaineCourante", floor(div(V("jourCourant"), 7))),
+        si(non(eq(long_liste("qaIndex"), NB_ACTIVES)), [
+            # premier drapeau de la session : tout construire
+            setv("jourCourant", floor(jours2000())), setv("semaineCourante", floor(div(V("jourCourant"), 7))),
+            vider("qaIndex"), vider("qaDebut"), vider("qaProg"), vider("qaEtat"), vider("QuetesActives"), setv("histProchaine", PREMIERE_HISTOIRE),
+            appel("activer quotidiennes"), appel("activer hebdomadaires"), appel("activer histoire"),
+        ], [
+            # drapeau suivant dans la même session : quêtes, progression et réclamations conservées (comme les
+            # statistiques stat_*, qui ne sont pas remises à zéro) — pas de double réclamation en relançant le projet.
+            # QuetesActives est réécrite depuis les listes locales ; un changement de jour/semaine survenu entre
+            # deux drapeaux est traité par « mettre a jour saison » juste après.
+            vider("QuetesActives"), setv("pos", 0),
+            repeter(NB_ACTIVES, [changev("pos", 1), ajouter_liste("QuetesActives", ""), appel("ecrire quete", V("pos"))]),
+        ]),
         appel("construire boutique"),
-        vider("qaIndex"), vider("qaDebut"), vider("qaProg"), vider("qaEtat"), vider("QuetesActives"), setv("histProchaine", PREMIERE_HISTOIRE),
-        appel("activer quotidiennes"), appel("activer hebdomadaires"), appel("activer histoire"),
         appel("mettre a jour saison"),
         appel("generer code"), setv("codeSale", 0), setv("menu_sale", 1),
     ])
@@ -757,6 +771,8 @@ def construire(P):
             si(gt(long_liste("evtCode"), 0), [diffuser("sys relais")]),
             # bannière différée tant qu'une autre (victoire, défaite, élimination…) est affichée
             si(et(non(eq(V("messageAttente"), "")), eq(V("message"), "")), [setv("message", V("messageAttente")), setv("messageAttente", "")]),
+            # jetons bornés à ce que le code de sauvegarde peut stocker (xp et hype sont bornées à l'écriture)
+            si(gt(V("jetons"), JETONS_MAX), [setv("jetons", JETONS_MAX)]),
             # code de sauvegarde régénéré au plus toutes les 0,5 s (les gains d'XP peuvent être fréquents)
             si(et(eq(V("codeSale"), 1), gt(chrono(), V("prochainCode"))), [appel("generer code"), setv("codeSale", 0), setv("prochainCode", add(chrono(), 0.5))]),
             si(gt(chrono(), V("prochainTick")), [

@@ -6,7 +6,7 @@ fichier à part (le « Royale 3D.sb3 » du dépôt n'est pas touché) :
     python3 outils/demos/sons/integration.py [sortie.sb3]
 
 Vérifie : sprite Sons présent, 28 sons, calque CALQUES['Sons'] unique parmi les sprites, locales son_*,
-aucune globale son_* autre que celles du contrat, taille du .sb3, puis affiche le chemin pour vm_lib.
+aucune globale son_* autre que celles du contrat et son_musiqueLecteur, taille du .sb3, puis affiche le chemin pour vm_lib.
 """
 import os
 import sys
@@ -41,7 +41,7 @@ def main(sortie):
         if any(not n.startswith("son_") for n in locales):
             erreurs.append("locales sans préfixe son_ : %s" % locales)
         globales_son = sorted(v[0] for v in cibles[0]["variables"].values() if v[0].startswith("son_"))
-        if globales_son != ["son_pan", "son_volume"]:
+        if globales_son != ["son_musiqueLecteur", "son_pan", "son_volume"]:
             erreurs.append("globales son_* inattendues : %s" % globales_son)
         print("Sons : %d sons, %d blocs, calque %d, locales %s" % (len(noms), len(s["blocks"]), s["layerOrder"], locales))
     taille = os.path.getsize(sortie)

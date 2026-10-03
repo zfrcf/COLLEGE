@@ -72,7 +72,9 @@ module.exports = async (T, verifier) => {
   T.set('ecran', 'parachute'); T.set('altitude', 50); T.set('hud_glyphes', 0); T.pas(3);
   verifier('parachute : seul l’altimètre (≤ 30 glyphes)', Number(T.g('hud_glyphes')) > 0 && Number(T.g('hud_glyphes')) <= 30, T.g('hud_glyphes'));
   T.set('altitude', 22); T.pas(2);
-  verifier('parachute sous 30 : libellé PLANEUR (glyphes en plus)', Number(T.g('hud_glyphes')) > 12, T.g('hud_glyphes'));
+  verifier('parachute sous 30 : icône de planeur tamponnée en dernier', T.costume('HUD') === 'hud_planeur' && Number(T.g('hud_glyphes')) <= 30, [T.costume('HUD'), T.g('hud_glyphes')]);
+  T.set('altitude', 50); T.pas(2);
+  verifier('parachute au-dessus de 30 : pas d’icône de planeur', T.costume('HUD') !== 'hud_planeur', T.costume('HUD'));
   T.set('ecran', 'prepartie'); T.set('etat', 8); T.set('invulnerable', 1); T.set('phase', 0); T.set('tempsPhase', 12); T.pas(3);
   verifier('pré-partie : HUD dessiné', Number(T.g('hud_glyphes')) > 0, T.g('hud_glyphes'));
   T.set('param_langue', 1); T.pas(2);

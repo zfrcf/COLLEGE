@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 Superpositions visibles en jeu : teinte de tempête, flash de dégâts, arme en vue subjective,
-flash de bouche, viseur / lunette, bannières de message (sprite Message piloté par `message`).
+flash de bouche, viseur / lunette, bannières de message (sprite Message piloté par `message`,
+costumes FR et EN selon `param_langue`, cachées sur les écrans « pause » et « fin »).
 """
 from .dsl import *  # noqa: F401,F403
 from . import contrat as C
@@ -63,14 +64,14 @@ def construire(P):
     W.layer = C.CALQUES["Arme"]
     W.var("objet", 0)
     W.script(quand_drapeau(), [
-        cacher(), taille(70),
+        cacher(), taille(58),
         toujours([
             si(et4(ou(eq(V("etat"), 1), eq(V("etat"), 8)), gt(V("plan"), 0.5), et(en_jeu(), eq(V("superposition"), "")), lt(V("monEmoteFin"), chrono())), [
                 setv("objet", item("Inventaire", V("slotActif"))),
                 si(eq(V("armeNum"), 8), [setv("objet", 8)]),
                 si(lt(V("objet"), 4), [
-                    taille(70), costume(V("objet")),
-                    aller(add(150, mul(V("tirAnim"), 4)), add(-110, mul(V("tirAnim"), 6))),
+                    taille(58), costume(V("objet")),
+                    aller(add(178, mul(V("tirAnim"), 4)), add(-118, mul(V("tirAnim"), 6))),
                     si(gt(V("rechargeFin"), 0), [mettre_y(-175)]),
                 ], [
                     taille(220),
@@ -136,23 +137,55 @@ def construire(P):
         "quete": ("QUÊTE TERMINÉE", "#4ade80", "+XP"),
         "ltm": ("ÉVÉNEMENT LIMITÉ", "#f472b6", "Règles spéciales actives"),
     }
+    textes_en = {
+        "connexion": ("Connecting to the server…", None),
+        "plein": ("SERVER FULL", "Try again in a moment (6 players max)"),
+        "elimine": ("ELIMINATED!", "You can watch the other players"),
+        "aterre": ("KNOCKED DOWN!", "A teammate can revive you"),
+        "reanime": ("REVIVED!", "Stay under cover"),
+        "elimination": ("ELIMINATION!", None),
+        "knock": ("OPPONENT KNOCKED", "Finish them or let them bleed out"),
+        "recharge": ("Reloading…", None),
+        "victoire": ("VICTORY ROYALE!", "#1 of the match"),
+        "defaite": ("MATCH OVER", "See the recap"),
+        "zone": ("THE STORM IS CLOSING", "Get to the circle"),
+        "zonebouge": ("MOVING STORM", "The circle is moving!"),
+        "coffre": ("CHEST OPENED", None),
+        "prepartie": ("WAITING ISLAND", "The bus takes off soon"),
+        "bus": ("JUMP FROM THE BUS!", "Press space to jump"),
+        "atterrissage": ("LANDED", "Find weapons and loot"),
+        "redeploiement": ("REBOOTED", "A teammate brought you back"),
+        "niveau": ("LEVEL UP!", "Reward unlocked"),
+        "quete": ("QUEST COMPLETE", "+XP"),
+        "ltm": ("LIMITED TIME EVENT", "Special rules active"),
+    }
+    assert set(textes_en) == set(textes)
     Msg.costumes = [P.costume("vide", S.svg_vide(), 2, 2)]
     for cle, val in textes.items():
         Msg.costumes.append(P.costume(cle, S.svg_texte(val[0], val[1], 34, "#111827", val[2]), 170, 50))
+        en = textes_en[cle]
+        Msg.costumes.append(P.costume(cle + "_en", S.svg_texte(en[0], val[1], 34, "#111827", en[1]), 170, 50))
     Msg.visible = False
     Msg.layer = C.CALQUES["Message"]
     Msg.var("dernier", "")
     Msg.var("fin", 0)
+    # La bannière (sprite, donc au-dessus du stylo) n'est pas montrée sur les écrans « pause » et « fin », dont les
+    # panneaux de Menus occupent le centre (l'écran de fin annonce déjà la victoire / la défaite) ; le message expire
+    # normalement pendant ce temps. Costumes FR (<message>) et EN (<message>_en) selon param_langue.
+    hors_menu = non(ou(eq(V("ecran"), "pause"), eq(V("ecran"), "fin")))
     Msg.script(quand_drapeau(), [
         aller(0, 60), cacher(), setv("dernier", ""), setv("fin", 0),
         toujours([
             si(non(eq(V("message"), V("dernier"))), [
                 setv("dernier", V("message")),
                 si(eq(V("message"), ""), [costume("vide"), cacher()], [
-                    costume(V("message")), setv("fin", add(chrono(), 3)), montrer(),
+                    si(eq(V("param_langue"), 1), [costume(join(V("message"), "_en"))], [costume(V("message"))]),
+                    setv("fin", add(chrono(), 3)), si(hors_menu, [montrer()]),
                 ]),
                 si(ou(eq(V("message"), "plein"), eq(V("message"), "connexion")), [setv("fin", add(chrono(), 9999))]),
             ]),
-            si(gt(chrono(), V("fin")), [cacher(), setv("message", ""), setv("dernier", "")]),
+            si(gt(chrono(), V("fin")), [cacher(), setv("message", ""), setv("dernier", "")], [
+                si(et(non(eq(V("message"), "")), non(hors_menu)), [cacher()]),
+            ]),
         ]),
     ])

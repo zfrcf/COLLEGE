@@ -124,5 +124,31 @@ module.exports = async (T, verifier) => {
   verifier('REJOUER → matchmaking, enPartie = 1', (T.g('ecran') === 'matchmaking' || Number(T.g('enPartie')) === 1) && Number(T.g('enPartie')) === 1, [T.g('ecran'), T.g('enPartie')]);
   T.set('ecran', 'fin'); T.set('enPartie', 0); T.pas(3); T.clic(80, -145); T.pas(2);
   verifier('Salon depuis la fin → salon', T.g('ecran') === 'salon', T.g('ecran'));
+  // --- signalement (panneau central de Social, x ∈ [−130, 130], y ∈ [−90, 90]) ouvert dans le salon :
+  //     aucun clic de Menus sous le panneau, mais les boutons hors du panneau (onglets) répondent ---
+  T.set('onglet', 'parametres'); T.set('superposition', 'signaler'); T.set('menu_sale', 1); T.pas(3);
+  const ct0 = Number(T.g('param_constructionTurbo'));
+  T.clic(110, 80); T.pas(2);                           // interrupteur « Construction turbo », sous le panneau
+  verifier('salon + signalement : clic sous le panneau central ignoré', Number(T.g('param_constructionTurbo')) === ct0 && T.g('ecran') === 'salon', [T.g('param_constructionTurbo'), ct0]);
+  T.souris(0, 0, false); T.pas(2);
+  verifier('salon + signalement : aucun survol sous le panneau', T.g('menu_survolId') === '', T.g('menu_survolId'));
+  T.clic(-202, 163); T.pas(2);                          // onglet Découvrir, hors du panneau
+  verifier('salon + signalement : clic hors du panneau (onglet) traité', T.g('onglet') === 'accueil', T.g('onglet'));
+  T.set('superposition', ''); T.set('onglet', 'parametres'); T.set('menu_sale', 1); T.pas(3);
+  T.clic(110, 80); T.pas(2);
+  verifier('sans signalement : le même clic bascule Construction turbo', Number(T.g('param_constructionTurbo')) === 1 - ct0, T.g('param_constructionTurbo'));
+  T.clic(110, 80); T.pas(2);
+  // --- signalement ouvert sur l'écran pause : Menus ne dessine qu'un voile, aucun bouton, clics ignorés ---
+  T.set('ecran', 'jeu'); T.set('etat', 1); T.set('enPartie', 1); T.set('superposition', 'signaler'); T.pas(2);   // Social mémorise la superposition
+  T.set('ecran', 'pause'); T.set('ecranPrecedent', 'jeu'); T.pas(3);
+  verifier('pause + signalement : aucun bouton de pause enregistré', T.g('ecran') === 'pause' && boutons().length === 0, [T.g('ecran'), boutons()]);
+  T.clic(0, 52); T.pas(2);                              // position de « Reprendre »
+  verifier('pause + signalement : clic sur « Reprendre » sans effet', T.g('ecran') === 'pause', T.g('ecran'));
+  T.appui('p', 2); T.pas(2);
+  verifier('pause + signalement : touche pause ignorée', T.g('ecran') === 'pause', T.g('ecran'));
+  T.set('superposition', ''); T.pas(3);
+  verifier('signalement fermé : boutons de pause de retour', boutons().includes('reprendre') && boutons().includes('quitter'), boutons());
+  T.clic(0, 52); T.pas(2);
+  verifier('Reprendre → retour au jeu', T.g('ecran') === 'jeu', T.g('ecran'));
   verifier('aucune erreur VM', T.erreurs.length === 0, T.erreurs.slice(0, 2));
 };

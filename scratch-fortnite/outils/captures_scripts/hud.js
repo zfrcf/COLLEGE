@@ -10,8 +10,11 @@ module.exports = async (A) => {
   const now = await A.evaluer((vm, V) => Math.floor(Number(V('maintenant').value)));
   const p2 = paquet({ x: 15.5, y: 7.2, dir: 270, pv: 75, bouclier: 20, battement: now, etat: 1, nom: '1809111500000000', niveau: 12, skin: 3, equipe: 2 });
   const p3 = paquet({ x: 18.2, y: 6.5, dir: 270, pv: 60, bouclier: 35, battement: now, etat: 1, nom: '2605040000000000', niveau: 4, skin: 5, equipe: 1 });
+  // les deux paquets à une image d'écart : Reseau ne décode de façon sûre qu'un nouveau paquet par image
+  await A.evaluer((vm, V, L, arg) => { V('☁ J2').value = arg; }, p2);
+  await A.attendre(150);
   await A.evaluer((vm, V, L, arg) => {
-    V('☁ J2').value = arg[0]; V('☁ J3').value = arg[1];
+    V('☁ J3').value = arg[1];
     const st = vm.runtime.getTargetForStage();
     const Lv = n => Object.values(st.variables).find(v => v.name === n);
     const t = vm.runtime.ioDevices.clock.projectTimer();
@@ -75,4 +78,49 @@ module.exports = async (A) => {
   await A.evaluer((vm, V) => { V('altitude').value = 22; });
   await A.attendre(300);
   await A.capture('hud_8b_parachute_planeur');
+
+  // (9) pré-partie invulnérable, anglais, HUD à 80 %, mode construction (pierre), pioche équipée, sous-titre,
+  //     coéquipier mort (carte ramassée) + coéquipier en l'air, soin en cours (Joueur gelé)
+  const now2 = await A.evaluer((vm, V) => Math.floor(Number(V('maintenant').value)));
+  const p2b = paquet({ x: 15.5, y: 7.2, dir: 270, pv: 0, battement: now2, etat: 2, nom: '1809111500000000', niveau: 12, equipe: 1 });
+  const p3b = paquet({ x: 18.2, y: 6.5, dir: 270, pv: 100, bouclier: 50, battement: now2, etat: 1, nom: '2605040000000000', niveau: 4, equipe: 1, altitude: 40 });
+  await A.evaluer((vm, V, L, arg) => {
+    V('☁ J2').value = arg[0]; V('☁ J3').value = arg[1];
+    const t = vm.runtime.ioDevices.clock.projectTimer();
+    const st = vm.runtime.getTargetForStage(); const Lv = n => Object.values(st.variables).find(v => v.name === n);
+    Lv('CartesRamassees').value = [2];
+    V('ecran').value = 'prepartie'; V('etat').value = 8; V('connecte').value = 0; V('monSlot').value = 1; V('invulnerable').value = 1;
+    V('phase').value = 0; V('tempsPhase').value = 12; V('altitude').value = 0; V('horsZone').value = 0;
+    V('param_langue').value = 1; V('param_tailleHUD').value = 80; V('param_sousTitres').value = 1;
+    V('modeConstruction').value = 1; V('materiauActif').value = 2; V('armeNum').value = 8; V('slotActif').value = 1;
+    V('utilisationFin').value = t + 60; V('utilisationDebut').value = t - 2; V('utilisationObjet').value = 5;
+    V('❤ PV').value = 100; V('surbouclier').value = 0; V('endurance').value = 100;
+  }, [p2b, p3b]);
+  // sous-titre armé directement (diffuser « evt tir » déclenche la synthèse sonore de Sons : plusieurs secondes ici)
+  await A.evaluer((vm) => { const H = vm.runtime.getSpriteTargetByName('HUD'); H.lookupVariableByNameAndType('sousTitre').value = '[Gunshot]'; H.lookupVariableByNameAndType('sousTitreFin').value = vm.runtime.ioDevices.clock.projectTimer() + 60; });
+  await A.attendre(400);
+  await A.capture('hud_9_prepartie_en_80_construction');
+
+  // (10) mort en Duo, redéployé par zed ; fusil à pompe tenu avec munitions infinies (LTM 4) ; HUD 100 %
+  const now3 = await A.evaluer((vm, V) => Math.floor(Number(V('maintenant').value)));   // battement < 15 s
+  const p3c = paquet({ x: 18.2, y: 6.5, dir: 270, pv: 100, battement: now3, etat: 1, nom: '2605040000000000', niveau: 4, equipe: 1, reanime: 1 });
+  await A.evaluer((vm, V, L, arg) => {
+    V('☁ J3').value = arg;
+    V('ecran').value = 'jeu'; V('etat').value = 2; V('invulnerable').value = 0; V('phase').value = 3; V('tempsAvantZone').value = 42;
+    V('param_langue').value = 0; V('param_tailleHUD').value = 100; V('param_sousTitres').value = 0;
+    V('modeConstruction').value = 0; V('materiauActif').value = 1; V('armeNum').value = 2; V('slotActif').value = 2; V('ltm').value = 4;
+    V('utilisationFin').value = 0; V('mode').value = 2; V('monEquipe').value = 1; V('❤ PV').value = 0;
+  }, p3c);
+  await A.attendre(400);
+  await A.capture('hud_10_mort_duo_infini');
+
+  // (11) consommable tenu (bandages ×5) + réanimation de zed en cours + soin : les deux barres du centre ; HUD 120 %
+  await A.evaluer((vm, V) => {
+    const t = vm.runtime.ioDevices.clock.projectTimer();
+    V('etat').value = 1; V('ltm').value = 0; V('armeNum').value = 4; V('slotActif').value = 4; V('❤ PV').value = 55; V('param_tailleHUD').value = 120;
+    V('interactionType').value = 2; V('interactionCible').value = 3; V('interactionDebut').value = t - 1; V('interactionDuree').value = 60;
+    V('utilisationFin').value = t + 60; V('utilisationDebut').value = t - 1; V('utilisationObjet').value = 4;
+  });
+  await A.attendre(400);
+  await A.capture('hud_11_consommable_reanimation_120');
 };

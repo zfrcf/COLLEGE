@@ -22,6 +22,13 @@ module.exports = async (A) => {
   await A.attendre(1200);
   await A.evaluer((vm, V) => { V('message').value = ''; });   // retire la bannière « QUÊTE TERMINÉE » du sprite Message
   await A.attendre(700);
+  // dernier rafraîchissement du débogage juste avant la capture (sinon la barre sociale dessinée par Social après un
+  // redessin de Menus peut recouvrir la colonne de droite jusqu'au prochain rafraîchissement, 0,5 s plus tard)
+  const rafraichir = () => A.evaluer((vm, V) => {
+    V('menu_sale').value = 0;
+    vm.runtime.getSpriteTargetByName('Systemes').lookupVariableByNameAndType('prochainDebug', '').value = 0;
+  });
+  await rafraichir(); await A.attendre(120);
   await A.capture('systemes_debug');
   // version anglaise, après réclamation de la quête terminée (position 9) et achat du 1er objet de la boutique
   await A.evaluer((vm, V) => { V('param_langue').value = 1; V('jetons').value = 3000; });
@@ -29,5 +36,6 @@ module.exports = async (A) => {
   await diffuser('boutique acheter', 1); await A.attendre(600);
   await A.evaluer((vm, V) => { V('message').value = ''; });
   await A.attendre(700);
+  await rafraichir(); await A.attendre(120);
   await A.capture('systemes_debug_en');
 };
