@@ -3,7 +3,9 @@
 Un **jeu de tir 3D multijoueur** entièrement en Scratch 3, synchronisé par **variables cloud**,
 qui reprend les systèmes de Fortnite : salon et onglets (passe de combat, boutique, casier, quêtes,
 carrière, paramètres), matchmaking, île d'attente, bus de combat, parachute, zone de tempête en
-5 phases, construction, coffres, à terre / réanimation / redéploiement, HUD complet, chat rapide,
+5 phases, construction, coffres, 6 armes à 5 raretés (pistolet, fusil à pompe, sniper, fusil d'assaut,
+pistolet-mitrailleur, lance-grenades à dégâts de zone), largages de ravitaillement, lama à butin,
+à terre / réanimation / redéploiement, HUD complet, chat rapide,
 émotes, pings, spectateur, XP, saisons, succès… Le détail des 128 éléments demandés et leur statut
 (fait / adapté / impossible sur Scratch) est dans [`docs/CORRESPONDANCE.md`](docs/CORRESPONDANCE.md).
 
@@ -66,7 +68,8 @@ Munitions infinies, Gravité faible.
 ## Comment ça marche
 
 - **Moteur 3D** : raycasting DDA au stylo sur une grille 32×32 (9 lieux nommés), colonnes de rendu variables,
-  panneaux 3D pour joueurs (10 tenues, poses à terre / émote), coffres, balises, marqueurs, sprays, mur de tempête, minicarte.
+  panneaux 3D pour joueurs (10 tenues, poses à terre / émote), coffres, largages (caisse sous ballon qui descend), lama,
+  balises, marqueurs, sprays, mur de tempête, minicarte.
 - **Réseau** : `☁ J1…☁ J6` (un paquet par joueur : position, direction, PV, boucliers, battement de cœur,
   dernier tir, état, pseudo, équipe, émote, ping, chat, code de salon, altitude, réanimation, cosmétiques, statistiques),
   `☁ Partie` (début de manche, mode, événement, graine : la zone et le bus sont déterministes pour tous),

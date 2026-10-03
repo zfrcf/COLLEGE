@@ -85,7 +85,7 @@ def _svg_halo_perso():
     """Halo radial violet (160 × 160) : centre transparent, lueur en anneau qui s'évanouit vers l'extérieur."""
     return S.svg(160, 160, '<defs><radialGradient id="h" cx="0.5" cy="0.5" r="0.5">'
                            '<stop offset="0" stop-color="#a78bfa" stop-opacity="0"/><stop offset="0.44" stop-color="#a78bfa" stop-opacity="0"/>'
-                           '<stop offset="0.6" stop-color="#c4b5fd" stop-opacity="0.5"/><stop offset="0.78" stop-color="#a78bfa" stop-opacity="0.18"/>'
+                           '<stop offset="0.6" stop-color="#c4b5fd" stop-opacity="0.7"/><stop offset="0.78" stop-color="#a78bfa" stop-opacity="0.28"/>'
                            '<stop offset="1" stop-color="#a78bfa" stop-opacity="0"/></radialGradient></defs>'
                            '<circle cx="80" cy="80" r="80" fill="url(#h)"/>')
 
@@ -370,7 +370,7 @@ def construire(P):
                 si(eq(V("role"), "haloPerso"), [
                     si(accueil, [
                         costume("spc_halo_perso"), aller(PERSO_X, PERSO_Y),
-                        taille(add(94, mul(10, pulse))), effet("GHOST", sub(80, mul(30, pulse))), montrer(),
+                        taille(add(94, mul(10, pulse))), effet("GHOST", sub(70, mul(35, pulse))), montrer(),
                     ], [cacher()]),
                 ]),
             ], [cacher()]),

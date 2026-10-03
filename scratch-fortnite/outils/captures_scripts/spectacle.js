@@ -4,7 +4,8 @@
 module.exports = async (A) => {
   const set = (obj) => A.evaluer((vm, V, L, arg) => { for (const k in arg) V(k).value = arg[k]; }, obj);
   const get = (nom) => A.evaluer((vm, V, L, arg) => V(arg).value, nom);
-  const diffuser = (nom) => A.evaluer((vm, V, L, arg) => vm.runtime.startHats('event_whenbroadcastreceived', { BROADCAST_OPTION: arg.toUpperCase() }), nom);
+  // ne pas renvoyer les fils créés par startHats : Playwright tenterait de sérialiser tout le runtime (≈ 15 s de blocage)
+  const diffuser = (nom) => A.evaluer((vm, V, L, arg) => { vm.runtime.startHats('event_whenbroadcastreceived', { BROADCAST_OPTION: arg.toUpperCase() }); return 0; }, nom);
   const chrono = () => A.evaluer((vm) => vm.runtime.ioDevices.clock.projectTimer());
   const mesurer = async (nom) => {           // opérations stylo (lignes + tampons) du sprite Spectacle par image
     const r = await A.evaluer(async (vm) => {

@@ -64,7 +64,7 @@ module.exports = async (A) => {
   // 7. tempête : éclair forcé (phase 5), zone devant
   const t0 = await chrono();
   await scene('rendu_07_tempete_eclair', { T: 200, px: 16.5, py: 4.5, dir: 90, phase: 5, zoneX: 16.5, zoneY: 10.5, zoneR: 4.2,
-    m3d_eclairFin: t0 + 60, m3d_eclairX: -70, m3d_prochainEclair: 1e9, attente: 500 });
+    m3d_eclairFin: t0 + 60, m3d_eclairX: 40, m3d_prochainEclair: 1e9, attente: 500 });
   // 8. flash blanc du ciel (1 image normalement ; forcé ici)
   const t1 = await chrono();
   await scene('rendu_08_flash_ciel', { m3d_eclairFin: 0, m3d_flashFin: t1 + 60, attente: 400 });
@@ -86,8 +86,12 @@ module.exports = async (A) => {
   await pousser({ pv: 0, etat: 2, tueur: 1, morts: 1 });
   const cloneAnime = () => A.evaluer((vm) => { const c = vm.runtime.targets.find(t => t.getName() === 'Ennemi' && !t.isOriginal && Object.values(t.variables).find(v => v.name === 'monIndex').value == 2); return c ? Number(Object.values(c.variables).find(v => v.name === 'mortAnim').value) : -1; });
   for (let i = 0; i < 40 && (await cloneAnime()) <= 0; i++) await A.attendre(25);
-  await A.attendre(60);
+  await A.attendre(150);
+  // le chronomètre du projet est mis en pause le temps de la capture (l'animation ne dure que 0,6 s)
+  await A.evaluer((vm) => vm.runtime.ioDevices.clock.pause());
+  await A.attendre(200);
   await A.capture('rendu_12_mort_disparition');
+  await A.evaluer((vm) => vm.runtime.ioDevices.clock.resume());
   await A.attendre(700);
   await pousser();
   // 13. rechargement (arme descendue, inclinée)
