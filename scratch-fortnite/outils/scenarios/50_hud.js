@@ -24,9 +24,9 @@ module.exports = async (T, verifier) => {
   T.pas(3);
   const fin = Math.round((chrono() + 60) * 10);
   const Lset = (nom, vals) => { const v = Object.values(T.stage.variables).find(x => x.name === nom); v.value = vals; };
-  Lset('Inventaire', [1, 2, 3, 4, 6]); Lset('Quantites', [12, 5, 3, 5, 3]);
+  Lset('Inventaire', [1, 2, 3, 7, 9]); Lset('Quantites', [12, 5, 3, 5, 3]); Lset('Raretes', [1, 3, 5, 1, 2]);
   Lset('Journal', ['riko a éliminé zed (Sniper)', 'Tu as mis à terre riko']); Lset('JournalFin', [chrono() + 60, chrono() + 60]);
-  Lset('Notifications', ['+ Fusil à pompe', '📍 Place Brique']); Lset('NotificationsFin', [chrono() + 60, chrono() + 60]);
+  Lset('Notifications', ['+ Fusil à pompe (Rare)', '📍 Place Brique']); Lset('NotificationsFin', [chrono() + 60, chrono() + 60]);
   Lset('DegatsAffiches', ['045' + '2100' + '2010' + String(fin).padStart(6, '0') + '0', '095' + '1950' + '2030' + String(fin).padStart(6, '0') + '1']);
   Lset('Bruits', ['045' + String(fin).padStart(6, '0') + '1', '300' + String(fin).padStart(6, '0') + '2']);
   Lset('Pings', ['3' + '1650' + '0900' + '999999']);

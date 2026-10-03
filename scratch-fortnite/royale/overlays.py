@@ -29,7 +29,8 @@ def construire(P):
     T.layer = C.CALQUES["Tempête"]
     T.script(quand_drapeau(), [
         aller(0, 0), cacher(),
-        toujours([si(et(eq(V("horsZone"), 1), est_ecran_rendu()), [effet("GHOST", 72), montrer()], [cacher()])]),
+        # teinte violette qui pulse légèrement hors zone (le moteur assombrit aussi ciel et murs et ajoute une vignette)
+        toujours([si(et(eq(V("horsZone"), 1), est_ecran_rendu()), [effet("GHOST", add(72, mul(5, sin(mul(chrono(), 160))))), montrer()], [cacher()])]),
     ])
 
     D = Cible(P, "Dégâts")
@@ -51,11 +52,15 @@ def construire(P):
     ])
 
     W = Cible(P, "Arme")
+    # armes : costumes 1..6 dans l'ordre des codes d'objets (sélection par numéro)
     W.costumes = [P.costume("pistolet", S.svg_arme("pistolet"), 140, 75),
                   P.costume("pompe", S.svg_arme("pompe"), 140, 75),
-                  P.costume("sniper", S.svg_arme("sniper"), 140, 75)]
-    # consommables et pioche en vue subjective : icônes agrandies si disponibles
-    for code, nom in [(4, "bandages"), (5, "medikit"), (6, "minipotion"), (7, "potion"), (8, "pioche")]:
+                  P.costume("sniper", S.svg_arme("sniper"), 140, 75),
+                  P.costume("assaut", S.svg_arme("assaut"), 140, 75),
+                  P.costume("pm", S.svg_arme("pm"), 140, 75),
+                  P.costume("lance", S.svg_arme("lance"), 140, 75)]
+    # consommables (7..10) et pioche (11) en vue subjective : icônes agrandies si disponibles
+    for code, nom in [(7, "bandages"), (8, "medikit"), (9, "minipotion"), (10, "potion"), (11, "pioche")]:
         try:
             W.costumes.append(P.costume(nom, UI.icone_objet(code), 24, 24))
         except Exception:
@@ -63,21 +68,36 @@ def construire(P):
     W.visible = False
     W.layer = C.CALQUES["Arme"]
     W.var("objet", 0)
+    for v in ["dist0", "bob", "ph", "ax", "ay", "p", "ta"]:    # balancement de marche, recul, rechargement
+        W.var(v, 0)
     W.script(quand_drapeau(), [
-        cacher(), taille(58),
+        cacher(), taille(58), setv("dist0", 0), setv("bob", 0), setv("ph", 0),
         toujours([
             si(et4(ou(eq(V("etat"), 1), eq(V("etat"), 8)), gt(V("plan"), 0.5), et(en_jeu(), eq(V("superposition"), "")), lt(V("monEmoteFin"), chrono())), [
                 setv("objet", item("Inventaire", V("slotActif"))),
-                si(eq(V("armeNum"), 8), [setv("objet", 8)]),
-                si(lt(V("objet"), 4), [
+                si(eq(V("armeNum"), C.PIOCHE), [setv("objet", C.PIOCHE)]),
+                si(lt(V("objet"), C.CONSO_MIN), [
                     taille(58), costume(V("objet")),
-                    aller(add(178, mul(V("tirAnim"), 4)), add(-118, mul(V("tirAnim"), 6))),
-                    si(gt(V("rechargeFin"), 0), [mettre_y(-175)]),
+                    # balancement de marche : la distance parcourue augmente → oscillation (amortie à l'arrêt)
+                    si(gt(V("stat_distance"), add(V("dist0"), 0.005)), [setv("bob", minimum(add(V("bob"), 0.2), 1))], [setv("bob", mul(V("bob"), 0.8))]),
+                    setv("dist0", V("stat_distance")),
+                    setv("ph", mod(add(V("ph"), mul(V("bob"), 13)), 360)),
+                    # recul visuel (tirAnim 4 → 0) et secousse d'écran du moteur
+                    setv("ta", minimum(V("tirAnim"), 4)),
+                    setv("ax", add(add(178, mul(sin(V("ph")), mul(8, V("bob")))), add(mul(V("ta"), 5), mul(V("m3d_secX"), 0.5)))),
+                    setv("ay", add(add(-118, mul(absv(cos(V("ph"))), mul(-6, V("bob")))), add(mul(V("ta"), 7), mul(V("m3d_secY"), 0.5)))),
+                    si(gt(V("rechargeFin"), 0), [
+                        # rechargement : l'arme descend puis remonte (demi-sinus sur la durée), légèrement inclinée
+                        setv("p", div(sub(chrono(), V("rechargeDebut")), maximum(sub(V("rechargeFin"), V("rechargeDebut")), 0.1))),
+                        si(lt(V("p"), 0), [setv("p", 0)]), si(gt(V("p"), 1), [setv("p", 1)]),
+                        changev("ay", mul(-80, sin(mul(V("p"), 180)))), pointer(add(90, mul(35, sin(mul(V("p"), 180))))),
+                    ], [pointer(sub(90, mul(V("ta"), 4)))]),
+                    aller(V("ax"), V("ay")),
                 ], [
-                    taille(220),
-                    si(eq(V("objet"), 4), [costume("bandages")]), si(eq(V("objet"), 5), [costume("medikit")]),
-                    si(eq(V("objet"), 6), [costume("minipotion")]), si(eq(V("objet"), 7), [costume("potion")]),
-                    si(eq(V("objet"), 8), [costume("pioche")]),
+                    taille(220), pointer(90),
+                    si(eq(V("objet"), 7), [costume("bandages")]), si(eq(V("objet"), 8), [costume("medikit")]),
+                    si(eq(V("objet"), 9), [costume("minipotion")]), si(eq(V("objet"), 10), [costume("potion")]),
+                    si(eq(V("objet"), C.PIOCHE), [costume("pioche")]),
                     aller(add(160, mul(V("tirAnim"), -8)), add(-120, mul(V("tirAnim"), 10))),
                     si(gt(V("utilisationFin"), chrono()), [aller(60, add(-120, mul(sin(mul(chrono(), 600)), 10)))]),
                 ]),
@@ -92,7 +112,12 @@ def construire(P):
     F.layer = C.CALQUES["Flash"]
     F.script(quand_drapeau(), [
         cacher(), aller(40, -45), taille(120),
-        toujours([si(et4(gt(V("tirAnim"), 2), gt(V("plan"), 0.5), lt(V("armeNum"), 4), eq(V("superposition"), "")), [montrer()], [cacher()])]),
+        toujours([si(et4(gt(V("tirAnim"), 2), gt(V("plan"), 0.5), lt(V("armeNum"), C.CONSO_MIN), eq(V("superposition"), "")), [
+            # flash de bouche plus grand pour le pompe, le sniper et le lance-grenades ; orientation aléatoire
+            taille(120), si(eq(V("armeNum"), 2), [taille(200)]), si(eq(V("armeNum"), 3), [taille(165)]),
+            si(eq(V("armeNum"), 6), [taille(180)]),
+            pointer(hasard(45, 135)), aller(add(40, mul(V("m3d_secX"), 0.5)), add(-45, mul(V("m3d_secY"), 0.5))), montrer(),
+        ], [cacher()])]),
     ])
 
     H = Cible(P, "Viseur")
@@ -109,6 +134,7 @@ def construire(P):
                     taille(V("param_tailleHUD")),
                     si(gt(V("toucheFin"), chrono()), [costume("touche")], [costume("viseur")]),
                 ]),
+                aller(mul(V("m3d_secX"), 0.3), mul(V("m3d_secY"), 0.3)),      # suit un peu la secousse d'écran
                 montrer(),
             ], [cacher()]),
         ]),
@@ -136,6 +162,7 @@ def construire(P):
         "niveau": ("NIVEAU SUPÉRIEUR !", "#fbbf24", "Récompense débloquée"),
         "quete": ("QUÊTE TERMINÉE", "#4ade80", "+XP"),
         "ltm": ("ÉVÉNEMENT LIMITÉ", "#f472b6", "Règles spéciales actives"),
+        "largage": ("LARGAGE EN COURS", "#60a5fa", "Butin légendaire dans la prochaine zone"),
     }
     textes_en = {
         "connexion": ("Connecting to the server…", None),
@@ -158,6 +185,7 @@ def construire(P):
         "niveau": ("LEVEL UP!", "Reward unlocked"),
         "quete": ("QUEST COMPLETE", "+XP"),
         "ltm": ("LIMITED TIME EVENT", "Special rules active"),
+        "largage": ("SUPPLY DROP INCOMING", "Legendary loot in the next zone"),
     }
     assert set(textes_en) == set(textes)
     Msg.costumes = [P.costume("vide", S.svg_vide(), 2, 2)]

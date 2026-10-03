@@ -4,7 +4,8 @@ BANQUE DE SONS SYNTHÉTISÉE et sprite « Sons » du projet Royale 3D.
 
 Scratch ne fournit aucun son ici : tous les effets et les musiques sont fabriqués
 en Python pur (sans numpy) sous forme de WAV PCM 16 bits mono, puis attachés au
-sprite « Sons ». La liste exacte des noms est `contrat.SONS` (28 sons).
+sprite « Sons ». La liste exacte des noms est `contrat.SONS` (28 sons) + SONS_SUPPLEMENTAIRES (5 sons
+du spectacle, voir plus bas).
 
 Synthèse
 --------
@@ -45,6 +46,14 @@ Sprite « Sons » (`installer(P)`)
   de "son stop musique" qui supprime le clone (ce qui arrête le son joué « jusqu'au
   bout » sans toucher aux effets). "son stop tout" arrête tout (effets compris) ;
   la musique reprend alors d'elle-même si l'on est toujours sur un écran musical.
+- Musique DYNAMIQUE en jeu (bloc « musique jeu », chaque image hors des écrans de menu) :
+  rien par défaut ; `musique_combat` (clone « combat ») quand un ennemi vivant est à moins de
+  DISTANCE_COMBAT cases (listes E_x/E_y/E_actif/E_etat/E_equipe et px/py), maintenue
+  HYSTERESIS_COMBAT s après le dernier contact ; `musique_tempete` (clone « tempete ») dès que
+  horsZone = 1 (prioritaire). Globale privée `son_musiqueJeu` = 0 / 1 / 2 ; "son stop musique jeu"
+  supprime le clone courant. Seulement sur l'écran « jeu » avec etat 1 ou 3.
+- Sons supplémentaires du spectacle (SONS_SUPPLEMENTAIRES : explosion, serie, largage,
+  musique_combat, musique_tempete) : même mécanisme que contrat.SONS ; à ajouter au contrat.
 
 Ajout local au DSL : `volume_actuel()` (reporter `sound_volume`) pour éviter de
 régler le volume (un rendu d'image perdu) quand il est déjà bon.
@@ -56,17 +65,26 @@ import sys
 from array import array
 
 from . import contrat
-from .dsl import (Cible, Node, Var, attendre, cloner_moi, diffuser, div, effet_son, eq, et, mul, non, ou,
-                  quand_clone, quand_drapeau, quand_message, setv, si, son, son_attendre, stop_sons, supprimer_clone,
-                  toujours, volume)
+from .dsl import (Cible, Node, Var, add, appel, attendre, changev, chrono, cloner_moi, diffuser, div, effet_son, eq,
+                  et, gt, item, lt, mul, non, ou, ou3, quand_clone, quand_drapeau, quand_message, repeter, setv, si,
+                  son, son_attendre, stop_sons, sub, supprimer_clone, toujours, volume)
 
 TAU = 2.0 * math.pi
 TAUX = 22050              # effets courts
 TAUX_NAPPES = 11025       # nappes et musiques (taille divisée par deux)
-NAPPES = ["tempete", "bus", "parachute", "musique_salon", "musique_fin"]
-VOIX = ["victoire", "defaite", "niveau", "elimination", "notification", "compte"]
+NAPPES = ["tempete", "bus", "parachute", "musique_salon", "musique_fin", "musique_combat", "musique_tempete", "explosion"]
+VOIX = ["victoire", "defaite", "niveau", "elimination", "notification", "compte", "serie"]
 ECRANS_MUSIQUE = ["connexion", "salon", "matchmaking", "chargement"]
 PARAMETRE_VOLUME = {"musique": "param_volumeMusique", "voix": "param_volumeVoix", "effets": "param_volumeEffets"}
+# Sons SUPPLÉMENTAIRES du spectacle (module mod_spectacle) : le sprite Sons les possède et répond à « son <nom> »
+# comme pour contrat.SONS ; à ajouter à contrat.SONS (ils disparaissent alors d'eux-mêmes de cette liste).
+SONS_SUPPLEMENTAIRES = ["explosion", "serie", "largage", "musique_combat", "musique_tempete"]
+TOUS_LES_SONS = list(contrat.SONS) + [n for n in SONS_SUPPLEMENTAIRES if n not in contrat.SONS]
+# Musique dynamique en jeu (lecteur dans le sprite Sons) : globale privée son_musiqueJeu = 0 rien, 1 combat
+# (un ennemi vivant à moins de DISTANCE_COMBAT cases, maintenu HYSTERESIS_COMBAT s), 2 tempête (horsZone = 1).
+DISTANCE_COMBAT = 12
+HYSTERESIS_COMBAT = 6
+BPM_COMBAT = 128
 
 
 def categorie(nom):
@@ -740,6 +758,136 @@ def _musique_fin(rate):
     return _finir(buf, rate, 0.7, 0.002, 0.05)
 
 
+def _explosion(rate):
+    """Explosion (feu d'artifice) : détonation grave et ronde, 0,8 s, avec un léger crépitement."""
+    n = _n(0.8, rate)
+    boum = _mult(_passe_bas(_bruit(n, 51), _glisse(n, rate, 900, 120, 0.5), rate), _env_perc(n, rate, 0.003, 0.16))
+    sub = _mult(_sinus(n, rate, _glisse(n, rate, 95, 30, 0.4)), _env_perc(n, rate, 0.004, 0.22))
+    r = random.Random(52)
+    crep = [0.0] * n
+    for i in range(_n(0.08, rate), n):
+        if r.random() < 0.012 * (1.0 - i / n):
+            crep[i] = r.uniform(-1.0, 1.0)
+    out = [x + 1.2 * y for x, y in zip(boum, sub)]
+    _ajouter(out, _passe_bas(crep, 2500, rate), 0, 0.5)
+    return _finir(_doux(out, 1.6), rate, 0.8, 0.002, 0.04)
+
+
+def _serie(rate):
+    """Série d'éliminations : jingle montant de quatre notes brillantes (mi majeur) + éclat final, 0,6 s."""
+    n = _n(0.6, rate)
+    out = [0.0] * n
+    for t, nom, d in ((0.0, "E5", 0.14), (0.09, "G#5", 0.14), (0.18, "B5", 0.16), (0.27, "E6", 0.33)):
+        _ajouter(out, _cloche(_n(d, rate), rate, _hz(nom), 0.11 if d < 0.3 else 0.15, 0.9), _n(t, rate), 0.65)
+    ns = _n(0.3, rate)
+    sc = _mult(_passe_haut(_bruit(ns, 53), 5000, rate), _env_perc(ns, rate, 0.01, 0.08))
+    _ajouter(out, sc, _n(0.27, rate), 0.08)
+    return _finir(out, rate, 0.8, 0.001, 0.02)
+
+
+def _largage(rate):
+    """Largage repéré : sifflement descendant (bruit passe-bande qui chute) sur 1,2 s."""
+    n = _n(1.2, rate)
+    v = _passe_bande(_bruit(n, 54), _glisse(n, rate, 2600, 380, 1.1), 2.5, rate)
+    v = _mult(v, [0.85 + 0.15 * math.sin(TAU * 9 * i / rate) for i in range(n)])
+    v = _mult(v, _env_adsr(n, rate, 0.08, 0.0, 1.0, 0.3))
+    sif = _mult(_sinus(n, rate, _glisse(n, rate, 2400, 420, 1.1)), _env_adsr(n, rate, 0.1, 0.0, 1.0, 0.3))
+    out = [3.0 * x + 0.25 * y for x, y in zip(v, sif)]
+    return _finir(out, rate, 0.7, 0.005, 0.03)
+
+
+def _kick(n, rate):
+    """Grosse caisse synthétique : sinus qui chute + clic."""
+    v = _mult(_sinus(n, rate, _glisse(n, rate, 150, 42, 0.09)), _env_perc(n, rate, 0.001, 0.09))
+    nc = _n(0.006, rate)
+    _ajouter(v, _mult(_bruit(nc, 61), _env_perc(nc, rate, 0.0003, 0.002)), 0, 0.5)
+    return _doux(v, 1.4)
+
+
+def _caisse(n, rate, graine=62):
+    """Caisse claire : bruit filtré + corps bref."""
+    b = _mult(_passe_bande(_bruit(n, graine), 1800, 0.8, rate), _env_perc(n, rate, 0.001, 0.05))
+    c = _mult(_sinus(n, rate, _glisse(n, rate, 240, 170, 0.04)), _env_perc(n, rate, 0.001, 0.03))
+    return [2.5 * x + 0.6 * y for x, y in zip(b, c)]
+
+
+def _charley(n, rate, graine=63):
+    return _mult(_passe_haut(_bruit(n, graine), 6000, rate), _env_perc(n, rate, 0.0005, 0.012))
+
+
+def duree_musique_combat():
+    """Durée exacte de la boucle de combat : 4 mesures à 4 temps à 128 BPM (7,5 s)."""
+    return 4 * 4 * 60.0 / BPM_COMBAT
+
+
+def _musique_combat(rate):
+    """Boucle de combat (tendue, 128 BPM, 4 mesures) : grosse caisse à chaque temps, caisse claire sur 2 et 4,
+    charley en croches, basse en doubles-croches sur mi mineur (mi - mi - do - ré), nappe tendue (quinte + 2de mineure).
+    La queue des notes qui dépasse la fin est repliée au début : la boucle est continue."""
+    temps = 60.0 / BPM_COMBAT
+    mesure = 4 * temps
+    N = _n(4 * mesure, rate)
+    queue = _n(0.5, rate)
+    buf = [0.0] * (N + queue)
+    basses = ("E2", "E2", "C2", "D2")
+    nappes = (("E3", "B3", "F4"), ("E3", "B3", "F4"), ("C3", "G3", "C#4"), ("D3", "A3", "D#4"))
+    nk, ns, nh = _n(0.25, rate), _n(0.18, rate), _n(0.06, rate)
+    kick, caisse, charley = _kick(nk, rate), _caisse(ns, rate), _charley(nh, rate)
+    charley2 = _charley(nh, rate, 64)
+    nb = _n(temps * 0.22, rate)
+    for m in range(4):
+        t0 = m * mesure
+        for nom in nappes[m]:
+            _ajouter(buf, _nappe(_n(mesure, rate), rate, _hz(nom), 0.04, 0.1, 0.006), _n(t0, rate), 0.09)
+        f = _hz(basses[m])
+        for k in range(16):
+            t = t0 + k * temps / 4
+            # motif de basse : fondamentale, octave sur les contretemps 3 et 7, silences sur 11 et 15
+            if k in (3, 7):
+                _ajouter(buf, _basse(nb, rate, f * 2, 0.08), _n(t, rate), 0.3)
+            elif k not in (11, 15):
+                _ajouter(buf, _basse(nb, rate, f, 0.1), _n(t, rate), 0.42)
+            if k % 2 == 0:
+                _ajouter(buf, charley if k % 4 == 0 else charley2, _n(t, rate), 0.16 if k % 4 == 0 else 0.1)
+        for k in range(4):
+            t = t0 + k * temps
+            _ajouter(buf, kick, _n(t, rate), 0.8)
+            if k in (1, 3):
+                _ajouter(buf, caisse, _n(t, rate), 0.45)
+        # roulement de caisse claire à la fin de la 4e mesure
+        if m == 3:
+            for k in range(4):
+                _ajouter(buf, caisse, _n(t0 + 3 * temps + k * temps / 4, rate), 0.25 + 0.08 * k)
+    for i in range(queue):
+        buf[i] += buf[N + i]
+    return _finir(_doux(buf[:N], 1.2), rate, 0.7, 0.002, 0.002)
+
+
+def _musique_tempete(rate):
+    """Nappe de tempête (8 s, bouclable) : bourdon grave désaccordé, triton lent, souffle filtré qui ondule et
+    battements sourds irréguliers — inquiétant."""
+    N = _n(8.0, rate)
+    queue = _n(0.8, rate)
+    buf = [0.0] * (N + queue)
+    for nom, g, des in (("A1", 0.5, 0.006), ("E2", 0.3, 0.004), ("D#3", 0.16, 0.009)):
+        f = _hz(nom)
+        a = _additif(N, rate, f * (1 + des), ((1, 1.0), (2, 0.5), (3, 0.3), (4, 0.15)))
+        b = _additif(N, rate, f * (1 - des), ((1, 1.0), (2, 0.4), (3, 0.25)), phase=0.7)
+        v = _passe_bas([p + q for p, q in zip(a, b)], 600, rate)
+        lent = [0.7 + 0.3 * math.sin(TAU * 0.11 * i / rate + des * 100) for i in range(N)]
+        _ajouter(buf, _mult(v, lent), 0, g)
+    fc = [320 + 220 * math.sin(TAU * 0.17 * i / rate) for i in range(N)]
+    vent = _passe_bas(_bruit(N, 71), fc, rate)
+    _ajouter(buf, vent, 0, 0.5)
+    nb = _n(0.5, rate)
+    for t, g in ((0.6, 1.0), (2.9, 0.7), (3.4, 0.5), (5.8, 0.9), (7.3, 0.6)):
+        thud = _mult(_sinus(nb, rate, _glisse(nb, rate, 70, 32, 0.3)), _env_perc(nb, rate, 0.01, 0.14))
+        _ajouter(buf, thud, _n(t, rate), 0.7 * g)
+    for i in range(queue):
+        buf[i] += buf[N + i]
+    return _finir(buf[:N], rate, 0.7, 0.002, 0.002)
+
+
 GENERATEURS = {
     "tir_pistolet": _tir_pistolet, "tir_pompe": _tir_pompe, "tir_sniper": _tir_sniper, "touche": _touche,
     "elimination": _elimination, "degats": _degats, "coffre": _coffre, "construction": _construction,
@@ -747,9 +895,11 @@ GENERATEURS = {
     "defaite": _defaite, "tempete": _tempete, "saut": _saut, "bus": _bus, "parachute": _parachute, "emote": _emote,
     "notification": _notification, "compte": _compte, "niveau": _niveau, "soin": _soin, "bouclier": _bouclier,
     "aterre": _aterre, "reanimation": _reanimation, "musique_salon": _musique_salon, "musique_fin": _musique_fin,
+    "explosion": _explosion, "serie": _serie, "largage": _largage,
+    "musique_combat": _musique_combat, "musique_tempete": _musique_tempete,
 }
-assert set(GENERATEURS) == set(contrat.SONS), "GENERATEURS et contrat.SONS divergent : %s" % (
-    set(GENERATEURS) ^ set(contrat.SONS))
+assert set(GENERATEURS) == set(TOUS_LES_SONS), "GENERATEURS et contrat.SONS (+ SONS_SUPPLEMENTAIRES) divergent : %s" % (
+    set(GENERATEURS) ^ set(TOUS_LES_SONS))
 
 _CACHE = {}
 
@@ -764,9 +914,9 @@ def generer(nom, rate=None):
 
 
 def fabriquer_sons():
-    """{nom: (octets_wav, rate, nombre_d_echantillons)} pour tous les sons de contrat.SONS."""
+    """{nom: (octets_wav, rate, nombre_d_echantillons)} pour tous les sons (TOUS_LES_SONS)."""
     banque = {}
-    for nom in contrat.SONS:
+    for nom in TOUS_LES_SONS:
         ech, rate = generer(nom)
         banque[nom] = (wav(ech, rate), rate, len(ech))
     return banque
@@ -777,7 +927,7 @@ def infos(banque=None):
     (pic_inter : pic inter-échantillons estimé, voir _pic_inter)."""
     banque = banque or fabriquer_sons()
     out = {}
-    for nom in contrat.SONS:
+    for nom in TOUS_LES_SONS:
         ech, rate = generer(nom, banque[nom][1])
         bord = max(1, int(rate * 0.001))
         pic = max(abs(v) for v in ech)
@@ -806,22 +956,55 @@ def _cloner_avec_role(role):
 
 
 def installer(P, banque=None):
-    """Crée le sprite « Sons » (invisible, calque CALQUES['Sons']) avec les 28 sons et ses scripts. Renvoie la Cible."""
+    """Crée le sprite « Sons » (invisible, calque CALQUES['Sons']) avec les 28 sons du contrat + les 5 sons du
+    spectacle et ses scripts. Renvoie la Cible."""
     from .svg import svg_vide
     S = Cible(P, "Sons")
     S.visible = False
     S.layer = contrat.CALQUES["Sons"]
     S.costumes = [P.costume("vide", svg_vide(), 2, 2)]
     banque = banque if banque is not None else fabriquer_sons()
-    for nom in contrat.SONS:
+    for nom in TOUS_LES_SONS:
         octets, rate, n = banque[nom]
         S.son_wav(nom, octets, rate, n)
     for nom, val in (("son_estClone", 0), ("son_musiqueActive", 0), ("son_role", ""),
-                     ("son_niveauClone", 100), ("son_panClone", 0), ("son_dernierPan", 0)):
+                     ("son_niveauClone", 100), ("son_panClone", 0), ("son_dernierPan", 0),
+                     ("son_combatFin", 0), ("son_voulu", 0), ("son_k", 0), ("son_dx", 0), ("son_dy", 0)):
         S.var(nom, val)
     P.stage.var("son_musiqueLecteur", 0)      # globale privée : le clone musique y écrit 1 à sa naissance
+    P.stage.var("son_musiqueJeu", 0)          # globale privée : musique dynamique en cours (0 rien, 1 combat, 2 tempête)
     V = Var
-    init = [setv("son_estClone", 0), setv("son_musiqueActive", 0), setv("son_role", ""), setv("son_dernierPan", 0)]
+    init = [setv("son_estClone", 0), setv("son_musiqueActive", 0), setv("son_role", ""), setv("son_dernierPan", 0),
+            setv("son_combatFin", 0), setv("son_voulu", 0), setv("son_musiqueJeu", 0)]
+    # --- musique dynamique en jeu : combat quand un ennemi vivant est proche (hystérésis), tempête hors zone -----
+    # Appelé chaque image hors des écrans de menu. son_voulu = 0/1/2 ; au changement, le clone courant est supprimé
+    # (« son stop musique jeu ») et un clone « combat » / « tempete » joue sa boucle au volume param_volumeMusique.
+    ennemi = et(et(non(eq(V("son_k"), V("monSlot"))), eq(item("E_actif", V("son_k")), 1)),
+                et(ou(eq(item("E_etat", V("son_k")), 1), eq(item("E_etat", V("son_k")), 3)),
+                   ou(eq(V("monEquipe"), 0), non(eq(item("E_equipe", V("son_k")), V("monEquipe"))))))
+    S.proc("musique jeu", [], [
+        setv("son_voulu", 0),
+        si(et(eq(V("ecran"), "jeu"), ou(eq(V("etat"), 1), eq(V("etat"), 3))), [
+            si(eq(V("horsZone"), 1), [setv("son_voulu", 2)], [
+                setv("son_k", 1),
+                repeter(contrat.NB_JOUEURS, [
+                    si(ennemi, [
+                        setv("son_dx", sub(item("E_x", V("son_k")), V("px"))), setv("son_dy", sub(item("E_y", V("son_k")), V("py"))),
+                        si(lt(add(mul(V("son_dx"), V("son_dx")), mul(V("son_dy"), V("son_dy"))), DISTANCE_COMBAT ** 2),
+                           [setv("son_combatFin", add(chrono(), HYSTERESIS_COMBAT))]),
+                    ]),
+                    changev("son_k", 1),
+                ]),
+                si(gt(V("son_combatFin"), chrono()), [setv("son_voulu", 1)]),
+            ]),
+        ], [setv("son_combatFin", 0)]),
+        si(non(eq(V("son_voulu"), V("son_musiqueJeu"))), [
+            si(gt(V("son_musiqueJeu"), 0), [diffuser("son stop musique jeu")]),
+            setv("son_musiqueJeu", V("son_voulu")),
+            si(eq(V("son_voulu"), 1), _cloner_avec_role("combat")),
+            si(eq(V("son_voulu"), 2), _cloner_avec_role("tempete")),
+        ]),
+    ])
 
     # --- initialisation et surveillance de l'écran pour la musique ---------------
     S.script(quand_drapeau(), list(init))
@@ -834,15 +1017,17 @@ def installer(P, banque=None):
         volume(100), effet_son("PAN", 0),
         toujours([
             si(_sur_ecran_musique(),
-               [si(eq(V("son_musiqueActive"), 0),
+               [si(gt(V("son_musiqueJeu"), 0), [setv("son_musiqueJeu", 0), setv("son_combatFin", 0), diffuser("son stop musique jeu")]),
+                si(eq(V("son_musiqueActive"), 0),
                    [setv("son_musiqueActive", 1), setv("son_musiqueLecteur", 0)] + _cloner_avec_role("musique"),
                    [si(eq(V("son_musiqueLecteur"), 0),
                        [attendre(0.3), si(eq(V("son_musiqueLecteur"), 0), [setv("son_musiqueActive", 0)])])])],
-               [si(eq(V("son_musiqueActive"), 1), [setv("son_musiqueActive", 0), diffuser("son stop musique")])]),
+               [si(eq(V("son_musiqueActive"), 1), [setv("son_musiqueActive", 0), diffuser("son stop musique")]),
+                appel("musique jeu")]),
         ])])])
 
     # --- un script par son ---------------------------------------------------------
-    for nom in contrat.SONS:
+    for nom in TOUS_LES_SONS:
         niveau = div(mul(V(parametre_volume(nom)), V("son_volume")), 100)
         if categorie(nom) == "effets":
             corps = [
@@ -862,24 +1047,29 @@ def installer(P, banque=None):
     # --- clones : musique en boucle ou jingle joué jusqu'au bout ---------------------
     # Un clone naît à volume 100 mais avec le PAN de l'original (état sonore copié) ; son_dernierPan,
     # copié lui aussi, dit quel PAN il a hérité : on ne règle (une image perdue) que ce qui change.
-    jingles = [si(eq(V("son_role"), nom), [son_attendre(nom)]) for nom in contrat.SONS if categorie(nom) != "effets"]
+    jingles = [si(eq(V("son_role"), nom), [son_attendre(nom)]) for nom in TOUS_LES_SONS if categorie(nom) != "effets"]
+    boucles = {"musique": "musique_salon", "combat": "musique_combat", "tempete": "musique_tempete"}
+    est_boucle = ou3(eq(V("son_role"), "musique"), eq(V("son_role"), "combat"), eq(V("son_role"), "tempete"))
     S.script(quand_clone(), [
-        si(eq(V("son_role"), "musique"),
-           [setv("son_musiqueLecteur", 1),                                   # « je suis né » (voir « demarrer »)
-            si(non(eq(V("son_dernierPan"), 0)), [effet_son("PAN", 0)]),      # musique toujours au centre
-            volume(V("param_volumeMusique")), toujours([son_attendre("musique_salon")])],
+        si(est_boucle,
+           [si(eq(V("son_role"), "musique"), [setv("son_musiqueLecteur", 1)]),   # « je suis né » (voir « demarrer »)
+            si(non(eq(V("son_dernierPan"), 0)), [effet_son("PAN", 0)]),           # musique toujours au centre
+            volume(V("param_volumeMusique"))]
+           + [si(eq(V("son_role"), role), [toujours([son_attendre(piste)])]) for role, piste in boucles.items()],
            [si(non(eq(volume_actuel(), V("son_niveauClone"))), [volume(V("son_niveauClone"))]),
             si(non(eq(V("son_panClone"), V("son_dernierPan"))), [effet_son("PAN", V("son_panClone"))])]
            + jingles + [supprimer_clone()])])
     # volume de la musique suivi en temps réel (le réglage s'applique au son en cours)
-    S.script(quand_clone(), [si(eq(V("son_role"), "musique"),
-                                [toujours([volume(V("param_volumeMusique")), attendre(0.1)])])])
+    S.script(quand_clone(), [si(est_boucle, [toujours([volume(V("param_volumeMusique")), attendre(0.1)])])])
 
     # --- arrêts ----------------------------------------------------------------------
     S.script(quand_message("son stop musique"),
              [si(et(eq(V("son_estClone"), 1), eq(V("son_role"), "musique")), [supprimer_clone()])])
+    S.script(quand_message("son stop musique jeu"),
+             [si(et(eq(V("son_estClone"), 1), ou(eq(V("son_role"), "combat"), eq(V("son_role"), "tempete"))), [supprimer_clone()])])
     S.script(quand_message("son stop tout"),
-             [si(eq(V("son_estClone"), 1), [supprimer_clone()], [stop_sons(), setv("son_musiqueActive", 0)])])
+             [si(eq(V("son_estClone"), 1), [supprimer_clone()],
+                [stop_sons(), setv("son_musiqueActive", 0), setv("son_musiqueJeu", 0), setv("son_combatFin", 0)])])
     return S
 
 

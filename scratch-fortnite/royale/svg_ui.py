@@ -8,7 +8,8 @@ SVG complète (racine <svg> avec viewBox, via royale.svg.svg) ; tout est déterm
 et rapide (pas d'aléatoire, pas de fichier).
 
 API (tailles en px) :
-  icone_objet(code) 48×48            contrat.OBJETS 1..8
+  icone_objet(code) 48×48            contrat.OBJETS 1..11 (6 armes, 4 consommables, pioche)
+  largage() 60×90  largage_pose() 60×34  lama_3d() 60×70   panneaux 3D de mod_largages (largage, largage posé, lama)
   icone_munitions(type) 32×32        "legeres" | "cartouches" | "lourdes"
   icone_materiau(code) 32×32         1 bois, 2 pierre, 3 métal
   personnage(skin, pose, style=0)    skin 1..10 (NOMS_SKINS), pose "debout" 60×100 | "aterre" 100×60 |
@@ -406,13 +407,99 @@ def _pioche_defaut():
         + _cercle(33, 17, 2.2, "#475569", CONTOUR, 1.2)
 
 
+def _assaut():
+    return (
+        _poly([(2, 22), (10, 20), (10, 30), (4, 33)], "#3f3f46", sw=2.5)                   # crosse
+        + _rect(9, 19, 20, 10, "#3f3f46", 2, sw=2.5)                                     # boîtier
+        + _rect(28, 21, 12, 6, "#6b4f2a", 1.5, sw=2.2)                                   # garde-main (bois)
+        + _rect(39, 22, 7, 4, "#52525b", 1, sw=2)                                        # canon
+        + _rect(14, 13, 12, 5, "#27272a", 2, sw=2)                                       # poignée de transport / viseur
+        + _poly([(17, 28), (24, 28), (23, 39), (16, 39)], "#27272a", sw=2.2)             # chargeur courbe
+        + _poly([(10, 28), (15, 28), (13, 35), (8, 35)], "#1f2937", sw=2.2)              # poignée
+        + _rect(11, 21, 15, 2, "#71717a", 1, None)                                       # reflet
+    )
+
+
+def _pm():
+    return (
+        _rect(4, 20, 9, 5, "#52525b", 1.5, sw=2.2)                                       # crosse repliée
+        + _rect(12, 17, 22, 11, "#3f3f46", 3, sw=2.5)                                    # corps compact
+        + _rect(33, 20, 10, 5, "#52525b", 1.5, sw=2.2)                                   # canon court
+        + _rect(42, 19, 4, 7, "#27272a", 1, sw=2)                                        # bouche
+        + _rect(20, 27, 6, 15, "#1a1a1a", 1.5, sw=2.2)                                   # long chargeur droit
+        + _poly([(13, 27), (19, 27), (17, 34), (11, 34)], "#5a4632", sw=2.2)             # poignée
+        + _rect(14, 19, 18, 2, "#71717a", 1, None)                                       # reflet
+        + _cercle(39, 22.5, 1.5, "#111827", None)
+    )
+
+
+def _lance():
+    return (
+        _poly([(2, 22), (11, 19), (11, 32), (4, 35)], "#4a3b2a", sw=2.5)                  # crosse épaisse
+        + _rect(10, 16, 30, 14, "#c2410c", 5, sw=2.5)                                    # gros tube orange
+        + _rect(38, 18, 8, 10, "#7c2d12", 3, sw=2.2)                                     # bouche évasée
+        + _cercle(21, 23, 6, "#9a3412", CONTOUR, 2.2)                                    # barillet
+        + _cercle(21, 23, 2.2, "#111827", None)
+        + _rect(17, 30, 7, 9, "#27272a", 1.5, sw=2.2)                                    # poignée
+        + _rect(30, 30, 5, 7, "#27272a", 1.5, sw=2)                                      # poignée avant
+        + _rect(13, 18, 22, 2, "#fb923c", 1, None, opacity=0.85)                         # reflet
+    )
+
+
 def icone_objet(code):
-    """Icône 48×48 d'un objet d'inventaire (contrat.OBJETS 1..8)."""
+    """Icône 48×48 d'un objet d'inventaire (contrat.OBJETS 1..11 : 1 pistolet, 2 fusil à pompe, 3 sniper, 4 fusil
+    d'assaut, 5 pistolet-mitrailleur, 6 lance-grenades, 7 bandages, 8 médikit, 9 mini-potion, 10 potion, 11 pioche)."""
     code = _entier(code, "objet")
-    dessins = {1: _pistolet, 2: _pompe, 3: _sniper, 4: _bandages, 5: _medikit, 6: _minipotion, 7: _potion, 8: _pioche_defaut}
+    dessins = {1: _pistolet, 2: _pompe, 3: _sniper, 4: _assaut, 5: _pm, 6: _lance, 7: _bandages, 8: _medikit,
+               9: _minipotion, 10: _potion, 11: _pioche_defaut}
     if code not in dessins:
         raise KeyError("objet inconnu : %r (codes %s)" % (code, sorted(dessins)))
     return svg(48, 48, dessins[code]())
+
+
+def largage():
+    """Largage de ravitaillement 60×90 : caisse bleue suspendue sous un ballon (panneau 3D de mod_largages)."""
+    return svg(60, 90, (
+        _ellipse(30, 24, 22, 20, "#60a5fa", CONTOUR, 2.5)                                # ballon
+        + _ellipse(22, 17, 6, 9, "#dbeafe", None, opacity=0.55, transform="rotate(-20 22 17)")   # reflet
+        + _poly([(26, 43), (34, 43), (30, 49)], "#1d4ed8", CONTOUR, 2)                   # bec du ballon
+        + _ligne(14, 50, 24, 62, "#e5e7eb", 1.5) + _ligne(46, 50, 36, 62, "#e5e7eb", 1.5)   # cordes
+        + _ligne(30, 49, 30, 62, "#e5e7eb", 1.5)
+        + _rect(10, 60, 40, 28, "#2563eb", 4, CONTOUR, 2.5)                              # caisse
+        + _rect(10, 70, 40, 7, "#fbbf24", 0, None)                                       # bande jaune
+        + _rect(27, 60, 6, 28, "#1e40af", 0, None)                                       # sangle
+        + _poly(_etoile_pts(20, 73.5, 3.2, 1.4), "#ffffff", None, opacity=0.9)
+        + _rect(10, 60, 40, 28, "none", 4, CONTOUR, 2.5)
+    ))
+
+
+def largage_pose():
+    """Largage posé 60×34 : la caisse seule (ballon dégonflé), même échelle que largage()."""
+    return svg(60, 34, (
+        _chemin("M20 2 q10 -4 20 0 q-6 4 -10 4 q-6 0 -10 -4 z", "#60a5fa", CONTOUR, 2)       # ballon dégonflé
+        + _rect(10, 5, 40, 28, "#2563eb", 4, CONTOUR, 2.5)
+        + _rect(10, 15, 40, 7, "#fbbf24", 0, None)
+        + _rect(27, 5, 6, 28, "#1e40af", 0, None)
+        + _poly(_etoile_pts(20, 18.5, 3.2, 1.4), "#ffffff", None, opacity=0.9)
+        + _rect(10, 5, 40, 28, "none", 4, CONTOUR, 2.5)
+    ))
+
+
+def lama_3d():
+    """Lama à butin 60×70 violet (panneau 3D de mod_largages) : corps piñata rayé, cou, tête et pattes."""
+    s = ""
+    for x in (14, 22, 34, 42):
+        s += _rect(x, 50, 6, 18, "#a21caf", 2, CONTOUR, 2)                               # pattes
+    s += _poly([(12, 36), (4, 30), (12, 43)], "#c026d3", CONTOUR, 2)                      # queue
+    s += _rect(10, 30, 40, 22, "#d946ef", 7, CONTOUR, 2.5)                                # corps
+    s += _rect(13, 35, 34, 4, "#fde047", 0, None) + _rect(13, 41, 34, 4, "#22d3ee", 0, None) + _rect(13, 46, 34, 3, "#4ade80", 0, None)
+    s += _rect(40, 12, 11, 24, "#d946ef", 4, CONTOUR, 2.5)                                # cou
+    s += _poly([(44, 7), (46, 1), (49, 7)], "#d946ef", CONTOUR, 2) + _poly([(52, 7), (54, 1), (57, 7)], "#d946ef", CONTOUR, 2)   # oreilles
+    s += _rect(40, 5, 20, 13, "#d946ef", 4, CONTOUR, 2.5)                                 # tête
+    s += _rect(52, 8, 8, 9, "#f0abfc", 3, None)                                           # museau
+    s += _cercle(47, 10.5, 1.8, NOIR, None)                                                # œil
+    s += _rect(42, 24, 8, 3, "#fde047", 0, None) + _rect(42, 29, 8, 3, "#22d3ee", 0, None)   # rayures du cou
+    return svg(60, 70, s)
 
 
 # ---------------------------------------------------------------------------

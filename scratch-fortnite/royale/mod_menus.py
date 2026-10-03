@@ -693,6 +693,10 @@ class Menus:
             setv("txt_ombre", 1),
             self.bouton("rejouer", -150, -162, -10, -128, tr("REJOUER", "PLAY AGAIN"), 16, JAUNE, "noir"),
             self.bouton("salon", 10, -162, 150, -128, tr("Salon", "Lobby"), 16, BOUTON_SOMBRE),
+            # compte à rebours de la prochaine manche (tempsPhase = DUREE_RESULTATS − temps écoulé, calculé par Partie)
+            si(eq(V("finManche"), 1), [
+                self.txt(join(tr("Prochaine manche dans ", "Next round in "), join(V("tempsPhase"), " s")), 0, -176, 11, "gris", 1),
+            ]),
         ]
 
     # ======================================================================

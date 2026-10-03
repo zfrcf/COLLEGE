@@ -93,7 +93,7 @@ def construire_reseau(P):
         "x": rnd(mul(V("nx"), 100)), "y": rnd(mul(V("ny"), 100)),
         "dir": mod(rnd(V("dir")), 360), "pv": V("❤ PV"), "bouclier": V("🛡 Bouclier"),
         "battement": V("maintenant"), "cible": V("cible"), "seq": V("seq"), "degats": V("degats"),
-        "tueur": V("tueur"), "morts": V("morts"), "arme": V("armeNum"), "etat": V("etat"),
+        "tueur": V("tueur"), "morts": V("morts"), "arme": V("armeTenue"), "etat": V("etat"),
         "elims": mod(V("💀 Éliminations"), 100), "niveau": V("niveau"), "equipe": V("monEquipe"),
         "emote": V("emote"), "emoteSeq": V("emoteSeq"), "pingX": V("pingX"), "pingY": V("pingY"),
         "pingSeq": V("pingSeq"), "chat": V("chat"), "chatSeq": V("chatSeq"), "salon": V("codeSalon"),
@@ -194,8 +194,9 @@ def construire_reseau(P):
             si(lt(V("dist"), 24), [
                 ajouter_liste("Bruits", join(C.rembourrer(V("_angle"), 3), join(C.rembourrer(mul(add(chrono(), 1.2), 10), 6), 1))),
                 si(gt(long_liste("Bruits"), 8), [supprimer("Bruits", 1)]),
-                si(eq(item("E_arme", n), 1), son_spatial("tir_pistolet", 24)),
-                si(eq(item("E_arme", n), 2), son_spatial("tir_pompe", 24)),
+                # sons par arme (1..6) : pistolet, PM et fusil d'assaut partagent le son de pistolet, le lance-grenades celui du pompe
+                si(ou3(eq(item("E_arme", n), 1), eq(item("E_arme", n), 4), eq(item("E_arme", n), 5)), son_spatial("tir_pistolet", 24)),
+                si(ou(eq(item("E_arme", n), 2), eq(item("E_arme", n), 6)), son_spatial("tir_pompe", 24)),
                 si(eq(item("E_arme", n), 3), son_spatial("tir_sniper", 30)),
             ]),
         ]),
@@ -210,8 +211,11 @@ def construire_reseau(P):
                     setv("evt_cible", n), diffuser("evt elimination"),
                     setv("message", "elimination"), setv("son_pan", 0), setv("son_volume", 100), diffuser("son elimination"),
                 ], [
-                    journal(joins(nom_de(item("E_tueur", n)), tr_txt(" a éliminé ", " eliminated "), nom_de(n),
-                                  " (", item("ObjetNoms", item("E_arme", item("E_tueur", n))), ")")),
+                    # arme du tueur (E_arme = 0 si consommable / pioche / mains nues : pas de parenthèse)
+                    si(gt(item("E_arme", item("E_tueur", n)), 0),
+                       journal(joins(nom_de(item("E_tueur", n)), tr_txt(" a éliminé ", " eliminated "), nom_de(n),
+                                     " (", item("ObjetNoms", item("E_arme", item("E_tueur", n))), ")")),
+                       journal(joins(nom_de(item("E_tueur", n)), tr_txt(" a éliminé ", " eliminated "), nom_de(n)))),
                 ]),
             ]),
         ]),
@@ -508,8 +512,32 @@ def construire_joueur(P):
               "idx", "velY", "prochainTir", "prochaineConstruction", "prochainDegatZone", "prochaineRecolte",
               "dernierDegatsT", "sprint", "v", "cod", "q", "entree", "source", "arme", "a", "construireRelache",
               "editionDebut", "dernierX", "dernierY", "dernierT", "prochainLieu", "redeploiementProgres",
-              "materiauRelache", "tirRelache", "slotPrecedent", "tolerance", "mx", "my", "pioches", "t", "c"]:
+              "materiauRelache", "tirRelache", "slotPrecedent", "tolerance", "mx", "my", "pioches", "t", "c",
+              "rar", "impactX", "impactY", "prochainEnvoi", "mult", "ni"]:
         J.var(v, 0)
+    # lance-grenades : cibles touchées en attente d'envoi (entrées « k ddd » : emplacement, dégâts), une toutes les 0,15 s
+    J.liste("fileTirs", [])
+
+    RESERVE_BONUS = {"legeres": 24, "cartouches": 10, "lourdes": 5, "moyennes": 30, "roquettes": 2}   # arme déjà équipée
+
+    def par_munitions(arme_expr, action):
+        """Blocs : selon le type de munitions de l'arme `arme_expr` (liste ArmeMunitions), action(variable de réserve)."""
+        return [si(eq(item("ArmeMunitions", arme_expr), i + 1), action("munitions_" + t)) for i, t in enumerate(C.TYPES_MUNITIONS)]
+
+    def est_arme(expr):
+        return et(gt(expr, 0), lt(expr, C.ARME_MAX + 1))
+
+    def est_consommable(expr):
+        return et(gt(expr, C.ARME_MAX), lt(expr, C.PIOCHE))
+
+    def nom_rarete(rar):
+        return item("RareteNoms", add(rar, mul(len(C.RARETES), V("param_langue"))))
+
+    def plafonner(var, maxi):
+        return si(gt(V(var), maxi), [setv(var, maxi)])
+
+    def lama_present():
+        return et(gt(V("lama_x"), 0), non(contient("LamasPris", 1)))
 
     def notification(texte):
         return [ajouter_liste("Notifications", texte), ajouter_liste("NotificationsFin", add(chrono(), 4)),
@@ -552,9 +580,12 @@ def construire_joueur(P):
         si(eq(V("ltm"), 2), [remplacer("Inventaire", 1, 3), remplacer("Quantites", 1, C.ARMES[3][4])]),
         remplacer("Inventaire", 2, 0), remplacer("Inventaire", 3, 0), remplacer("Inventaire", 4, 0), remplacer("Inventaire", 5, 0),
         remplacer("Quantites", 2, 0), remplacer("Quantites", 3, 0), remplacer("Quantites", 4, 0), remplacer("Quantites", 5, 0),
+    ] + [remplacer("Raretes", k, 1) for k in range(1, 6)] + [
         setv("munitions_legeres", 24), setv("munitions_cartouches", 10), setv("munitions_lourdes", 3),
+        setv("munitions_moyennes", 30), setv("munitions_roquettes", 0),
         setv("mat_bois", 0), setv("mat_pierre", 0), setv("mat_metal", 0), setv("materiauActif", 1),
-        setv("slotActif", 1), setv("armeNum", item("Inventaire", 1)), setv("rechargeFin", 0), setv("utilisationFin", 0),
+        setv("slotActif", 1), setv("armeNum", item("Inventaire", 1)), setv("armeTenue", item("Inventaire", 1)),
+        setv("rechargeFin", 0), setv("utilisationFin", 0), vider("fileTirs"),
         setv("interactionType", 0), setv("reanime", 0), setv("surbouclier", 0), setv("endurance", 100),
     ])
     J.proc("choisir slot", [("s", "n")], [
@@ -565,62 +596,75 @@ def construire_joueur(P):
         setv("pioches", 0),
     ])
     J.proc("mettre a jour affichage", [], [
-        si(eq(V("pioches"), 1), [setv("armeNum", 8)], [setv("armeNum", item("Inventaire", V("slotActif")))]),
+        si(eq(V("pioches"), 1), [setv("armeNum", C.PIOCHE)], [setv("armeNum", item("Inventaire", V("slotActif")))]),
+        # champ « arme » du paquet (1 chiffre) : seulement les armes 1..6
+        si(est_arme(V("armeNum")), [setv("armeTenue", V("armeNum"))], [setv("armeTenue", 0)]),
         si(gt(V("armeNum"), 0), [setv("🎯 Arme", item("ObjetNoms", V("armeNum")))], [setv("🎯 Arme", tr_txt("Mains nues", "Unarmed"))]),
         setv("🔫 Munitions", item("Quantites", V("slotActif"))),
         setv("🧱 Matériaux", add(V("mat_bois"), add(V("mat_pierre"), V("mat_metal")))),
     ])
-    # ramasser un objet (code, quantité) : arme → case vide ou réserve de munitions ; consommable → empile
-    J.proc("ramasser", [("code", "n"), ("quantite", "n")], [
-        setv("ok", 0),
-        si(lt(A("code"), 4), [
-            # déjà équipé → munitions en réserve
-            setv("k", 1),
-            repeter(5, [si(eq(item("Inventaire", V("k")), A("code")), [setv("ok", 1)]), changev("k", 1)]),
-            si(eq(V("ok"), 1), [
-                si(eq(A("code"), 1), [changev("munitions_legeres", 24)]),
-                si(eq(A("code"), 2), [changev("munitions_cartouches", 10)]),
-                si(eq(A("code"), 3), [changev("munitions_lourdes", 5)]),
-                notification(join("+ ", tr_txt("munitions", "ammo"))),
-            ], [
-                setv("k", 1), setv("n", 0),
+    # ramasser un objet (code, quantité, rareté 1..5) : arme → case vide, ou amélioration de rareté si déjà équipée (sinon
+    # réserve de munitions) ; consommable → empile (rareté fixe RARETE_CONSOMMABLE). Notification « + Objet (Rareté) ».
+    def chercher_case_libre():
+        return [setv("k", 1), setv("n", 0),
                 repeter(5, [si(et(eq(V("n"), 0), eq(item("Inventaire", V("k")), 0)), [setv("n", V("k"))]), changev("k", 1)]),
-                si(eq(V("n"), 0), [setv("n", V("slotActif"))]),
-                remplacer("Inventaire", V("n"), A("code")), remplacer("Quantites", V("n"), A("quantite")),
-                notification(join("+ ", item("ObjetNoms", A("code")))),
+                si(eq(V("n"), 0), [setv("n", V("slotActif"))])]
+
+    J.proc("ramasser", [("code", "n"), ("quantite", "n"), ("rarete", "n")], [
+        setv("ok", 0), setv("rar", rnd(A("rarete"))),
+        si(lt(V("rar"), 1), [setv("rar", 1)]), si(gt(V("rar"), len(C.RARETES)), [setv("rar", len(C.RARETES))]),
+        si(lt(A("code"), C.CONSO_MIN), [
+            # déjà équipée ? (n = case)
+            setv("k", 1), setv("n", 0),
+            repeter(5, [si(eq(item("Inventaire", V("k")), A("code")), [setv("ok", 1), setv("n", V("k"))]), changev("k", 1)]),
+            si(eq(V("ok"), 1), [
+                si(gt(V("rar"), item("Raretes", V("n"))), [
+                    remplacer("Raretes", V("n"), V("rar")),
+                    notification(joins("+ ", item("ObjetNoms", A("code")), " (", nom_rarete(V("rar")), ")")),
+                ], par_munitions(A("code"), lambda var: [changev(var, RESERVE_BONUS[var[len("munitions_"):]])]) + [
+                    notification(join("+ ", tr_txt("munitions", "ammo"))),
+                ]),
+            ], chercher_case_libre() + [
+                remplacer("Inventaire", V("n"), A("code")), remplacer("Quantites", V("n"), A("quantite")), remplacer("Raretes", V("n"), V("rar")),
+                notification(joins("+ ", item("ObjetNoms", A("code")), " (", nom_rarete(V("rar")), ")")),
             ]),
         ], [
+            # consommable : rareté fixe
+            setv("rar", 1),
+        ] + [si(eq(A("code"), code), [setv("rar", r)]) for code, r in C.RARETE_CONSOMMABLE.items() if r != 1] + [
             setv("k", 1),
             repeter(5, [
                 si(et(eq(V("ok"), 0), eq(item("Inventaire", V("k")), A("code"))), [
                     setv("ok", 1),
                     remplacer("Quantites", V("k"), minimum(add(item("Quantites", V("k")), A("quantite")),
-                                                          item("MaxConsommable", sub(A("code"), 3)))),
+                                                          item("MaxConsommable", sub(A("code"), C.ARME_MAX)))),
                 ]),
                 changev("k", 1),
             ]),
-            si(eq(V("ok"), 0), [
-                setv("k", 1), setv("n", 0),
-                repeter(5, [si(et(eq(V("n"), 0), eq(item("Inventaire", V("k")), 0)), [setv("n", V("k"))]), changev("k", 1)]),
-                si(eq(V("n"), 0), [setv("n", V("slotActif"))]),
-                remplacer("Inventaire", V("n"), A("code")), remplacer("Quantites", V("n"), A("quantite")),
+            si(eq(V("ok"), 0), chercher_case_libre() + [
+                remplacer("Inventaire", V("n"), A("code")), remplacer("Quantites", V("n"), A("quantite")), remplacer("Raretes", V("n"), V("rar")),
             ]),
             notification(joins("+", A("quantite"), " ", item("ObjetNoms", A("code")))),
         ]),
         appel("mettre a jour affichage"),
     ])
-    # coffre n : butin déterministe (n, graine) + matériaux
+    # coffre n : butin déterministe (n, graine) parmi 8 tirages, rareté déterministe (commune 40 %, peu commune 30 %,
+    # rare 20 %, épique 10 %) + matériaux
     J.proc("ouvrir coffre", [("n", "n")], [
         ajouter_liste("CoffresPris", A("n")),
-        setv("k", mod(add(mul(A("n"), 7), mul(V("graine"), 3)), 6)),
-        si(eq(V("k"), 0), [appel("ramasser", 2, 5), changev("munitions_cartouches", 10)]),
-        si(eq(V("k"), 1), [appel("ramasser", 3, 3), changev("munitions_lourdes", 6)]),
-        si(eq(V("k"), 2), [appel("ramasser", 5, 1), appel("ramasser", 4, 5)]),
-        si(eq(V("k"), 3), [appel("ramasser", 7, 1), appel("ramasser", 6, 3)]),
-        si(eq(V("k"), 4), [changev("munitions_legeres", 24), appel("ramasser", 2, 5)]),
-        si(eq(V("k"), 5), [appel("ramasser", 3, 3), appel("ramasser", 7, 1)]),
-        si(eq(V("ltm"), 1), [appel("ramasser", 2, 5), changev("munitions_cartouches", 10)]),
-        si(eq(V("ltm"), 2), [appel("ramasser", 3, 3), changev("munitions_lourdes", 6)]),
+        setv("q", mod(add(mul(A("n"), 5), mul(V("graine"), 11)), 10)),
+        setv("rar", 1), si(gt(V("q"), 3), [setv("rar", 2)]), si(gt(V("q"), 6), [setv("rar", 3)]), si(gt(V("q"), 8), [setv("rar", 4)]),
+        setv("k", mod(add(mul(A("n"), 7), mul(V("graine"), 3)), 8)),
+        si(eq(V("k"), 0), [appel("ramasser", 2, 5, V("rar")), changev("munitions_cartouches", 10)]),
+        si(eq(V("k"), 1), [appel("ramasser", 3, 3, V("rar")), changev("munitions_lourdes", 6)]),
+        si(eq(V("k"), 2), [appel("ramasser", 8, 1, 1), appel("ramasser", 7, 5, 1)]),
+        si(eq(V("k"), 3), [appel("ramasser", 10, 1, 1), appel("ramasser", 9, 3, 1)]),
+        si(eq(V("k"), 4), [appel("ramasser", 4, 30, V("rar")), changev("munitions_moyennes", 30)]),
+        si(eq(V("k"), 5), [appel("ramasser", 5, 25, V("rar")), changev("munitions_legeres", 24)]),
+        si(eq(V("k"), 6), [appel("ramasser", 6, 4, V("rar")), changev("munitions_roquettes", 4)]),
+        si(eq(V("k"), 7), [appel("ramasser", 4, 30, V("rar")), appel("ramasser", 10, 1, 1)]),
+        si(eq(V("ltm"), 1), [appel("ramasser", 2, 5, V("rar")), changev("munitions_cartouches", 10)]),
+        si(eq(V("ltm"), 2), [appel("ramasser", 3, 3, V("rar")), changev("munitions_lourdes", 6)]),
         setv("k", mod(add(A("n"), V("graine")), 3)),
         si(eq(V("k"), 0), [changev("mat_bois", 30)]), si(eq(V("k"), 1), [changev("mat_pierre", 30)]),
         si(eq(V("k"), 2), [changev("mat_metal", 30)]),
@@ -628,6 +672,39 @@ def construire_joueur(P):
         changev("stat_coffres", 1), setv("evt_valeur", A("n")), diffuser("evt coffre"),
         setv("message", "coffre"), jouer_son("coffre"),
         appel("mettre a jour affichage"),
+    ])
+    # largage de ravitaillement (mod_largages le fait descendre ; Joueur l'ouvre par l'interaction de type 4) :
+    # arme légendaire (sniper / fusil d'assaut / lance-grenades selon n° + graine), potion de bouclier, 100 de chaque matériau
+    J.proc("ouvrir largage", [], [
+        ajouter_liste("LargagesPris", V("largage_num")),
+        setv("k", mod(add(V("largage_num"), V("graine")), 3)),
+        si(eq(V("k"), 0), [appel("ramasser", 3, 3, 5), changev("munitions_lourdes", 6)]),
+        si(eq(V("k"), 1), [appel("ramasser", 4, 30, 5), changev("munitions_moyennes", 30)]),
+        si(eq(V("k"), 2), [appel("ramasser", 6, 4, 5), changev("munitions_roquettes", 4)]),
+        appel("ramasser", 10, 1, 3),
+        changev("mat_bois", 100), changev("mat_pierre", 100), changev("mat_metal", 100),
+        plafonner("mat_bois", 500), plafonner("mat_pierre", 500), plafonner("mat_metal", 500),
+        setv("evt_valeur", add(100, V("largage_num"))), diffuser("evt coffre"),
+        notification(tr_txt("Largage ouvert !", "Supply drop opened!")),
+        setv("message", "coffre"), jouer_son("coffre"),
+        appel("mettre a jour affichage"),
+    ])
+    # lama à butin : 200 de chaque matériau, 3 potions de bouclier, munitions de chaque type
+    J.proc("ouvrir lama", [], [
+        ajouter_liste("LamasPris", 1),
+        changev("mat_bois", 200), changev("mat_pierre", 200), changev("mat_metal", 200),
+        plafonner("mat_bois", 500), plafonner("mat_pierre", 500), plafonner("mat_metal", 500),
+        appel("ramasser", 10, 3, 3),
+        changev("munitions_legeres", 30), changev("munitions_cartouches", 10), changev("munitions_lourdes", 6),
+        changev("munitions_moyennes", 30), changev("munitions_roquettes", 4),
+        setv("evt_valeur", 200), diffuser("evt coffre"),
+        notification(tr_txt("Lama à butin ouvert !", "Loot llama opened!")),
+        setv("message", "coffre"), jouer_son("coffre"),
+        appel("mettre a jour affichage"),
+    ])
+    J.proc("toucher lama", [], [
+        changev("lama_coups", 1), setv("lama_touche", chrono()),
+        si(ge(V("lama_coups"), C.COUPS_LAMA), [appel("ouvrir lama")]),
     ])
 
     # --- tir ---------------------------------------------------------------------------------
@@ -639,31 +716,82 @@ def construire_joueur(P):
         setv("evt_valeur", V("armeNum")), diffuser("evt tir"),
         # traceur : du canon vers le point visé (impact sur le mur au centre de l'écran par défaut)
         setv("traceFin", add(chrono(), 0.08)), setv("traceX", hasard(-6, 6)), setv("traceY", add(V("horizon"), hasard(-6, 6))),
-        si(eq(V("armeNum"), 1), jouer_son("tir_pistolet")), si(eq(V("armeNum"), 2), jouer_son("tir_pompe")),
+        si(ou3(eq(V("armeNum"), 1), eq(V("armeNum"), 4), eq(V("armeNum"), 5)), jouer_son("tir_pistolet")),
+        si(ou(eq(V("armeNum"), 2), eq(V("armeNum"), 6)), jouer_son("tir_pompe")),
         si(eq(V("armeNum"), 3), jouer_son("tir_sniper")),
         setv("tolerance", item("ArmeTolerance", V("armeNum"))),
         si(eq(V("param_viseeAssistee"), 1), [setv("tolerance", mul(V("tolerance"), 1.3))]),
+        # multiplicateur de rareté de l'arme tenue (liste Raretes, case active)
+        setv("rar", item("Raretes", V("slotActif"))),
+        si(ou(lt(V("rar"), 1), gt(V("rar"), len(C.RARETES))), [setv("rar", 1)]),
+        setv("mult", item("RareteMult", V("rar"))),
         setv("meilleur", 0), setv("meilleurDist", item("ArmePortee", V("armeNum"))),
-        setv("k", 1),
-        repeter(C.NB_JOUEURS, [
-            si(et4(non(eq(V("k"), V("monSlot"))), eq(item("E_actif", V("k")), 1), est_vivant_ou_aterre(V("k")),
-                   non(meme_equipe(V("k")))), [
-                setv("dx", sub(item("E_x", V("k")), V("px"))), setv("dy", sub(item("E_y", V("k")), V("py"))),
+        si(eq(V("armeNum"), 6), [
+            # lance-grenades : point d'impact = mur au centre de l'écran (Profondeur) ou portée ; explosion visuelle ;
+            # toutes les cibles à moins de RAYON_GRENADE cases : la plus proche de moi tout de suite, les autres en file
+            setv("d", item("Profondeur", rnd(div(V("colonnes"), 2)))),
+            si(gt(V("d"), item("ArmePortee", 6)), [setv("d", item("ArmePortee", 6))]), si(lt(V("d"), 0.5), [setv("d", 0.5)]),
+            setv("impactX", add(V("px"), mul(cos(V("dir")), V("d")))), setv("impactY", add(V("py"), mul(sin(V("dir")), V("d")))),
+            setv("secousse", add(chrono(), 0.4)), setv("secousseForce", 10), setv("flash", add(chrono(), 0.25)),
+            setv("traceX", 0), setv("traceY", V("horizon")),
+            setv("degats", rnd(mul(item("ArmeDegats", 6), V("mult")))), si(gt(V("degats"), 99), [setv("degats", 99)]),
+            setv("k", 1),
+            repeter(C.NB_JOUEURS, [
+                si(et4(non(eq(V("k"), V("monSlot"))), eq(item("E_actif", V("k")), 1), est_vivant_ou_aterre(V("k")),
+                       non(meme_equipe(V("k")))), [
+                    setv("dx", sub(item("E_x", V("k")), V("impactX"))), setv("dy", sub(item("E_y", V("k")), V("impactY"))),
+                    si(lt(sqrt(add(mul(V("dx"), V("dx")), mul(V("dy"), V("dy")))), C.RAYON_GRENADE), [
+                        setv("dx", sub(item("E_x", V("k")), V("px"))), setv("dy", sub(item("E_y", V("k")), V("py"))),
+                        setv("f", add(mul(V("dx"), cos(V("dir"))), mul(V("dy"), sin(V("dir"))))),
+                        setv("r", sub(mul(V("dx"), sin(V("dir"))), mul(V("dy"), cos(V("dir"))))),
+                        si(lt(V("f"), 0.5), [setv("f", 0.5)]),
+                        si(ou(eq(V("meilleur"), 0), lt(V("f"), V("meilleurDist"))), [
+                            si(gt(V("meilleur"), 0), [ajouter_liste("fileTirs", join(V("meilleur"), C.rembourrer(V("degats"), 3)))]),
+                            setv("meilleur", V("k")), setv("meilleurDist", V("f")), setv("meilleurR", V("r")),
+                        ], [ajouter_liste("fileTirs", join(V("k"), C.rembourrer(V("degats"), 3)))]),
+                    ]),
+                ]),
+                changev("k", 1),
+            ]),
+            si(gt(long_liste("fileTirs"), 0), [setv("prochainEnvoi", add(chrono(), 0.15))]),
+            # lama dans le rayon de l'explosion
+            si(lama_present(), [
+                si(lt(add(absv(sub(V("lama_x"), V("impactX"))), absv(sub(V("lama_y"), V("impactY")))), C.RAYON_GRENADE),
+                   [appel("toucher lama")]),
+            ]),
+        ], [
+            setv("k", 1),
+            repeter(C.NB_JOUEURS, [
+                si(et4(non(eq(V("k"), V("monSlot"))), eq(item("E_actif", V("k")), 1), est_vivant_ou_aterre(V("k")),
+                       non(meme_equipe(V("k")))), [
+                    setv("dx", sub(item("E_x", V("k")), V("px"))), setv("dy", sub(item("E_y", V("k")), V("py"))),
+                    setv("f", add(mul(V("dx"), cos(V("dir"))), mul(V("dy"), sin(V("dir"))))),
+                    setv("r", sub(mul(V("dx"), sin(V("dir"))), mul(V("dy"), cos(V("dir"))))),
+                    si(et4(gt(V("f"), 0.3), lt(V("f"), V("meilleurDist")), lt(absv(V("r")), V("tolerance")),
+                           gt(item("Profondeur", rnd(div(V("colonnes"), 2))), sub(V("f"), 0.3))), [
+                        setv("meilleur", V("k")), setv("meilleurDist", V("f")), setv("meilleurR", V("r")),
+                    ]),
+                ]),
+                changev("k", 1),
+            ]),
+            # lama à butin dans la ligne de mire (à portée, non masqué par un mur)
+            si(lama_present(), [
+                setv("dx", sub(V("lama_x"), V("px"))), setv("dy", sub(V("lama_y"), V("py"))),
                 setv("f", add(mul(V("dx"), cos(V("dir"))), mul(V("dy"), sin(V("dir"))))),
                 setv("r", sub(mul(V("dx"), sin(V("dir"))), mul(V("dy"), cos(V("dir"))))),
-                si(et4(gt(V("f"), 0.3), lt(V("f"), V("meilleurDist")), lt(absv(V("r")), V("tolerance")),
-                       gt(item("Profondeur", rnd(div(V("colonnes"), 2))), sub(V("f"), 0.3))), [
-                    setv("meilleur", V("k")), setv("meilleurDist", V("f")), setv("meilleurR", V("r")),
-                ]),
+                si(et4(gt(V("f"), 0.3), lt(V("f"), item("ArmePortee", V("armeNum"))), lt(absv(V("r")), add(V("tolerance"), 0.3)),
+                       gt(item("Profondeur", rnd(div(V("colonnes"), 2))), sub(V("f"), 0.3))), [appel("toucher lama")]),
             ]),
-            changev("k", 1),
         ]),
         si(gt(V("meilleur"), 0), [
             setv("cible", V("meilleur")), setv("seq", mod(add(V("seq"), 1), 100)),
-            setv("degats", item("ArmeDegats", V("armeNum"))),
-            si(eq(V("armeNum"), 2), [
-                setv("degats", rnd(mul(V("degats"), sub(1, div(V("meilleurDist"), 6))))),
-                si(lt(V("degats"), 10), [setv("degats", 10)]),
+            si(non(eq(V("armeNum"), 6)), [
+                setv("degats", rnd(mul(item("ArmeDegats", V("armeNum")), V("mult")))),
+                si(eq(V("armeNum"), 2), [
+                    setv("degats", rnd(mul(V("degats"), sub(1, div(V("meilleurDist"), 6))))),
+                    si(lt(V("degats"), 10), [setv("degats", 10)]),
+                ]),
+                si(gt(V("degats"), 99), [setv("degats", 99)]),      # champ « degats » du paquet : 2 chiffres
             ]),
             setv("toucheFin", add(chrono(), 0.25)),
             setv("traceX", mul(div(div(V("meilleurR"), V("meilleurDist")), V("plan")), 240)), setv("traceY", sub(V("horizon"), div(40, V("meilleurDist")))),
@@ -683,8 +811,7 @@ def construire_joueur(P):
     J.proc("recharger", [], [
         setv("k", item("ArmeChargeur", V("armeNum"))),
         setv("q", 0),
-        si(eq(V("armeNum"), 1), [setv("q", V("munitions_legeres"))]), si(eq(V("armeNum"), 2), [setv("q", V("munitions_cartouches"))]),
-        si(eq(V("armeNum"), 3), [setv("q", V("munitions_lourdes"))]),
+    ] + par_munitions(V("armeNum"), lambda var: [setv("q", V(var))]) + [
         si(et3(eq(V("rechargeFin"), 0), lt(item("Quantites", V("slotActif")), V("k")),
                ou(eq(V("ltm"), 4), gt(V("q"), 0))), [
             setv("rechargeDebut", chrono()), setv("rechargeFin", add(chrono(), item("ArmeRecharge", V("armeNum")))),
@@ -693,11 +820,8 @@ def construire_joueur(P):
     ])
     J.proc("finir recharge", [], [
         setv("k", sub(item("ArmeChargeur", V("armeNum")), item("Quantites", V("slotActif")))),
-        si(non(eq(V("ltm"), 4)), [
-            si(eq(V("armeNum"), 1), [setv("k", minimum(V("k"), V("munitions_legeres"))), changev("munitions_legeres", mul(V("k"), -1))]),
-            si(eq(V("armeNum"), 2), [setv("k", minimum(V("k"), V("munitions_cartouches"))), changev("munitions_cartouches", mul(V("k"), -1))]),
-            si(eq(V("armeNum"), 3), [setv("k", minimum(V("k"), V("munitions_lourdes"))), changev("munitions_lourdes", mul(V("k"), -1))]),
-        ]),
+        si(non(eq(V("ltm"), 4)),
+           par_munitions(V("armeNum"), lambda var: [setv("k", minimum(V("k"), V(var))), changev(var, mul(V("k"), -1))])),
         remplacer("Quantites", V("slotActif"), add(item("Quantites", V("slotActif")), V("k"))),
         setv("rechargeFin", 0),
     ])
@@ -706,25 +830,27 @@ def construire_joueur(P):
     J.proc("commencer utilisation", [], [
         setv("cod", V("armeNum")),
         setv("ok", 1),
-        si(ou(eq(V("cod"), 4), eq(V("cod"), 5)), [si(ge(V("❤ PV"), 100), [setv("ok", 0)])]),
-        si(eq(V("cod"), 4), [si(ge(V("❤ PV"), 75), [setv("ok", 0)])]),
-        si(ou(eq(V("cod"), 6), eq(V("cod"), 7)), [si(ge(V("🛡 Bouclier"), 100), [setv("ok", 0)])]),
-        si(eq(V("cod"), 6), [si(ge(V("🛡 Bouclier"), 50), [setv("ok", 0)])]),
+        # 7 bandages (PV ≤ 75), 8 médikit, 9 mini-potion (bouclier ≤ 50), 10 potion de bouclier
+        si(ou(eq(V("cod"), 7), eq(V("cod"), 8)), [si(ge(V("❤ PV"), 100), [setv("ok", 0)])]),
+        si(eq(V("cod"), 7), [si(ge(V("❤ PV"), 75), [setv("ok", 0)])]),
+        si(ou(eq(V("cod"), 9), eq(V("cod"), 10)), [si(ge(V("🛡 Bouclier"), 100), [setv("ok", 0)])]),
+        si(eq(V("cod"), 9), [si(ge(V("🛡 Bouclier"), 50), [setv("ok", 0)])]),
         si(et(eq(V("ok"), 1), gt(item("Quantites", V("slotActif")), 0)), [
             setv("utilisationObjet", V("cod")), setv("utilisationDebut", chrono()),
-            setv("utilisationFin", add(chrono(), item("ConsoDuree", sub(V("cod"), 3)))),
+            setv("utilisationFin", add(chrono(), item("ConsoDuree", sub(V("cod"), C.ARME_MAX)))),
         ]),
     ])
     J.proc("finir utilisation", [], [
         setv("cod", V("utilisationObjet")),
-        si(eq(V("cod"), 4), [changev("❤ PV", 15), si(gt(V("❤ PV"), 75), [setv("❤ PV", 75)])]),
-        si(eq(V("cod"), 5), [setv("❤ PV", 100)]),
-        si(eq(V("cod"), 6), [changev("🛡 Bouclier", 25), si(gt(V("🛡 Bouclier"), 50), [setv("🛡 Bouclier", 50)])]),
-        si(eq(V("cod"), 7), [changev("🛡 Bouclier", 50), si(gt(V("🛡 Bouclier"), 100), [setv("🛡 Bouclier", 100)])]),
+        si(eq(V("cod"), 7), [changev("❤ PV", 15), si(gt(V("❤ PV"), 75), [setv("❤ PV", 75)])]),
+        si(eq(V("cod"), 8), [setv("❤ PV", 100)]),
+        si(eq(V("cod"), 9), [changev("🛡 Bouclier", 25), si(gt(V("🛡 Bouclier"), 50), [setv("🛡 Bouclier", 50)])]),
+        si(eq(V("cod"), 10), [changev("🛡 Bouclier", 50), si(gt(V("🛡 Bouclier"), 100), [setv("🛡 Bouclier", 100)])]),
         remplacer("Quantites", V("slotActif"), sub(item("Quantites", V("slotActif")), 1)),
-        si(le(item("Quantites", V("slotActif")), 0), [remplacer("Inventaire", V("slotActif"), 0), remplacer("Quantites", V("slotActif"), 0)]),
+        si(le(item("Quantites", V("slotActif")), 0), [remplacer("Inventaire", V("slotActif"), 0), remplacer("Quantites", V("slotActif"), 0),
+                                                      remplacer("Raretes", V("slotActif"), 1)]),
         changev("stat_soins", 1), setv("evt_valeur", V("cod")), diffuser("evt soin"),
-        si(lt(V("cod"), 6), jouer_son("soin"), jouer_son("bouclier")),
+        si(lt(V("cod"), 9), jouer_son("soin"), jouer_son("bouclier")),
         setv("utilisationFin", 0), setv("utilisationObjet", 0),
         appel("mettre a jour affichage"),
     ])
@@ -750,6 +876,13 @@ def construire_joueur(P):
                 appel("publier entree", 0, V("cx"), V("cy")),
                 notification(tr_txt("Mur détruit", "Wall destroyed")),
             ]),
+        ]),
+        # lama à butin devant moi (≤ 1,8 case, presque dans l'axe) : un coup compte
+        si(lama_present(), [
+            setv("dx", sub(V("lama_x"), V("px"))), setv("dy", sub(V("lama_y"), V("py"))),
+            setv("f", add(mul(V("dx"), cos(V("dir"))), mul(V("dy"), sin(V("dir"))))),
+            setv("r", sub(mul(V("dx"), sin(V("dir"))), mul(V("dy"), cos(V("dir"))))),
+            si(et3(gt(V("f"), 0), lt(V("f"), 1.8), lt(absv(V("r")), 0.8)), [jouer_son("pioche"), appel("toucher lama")]),
         ]),
         appel("mettre a jour affichage"),
     ])
@@ -843,15 +976,26 @@ def construire_joueur(P):
                 changev("k", 1),
             ]),
         ]),
+        # largage posé (altitude 0) à moins de 1,5 case, pas encore ouvert (DUREE_OUVERTURE_LARGAGE s)
+        si(eq(V("n"), 0), [
+            si(et3(gt(V("largage_num"), 0), le(V("largage_alt"), 0), non(contient("LargagesPris", V("largage_num")))), [
+                si(lt(add(absv(sub(V("largage_x"), V("px"))), absv(sub(V("largage_y"), V("py")))), 1.5), [
+                    setv("n", 4), setv("interactionCible", V("largage_num")), setv("interactionDuree", C.DUREE_OUVERTURE_LARGAGE),
+                ]),
+            ]),
+        ]),
         si(non(eq(V("n"), V("interactionType"))), [setv("interactionType", V("n")), setv("interactionDebut", chrono())]),
         si(eq(V("n"), 0), [setv("reanime", 0)]),
         si(ou(eq(V("n"), 2), eq(V("n"), 3)), [setv("reanime", V("interactionCible"))]),
         si(gt(V("n"), 0), [
             si(gt(sub(chrono(), V("interactionDebut")), V("interactionDuree")), [
-                si(eq(V("n"), 1), [appel("ouvrir coffre", V("interactionCible"))]),
-                si(eq(V("n"), 2), [changev("stat_reanimations", 1), setv("evt_cible", V("interactionCible")), diffuser("evt reanimation"),
-                                   notification(tr_txt("Coéquipier réanimé", "Teammate revived")), jouer_son("reanimation")]),
-                si(eq(V("n"), 3), [
+                # ni = type figé : « ouvrir coffre » / « ramasser » réutilisent la variable n (case d'inventaire)
+                setv("ni", V("n")),
+                si(eq(V("ni"), 1), [appel("ouvrir coffre", V("interactionCible"))]),
+                si(eq(V("ni"), 4), [appel("ouvrir largage")]),
+                si(eq(V("ni"), 2), [changev("stat_reanimations", 1), setv("evt_cible", V("interactionCible")), diffuser("evt reanimation"),
+                                    notification(tr_txt("Coéquipier réanimé", "Teammate revived")), jouer_son("reanimation")]),
+                si(eq(V("ni"), 3), [
                     setv("k", num_item("CartesRamassees", V("interactionCible"))),
                     si(gt(V("k"), 0), [supprimer("CartesRamassees", V("k"))]),
                     changev("stat_reanimations", 1), setv("evt_cible", V("interactionCible")), diffuser("evt reanimation"),
@@ -1024,7 +1168,7 @@ def construire_joueur(P):
             si(eq(V("sprint"), 1), [setv("plan", 0.74)], [setv("plan", 0.66)]),   # zoom arrière en sprint
         ]),
         # rechargement
-        si(et(tc("recharger"), lt(V("armeNum"), 4)), [si(gt(V("armeNum"), 0), [appel("recharger")])]),
+        si(et(tc("recharger"), est_arme(V("armeNum"))), [appel("recharger")]),
         si(et(gt(V("rechargeFin"), 0), gt(chrono(), V("rechargeFin"))), [appel("finir recharge")]),
         si(et(gt(V("utilisationFin"), 0), lt(V("utilisationFin"), chrono())), [appel("finir utilisation")]),
         # clic : tir / consommable / pioche / construction (mode construction)
@@ -1035,8 +1179,8 @@ def construire_joueur(P):
                     si(eq(V("param_constructionTurbo"), 0), [setv("construireRelache", 1)]),
                 ]),
             ], [
-                si(eq(V("armeNum"), 8), [si(gt(chrono(), V("prochaineRecolte")), [appel("coup de pioche")])]),
-                si(et3(gt(V("armeNum"), 0), lt(V("armeNum"), 4), ou(eq(V("etat"), 1), eq(V("etat"), 8))), [
+                si(eq(V("armeNum"), C.PIOCHE), [si(gt(chrono(), V("prochaineRecolte")), [appel("coup de pioche")])]),
+                si(et(est_arme(V("armeNum")), ou(eq(V("etat"), 1), eq(V("etat"), 8))), [
                     setv("ok", 1),
                     si(et(eq(V("ltm"), 1), non(eq(V("armeNum"), 2))), [setv("ok", 0)]),
                     si(et(eq(V("ltm"), 2), non(eq(V("armeNum"), 3))), [setv("ok", 0)]),
@@ -1047,7 +1191,7 @@ def construire_joueur(P):
                         notification(join(item("LTMNoms", add(V("ltm"), 1)), " !")), setv("tirRelache", 1),
                     ]),
                 ]),
-                si(et4(gt(V("armeNum"), 3), lt(V("armeNum"), 8), eq(V("utilisationFin"), 0), eq(V("etat"), 1)), [appel("commencer utilisation")]),
+                si(et3(est_consommable(V("armeNum")), eq(V("utilisationFin"), 0), eq(V("etat"), 1)), [appel("commencer utilisation")]),
             ]),
         ], [setv("construireRelache", 0), setv("tirRelache", 0)]),
         # construction directe / mode construction, matériau, édition
@@ -1083,6 +1227,14 @@ def construire_joueur(P):
         si(gt(V("recul"), 0), [setv("recul", mul(V("recul"), 0.75)), si(lt(V("recul"), 0.5), [setv("recul", 0)])]),
         setv("horizon", add(mul(V("hauteur"), -1), mul(V("recul"), 0.4))),
         si(gt(V("tirAnim"), 0), [changev("tirAnim", -1)]),
+        # lance-grenades : cibles supplémentaires de la dernière explosion, publiées une par une (cible/seq/degats) toutes les 0,15 s
+        si(et(gt(long_liste("fileTirs"), 0), gt(chrono(), V("prochainEnvoi"))), [
+            setv("entree", item("fileTirs", 1)), supprimer("fileTirs", 1), setv("prochainEnvoi", add(chrono(), 0.15)),
+            setv("cible", mul(lettre(1, V("entree")), 1)), setv("seq", mod(add(V("seq"), 1), 100)),
+            setv("degats", mul(C.sous_chaine(V("entree"), 2, 3), 1)),
+            changev("stat_touches", 1), changev("stat_degats", V("degats")),
+            setv("evt_cible", V("cible")), setv("evt_valeur", V("degats")), diffuser("evt touche"),
+        ]),
         # surbouclier : +5/s après 6 s sans dégâts, max 50 (en combat seulement)
         si(et3(eq(V("etat"), 1), gt(sub(chrono(), V("dernierDegatsT")), 6), lt(V("surbouclier"), 50)), [
             si(ge(V("phase"), 2), [changev("surbouclier", 0.17), si(gt(V("surbouclier"), 50), [setv("surbouclier", 50)])]),
@@ -1141,6 +1293,7 @@ def construire_joueur(P):
         setv("velY", 0), setv("respawnT", 0), setv("prochainTir", 0), setv("prochaineConstruction", 0), setv("prochainDegatZone", 0),
         setv("prochaineRecolte", 0), setv("dernierDegatsT", 0), setv("construireRelache", 0), setv("editionDebut", 0), setv("dernierT", 0),
         setv("prochainLieu", 0), setv("redeploiementProgres", 0), setv("materiauRelache", 0), setv("tirRelache", 0), setv("pioches", 0),
+        setv("prochainEnvoi", 0), vider("fileTirs"),
         vider("CoffresPris"), vider("CartesRamassees"), vider("DegatsRecus"), vider("Journal"), vider("JournalFin"),
         vider("Notifications"), vider("NotificationsFin"), vider("DegatsAffiches"), vider("Bruits"), vider("Chat"), vider("ChatFin"),
         vider("Pings"), vider("Sprays"),

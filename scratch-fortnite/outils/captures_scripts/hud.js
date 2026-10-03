@@ -20,9 +20,9 @@ module.exports = async (A) => {
     const t = vm.runtime.ioDevices.clock.projectTimer();
     const fin = String(Math.round((t + 600) * 10)).padStart(6, '0');
     Lv('Pings').value = ['3' + '1650' + '0900' + '999999'];
-    Lv('Inventaire').value = [1, 2, 3, 4, 6]; Lv('Quantites').value = [12, 5, 3, 5, 3];
+    Lv('Inventaire').value = [1, 2, 3, 7, 9]; Lv('Quantites').value = [12, 5, 3, 5, 3]; Lv('Raretes').value = [1, 3, 5, 1, 2];
     Lv('Journal').value = ['riko a éliminé zed (Sniper)', 'Tu as mis à terre riko']; Lv('JournalFin').value = [t + 600, t + 600];
-    Lv('Notifications').value = ['+ Fusil à pompe', '📍 Place Brique']; Lv('NotificationsFin').value = [t + 600, t + 600];
+    Lv('Notifications').value = ['+ Fusil à pompe (Rare)', '📍 Place Brique']; Lv('NotificationsFin').value = [t + 600, t + 600];
     Lv('DegatsAffiches').value = ['045' + '2060' + '2020' + fin + '1'];
     Lv('Bruits').value = ['115' + fin + '1', '250' + fin + '2'];
     V('🛡 Bouclier').value = 50; V('surbouclier').value = 20; V('endurance').value = 60;
@@ -92,8 +92,8 @@ module.exports = async (A) => {
     V('ecran').value = 'prepartie'; V('etat').value = 8; V('connecte').value = 0; V('monSlot').value = 1; V('invulnerable').value = 1;
     V('phase').value = 0; V('tempsPhase').value = 12; V('altitude').value = 0; V('horsZone').value = 0;
     V('param_langue').value = 1; V('param_tailleHUD').value = 80; V('param_sousTitres').value = 1;
-    V('modeConstruction').value = 1; V('materiauActif').value = 2; V('armeNum').value = 8; V('slotActif').value = 1;
-    V('utilisationFin').value = t + 60; V('utilisationDebut').value = t - 2; V('utilisationObjet').value = 5;
+    V('modeConstruction').value = 1; V('materiauActif').value = 2; V('armeNum').value = 11; V('slotActif').value = 1;
+    V('utilisationFin').value = t + 60; V('utilisationDebut').value = t - 2; V('utilisationObjet').value = 8;
     V('❤ PV').value = 100; V('surbouclier').value = 0; V('endurance').value = 100;
   }, [p2b, p3b]);
   // sous-titre armé directement (diffuser « evt tir » déclenche la synthèse sonore de Sons : plusieurs secondes ici)
@@ -114,12 +114,12 @@ module.exports = async (A) => {
   await A.attendre(400);
   await A.capture('hud_10_mort_duo_infini');
 
-  // (11) consommable tenu (bandages ×5) + réanimation de zed en cours + soin : les deux barres du centre ; HUD 120 %
+  // (11) consommable tenu (bandages ×5, code 7) + réanimation de zed en cours + soin : les deux barres du centre ; HUD 120 %
   await A.evaluer((vm, V) => {
     const t = vm.runtime.ioDevices.clock.projectTimer();
-    V('etat').value = 1; V('ltm').value = 0; V('armeNum').value = 4; V('slotActif').value = 4; V('❤ PV').value = 55; V('param_tailleHUD').value = 120;
+    V('etat').value = 1; V('ltm').value = 0; V('armeNum').value = 7; V('slotActif').value = 4; V('❤ PV').value = 55; V('param_tailleHUD').value = 120;
     V('interactionType').value = 2; V('interactionCible').value = 3; V('interactionDebut').value = t - 1; V('interactionDuree').value = 60;
-    V('utilisationFin').value = t + 60; V('utilisationDebut').value = t - 1; V('utilisationObjet').value = 4;
+    V('utilisationFin').value = t + 60; V('utilisationDebut').value = t - 1; V('utilisationObjet').value = 7;
   });
   await A.attendre(400);
   await A.capture('hud_11_consommable_reanimation_120');

@@ -556,12 +556,134 @@
   "1": "Pistolet",
   "2": "Fusil à pompe",
   "3": "Sniper",
-  "4": "Bandages",
-  "5": "Médikit",
-  "6": "Mini-potion",
-  "7": "Potion de bouclier",
-  "8": "Pioche"
+  "4": "Fusil d'assaut",
+  "5": "Pistolet-mitrailleur",
+  "6": "Lance-grenades",
+  "7": "Bandages",
+  "8": "Médikit",
+  "9": "Mini-potion",
+  "10": "Potion de bouclier",
+  "11": "Pioche"
  },
+ "armes": {
+  "1": [
+   20,
+   0.25,
+   14,
+   0.45,
+   12,
+   "legeres",
+   1.5
+  ],
+  "2": [
+   70,
+   0.9,
+   5,
+   0.9,
+   5,
+   "cartouches",
+   2.0
+  ],
+  "3": [
+   95,
+   1.4,
+   40,
+   0.35,
+   3,
+   "lourdes",
+   2.5
+  ],
+  "4": [
+   30,
+   0.14,
+   20,
+   0.4,
+   30,
+   "moyennes",
+   2.2
+  ],
+  "5": [
+   17,
+   0.09,
+   12,
+   0.5,
+   25,
+   "legeres",
+   1.8
+  ],
+  "6": [
+   100,
+   1.6,
+   8,
+   0.5,
+   4,
+   "roquettes",
+   3.0
+  ]
+ },
+ "consommables": {
+  "7": [
+   3,
+   15,
+   0,
+   15
+  ],
+  "8": [
+   8,
+   100,
+   0,
+   3
+  ],
+  "9": [
+   2,
+   0,
+   25,
+   6
+  ],
+  "10": [
+   5,
+   0,
+   50,
+   3
+  ]
+ },
+ "raretes": [
+  [
+   "Commune",
+   "Common",
+   "gris",
+   1
+  ],
+  [
+   "Peu commune",
+   "Uncommon",
+   "vert",
+   1.1
+  ],
+  [
+   "Rare",
+   "Rare",
+   "bleu",
+   1.2
+  ],
+  [
+   "Épique",
+   "Epic",
+   "violet",
+   1.3
+  ],
+  [
+   "Légendaire",
+   "Legendary",
+   "orange",
+   1.45
+  ]
+ ],
+ "phasesLargage": [
+  2,
+  4
+ ],
+ "coupsLama": 5,
  "phasesTempete": [
   [
    30,
@@ -669,9 +791,22 @@
   "armeNum",
   "🔫 Munitions",
   "🎯 Arme",
+  "armeTenue",
   "munitions_legeres",
   "munitions_cartouches",
   "munitions_lourdes",
+  "munitions_moyennes",
+  "munitions_roquettes",
+  "largage_num",
+  "largage_phase",
+  "largage_x",
+  "largage_y",
+  "largage_alt",
+  "largage_debut",
+  "lama_x",
+  "lama_y",
+  "lama_coups",
+  "lama_touche",
   "mat_bois",
   "mat_pierre",
   "mat_metal",
@@ -836,6 +971,12 @@
   "Touches",
   "Inventaire",
   "Quantites",
+  "Raretes",
+  "RareteNoms",
+  "RareteCouleurs",
+  "RareteMult",
+  "LargagesPris",
+  "LamasPris",
   "LieuxNom",
   "LieuxX",
   "LieuxY",
@@ -847,6 +988,7 @@
   "ArmeTolerance",
   "ArmeChargeur",
   "ArmeRecharge",
+  "ArmeMunitions",
   "ConsoDuree",
   "MaxConsommable",
   "LTMNoms",

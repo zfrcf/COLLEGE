@@ -13,8 +13,12 @@ module.exports = async (T, verifier) => {
   const contrat = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'contrat.json'), 'utf8'));
   const S = T.sprite('Sons');
   const sons = S.sprite.sounds;
-  verifier('28 sons attachés au sprite Sons', sons.length === 28 && contrat.sons.length === 28, sons.length);
-  verifier('noms des sons = contrat.SONS (même ordre)', JSON.stringify(sons.map(s => s.name)) === JSON.stringify(contrat.sons), sons.map(s => s.name));
+  // au moins les sons du contrat (28) ; les sons supplémentaires du spectacle (explosion, serie, largage, musique_combat,
+  // musique_tempete — voir royale/sons.py SONS_SUPPLEMENTAIRES) suivent tant qu'ils ne sont pas dans contrat.SONS
+  verifier('au moins les 28 sons de contrat.SONS attachés au sprite Sons', sons.length >= contrat.sons.length && contrat.sons.length >= 28, sons.length);
+  verifier('noms des sons = contrat.SONS (même ordre) puis les supplémentaires', JSON.stringify(sons.slice(0, contrat.sons.length).map(s => s.name)) === JSON.stringify(contrat.sons), sons.map(s => s.name));
+  const supplementaires = ['explosion', 'serie', 'largage', 'musique_combat', 'musique_tempete'];
+  verifier('sons supplémentaires du spectacle présents', supplementaires.every(n => sons.some(s => s.name === n)), sons.map(s => s.name).filter(n => !contrat.sons.includes(n)));
   verifier('tous en WAV à 22050 ou 11025 Hz avec des échantillons et un md5',
     sons.every(s => s.dataFormat === 'wav' && (s.rate === 22050 || s.rate === 11025) && s.sampleCount > 0 && /^[0-9a-f]{32}\.wav$/.test(s.md5)), sons[0]);
   verifier('sprite Sons invisible', !S.visible);
@@ -23,17 +27,18 @@ module.exports = async (T, verifier) => {
   // un chapeau « quand je reçois » par son + les deux arrêts
   const chapeaux = Object.values(S.blocks._blocks).filter(b => b.opcode === 'event_whenbroadcastreceived' && b.topLevel)
     .map(b => String(b.fields.BROADCAST_OPTION.value).toLowerCase());
-  const manquants = contrat.sons.filter(n => !chapeaux.includes('son ' + n));
+  const tousLesSons = contrat.sons.concat(supplementaires.filter(n => !contrat.sons.includes(n)));
+  const manquants = tousLesSons.filter(n => !chapeaux.includes('son ' + n));
   verifier('un script « quand je reçois son <nom> » par son', manquants.length === 0, manquants);
-  verifier('scripts « son stop musique » et « son stop tout »', chapeaux.includes('son stop musique') && chapeaux.includes('son stop tout'), chapeaux);
+  verifier('scripts « son stop musique », « son stop musique jeu » et « son stop tout »', chapeaux.includes('son stop musique') && chapeaux.includes('son stop musique jeu') && chapeaux.includes('son stop tout'), chapeaux);
   const parametre = nom => nom.startsWith('musique_') ? 'param_volumeMusique'
-    : ['victoire', 'defaite', 'niveau', 'elimination', 'notification', 'compte'].includes(nom) ? 'param_volumeVoix' : 'param_volumeEffets';
+    : ['victoire', 'defaite', 'niveau', 'elimination', 'notification', 'compte', 'serie'].includes(nom) ? 'param_volumeVoix' : 'param_volumeEffets';
   // chaque script lit bien la variable de volume de sa catégorie
   const mauvaiseCategorie = [];
   for (const b of Object.values(S.blocks._blocks)) {
     if (b.opcode !== 'event_whenbroadcastreceived' || !b.topLevel) continue;
     const nom = String(b.fields.BROADCAST_OPTION.value).toLowerCase().replace(/^son /, '');
-    if (!contrat.sons.includes(nom)) continue;
+    if (!tousLesSons.includes(nom)) continue;
     const vars = new Set(); let id = b.next; const pile = [];
     while (id) { pile.push(id); id = S.blocks._blocks[id].next; }
     const visiter = (bid) => { const bl = S.blocks._blocks[bid]; if (!bl) return; if (bl.opcode === 'data_variable') vars.add(bl.fields.VARIABLE.value);

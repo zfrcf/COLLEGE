@@ -95,6 +95,8 @@ CALQUES = {
     "HUD": 90, "Social": 89, "Menus": 88, "Sons": 87, "Texte": 86,
     # sprites visibles (du fond vers l'avant)
     "Spray": 2, "Balise": 3, "CarteRedeploiement": 4, "Marqueur": 5, "Coffre": 6, "Ennemi": 7,
+    "Largage": 8, "Lama": 9,          # panneaux 3D de mod_largages ; « Largages » (logique) : 94, après Moteur3D
+    "Largages": 94,
     "Tempête": 10, "Dégâts": 11, "Arme": 12, "Flash": 13, "Viseur": 14, "Message": 15,
 }
 
@@ -107,7 +109,7 @@ CHAMPS = [
     ("battement", 5),            # secondes (maintenant) ; emplacement libre si |écart| > 15 s
     ("cible", 1), ("seq", 2), ("degats", 2),   # dernier tir : cible touchée, n° de tir, dégâts
     ("tueur", 1), ("morts", 1),  # qui m'a éliminé ; compteur de morts (mod 10)
-    ("arme", 1),                 # code d'objet tenu (voir OBJETS)
+    ("arme", 1),                 # code de l'ARME tenue (1..6, voir ARMES) ; 0 si consommable, pioche ou mains nues
     ("etat", 1),                 # voir ETAT
     ("nom", 16),                 # 8 lettres codées sur 2 chiffres (ALPHABET, 0 = rien)
     ("elims", 2),
@@ -130,7 +132,7 @@ _p = 2
 for _n, _l in CHAMPS:
     POS[_n] = (_p, _l)
     _p += _l
-LONGUEUR_PAQUET = _p - 1       # 88
+LONGUEUR_PAQUET = _p - 1       # 87 avec les champs ci-dessus
 assert LONGUEUR_PAQUET <= 250
 
 ALPHABET = list("abcdefghijklmnopqrstuvwxyz0123456789_-")
@@ -147,17 +149,37 @@ RECORD_TAILLE = 23
 #  Objets d'inventaire (codes), armes, consommables, matériaux
 # ---------------------------------------------------------------------------
 OBJETS = {
-    0: "Vide", 1: "Pistolet", 2: "Fusil à pompe", 3: "Sniper", 4: "Bandages", 5: "Médikit",
-    6: "Mini-potion", 7: "Potion de bouclier", 8: "Pioche",
+    0: "Vide", 1: "Pistolet", 2: "Fusil à pompe", 3: "Sniper", 4: "Fusil d'assaut", 5: "Pistolet-mitrailleur",
+    6: "Lance-grenades", 7: "Bandages", 8: "Médikit", 9: "Mini-potion", 10: "Potion de bouclier", 11: "Pioche",
 }
+CODES_ARMES = [1, 2, 3, 4, 5, 6]            # armes : 1..6 (ARME_MAX) ; consommables : 7..10 ; pioche : 11
+CODES_CONSOMMABLES = [7, 8, 9, 10]
+ARME_MAX, CONSO_MIN, CONSO_MAX, PIOCHE = 6, 7, 10, 11
 ARMES = {  # code: (dégâts, cadence s, portée, tolérance, chargeur, type de munitions, temps de recharge)
     1: (20, 0.25, 14, 0.45, 12, "legeres", 1.5),
     2: (70, 0.9, 5, 0.9, 5, "cartouches", 2.0),
     3: (95, 1.4, 40, 0.35, 3, "lourdes", 2.5),
+    4: (30, 0.14, 20, 0.4, 30, "moyennes", 2.2),
+    5: (17, 0.09, 12, 0.5, 25, "legeres", 1.8),
+    # lance-grenades : dégâts de zone (RAYON_GRENADE autour du point d'impact : mur au centre ou PORTEE cases)
+    6: (100, 1.6, 8, 0.5, 4, "roquettes", 3.0),
 }
+RAYON_GRENADE = 2.5
+TYPES_MUNITIONS = ["legeres", "cartouches", "lourdes", "moyennes", "roquettes"]   # variables munitions_<type>
 CONSOMMABLES = {  # code: (durée d'utilisation s, pv, bouclier, max empilable)
-    4: (3, 15, 0, 15), 5: (8, 100, 0, 3), 6: (2, 0, 25, 6), 7: (5, 0, 50, 3),
+    7: (3, 15, 0, 15), 8: (8, 100, 0, 3), 9: (2, 0, 25, 6), 10: (5, 0, 50, 3),
 }
+RARETE_CONSOMMABLE = {7: 1, 8: 2, 9: 2, 10: 3}    # rareté fixe affichée pour les consommables
+# Raretés (liste globale `Raretes` : rareté de chaque case d'inventaire 1..5) : nom FR/EN, couleur de texte,
+# multiplicateur de dégâts (appliqué dans Joueur.tirer)
+RARETES = [("Commune", "Common", "gris", 1), ("Peu commune", "Uncommon", "vert", 1.1), ("Rare", "Rare", "bleu", 1.2),
+           ("Épique", "Epic", "violet", 1.3), ("Légendaire", "Legendary", "orange", 1.45)]
+# Largages de ravitaillement (mod_largages) : phases de jeu dont le début de rétrécissement déclenche un largage,
+# durée de descente, durée d'ouverture ; lama à butin : coups nécessaires
+PHASES_LARGAGE = [2, 4]
+DUREE_DESCENTE_LARGAGE = 20
+DUREE_OUVERTURE_LARGAGE = 2.5
+COUPS_LAMA = 5
 MATERIAUX = {1: "Bois", 2: "Pierre", 3: "Métal"}
 # valeur de case de la carte -> (nom, matériau récolté, coups de pioche pour détruire un mur construit)
 CASES = {1: ("Béton", 2, 5), 2: ("Bois", 1, 3), 3: ("Brique", 2, 5), 4: ("Métal", 3, 7)}
@@ -190,7 +212,7 @@ EVENEMENTS = [
     "evt mort",                 # je suis mort (evt_source)
     "evt aterre",               # je suis à terre
     "evt elimination",          # j'ai éliminé quelqu'un (evt_cible)
-    "evt coffre",               # coffre ouvert (evt_valeur = n°)
+    "evt coffre",               # coffre ouvert (evt_valeur = n°) ; aussi diffusé pour un largage (evt_valeur = 100 + n°) et le lama (200)
     "evt mur",                  # mur construit (evt_valeur = matériau)
     "evt recolte",              # matériaux récoltés (evt_valeur = matériau)
     "evt soin",                 # consommable utilisé (evt_valeur = code objet)
@@ -248,10 +270,21 @@ GLOBALES = {
     "codeSalon": 0, "confidentialite": 0,
     # --- inventaire / munitions / matériaux ---
     "slotActif": 1, "armeNum": 1, "🔫 Munitions": 0, "🎯 Arme": "Pistolet",
+    "armeTenue": 1,                  # code de l'arme tenue (1..6) ou 0 : champ « arme » du paquet (Joueur l'écrit)
     "munitions_legeres": 36, "munitions_cartouches": 10, "munitions_lourdes": 6,
+    "munitions_moyennes": 30, "munitions_roquettes": 0,
+    # --- largages de ravitaillement et lama à butin (mod_largages écrit, Joueur ouvre) ---
+    "largage_num": 0,                # n° du largage en cours (0 = aucun) ; LargagesPris contient les n° ouverts
+    "largage_phase": 0,              # phase de jeu qui a déclenché le largage courant
+    "largage_x": 0, "largage_y": 0,  # point de chute (centre de case)
+    "largage_alt": 0,                # altitude restante (20 → 0 en DUREE_DESCENTE_LARGAGE s) ; ouvrable à 0
+    "largage_debut": 0,              # chrono au début de la descente
+    "lama_x": 0, "lama_y": 0,        # position du lama de la manche (case libre déterministe)
+    "lama_coups": 0,                 # coups de pioche / tirs reçus par le lama (COUPS_LAMA pour l'ouvrir)
+    "lama_touche": 0,                # chrono du dernier coup (animation du panneau)
     "mat_bois": 0, "mat_pierre": 0, "mat_metal": 0, "materiauActif": 1, "🧱 Matériaux": 0,
     "rechargeFin": 0, "utilisationFin": 0, "utilisationDebut": 0, "utilisationObjet": 0,
-    "interactionDebut": 0, "interactionType": 0, "interactionCible": 0,   # 1 coffre, 2 réanimation, 3 redéploiement
+    "interactionDebut": 0, "interactionType": 0, "interactionCible": 0,   # 1 coffre, 2 réanimation, 3 redéploiement, 4 largage
     "modeConstruction": 0, "tirAnim": 0, "toucheFin": 0, "flash": 0, "message": "",
     "rechargeDebut": 0, "interactionDuree": 1, "murCoups": 0, "murCible": 0, "reanimationProgres": 0,
     # --- champs du paquet écrits par les modules (Joueur : cible/seq/degats/tueur/morts/knockPar/reanime ;
@@ -384,16 +417,24 @@ LISTES = {
     "Profondeur": [30] * COLONNES_MAX,
     "Alphabet": ALPHABET,
     "Touches": PRESET_AZERTY,
-    "Inventaire": [1, 2, 3, 4, 6],            # codes d'objets par emplacement (1..5)
+    "Inventaire": [1, 2, 3, 7, 9],            # codes d'objets par emplacement (1..5)
     "Quantites": [12, 5, 3, 5, 3],            # munitions dans le chargeur / nombre de consommables
+    "Raretes": [1, 1, 1, 1, 1],               # rareté de chaque emplacement (1 commune … 5 légendaire, voir RARETES)
+    # RareteNoms : FR (index r) puis EN (index r + 5) ; RareteCouleurs : couleur de texte ; RareteMult : × dégâts
+    "RareteNoms": [r[0] for r in RARETES] + [r[1] for r in RARETES],
+    "RareteCouleurs": [r[2] for r in RARETES], "RareteMult": [r[3] for r in RARETES],
+    "LargagesPris": [], "LamasPris": [],       # n° des largages ouverts / lama ouvert (1) dans la manche
     # lieux nommés : LieuxNom contient les noms FR puis les noms EN (index i + len(LIEUX) * param_langue)
     "LieuxNom": [l[0] for l in LIEUX] + [l[1] for l in LIEUX],
     "LieuxX": [l[2] for l in LIEUX], "LieuxY": [l[3] for l in LIEUX], "LieuxR": [l[4] for l in LIEUX],
-    "ObjetNoms": [OBJETS[i] for i in range(1, 9)],
-    "ArmeDegats": [ARMES[i][0] for i in (1, 2, 3)], "ArmeCadence": [ARMES[i][1] for i in (1, 2, 3)],
-    "ArmePortee": [ARMES[i][2] for i in (1, 2, 3)], "ArmeTolerance": [ARMES[i][3] for i in (1, 2, 3)],
-    "ArmeChargeur": [ARMES[i][4] for i in (1, 2, 3)], "ArmeRecharge": [ARMES[i][6] for i in (1, 2, 3)],
-    "ConsoDuree": [CONSOMMABLES[i][0] for i in (4, 5, 6, 7)], "MaxConsommable": [CONSOMMABLES[i][3] for i in (4, 5, 6, 7)],
+    "ObjetNoms": [OBJETS[i] for i in range(1, 12)],
+    "ArmeDegats": [ARMES[i][0] for i in CODES_ARMES], "ArmeCadence": [ARMES[i][1] for i in CODES_ARMES],
+    "ArmePortee": [ARMES[i][2] for i in CODES_ARMES], "ArmeTolerance": [ARMES[i][3] for i in CODES_ARMES],
+    "ArmeChargeur": [ARMES[i][4] for i in CODES_ARMES], "ArmeRecharge": [ARMES[i][6] for i in CODES_ARMES],
+    # ArmeMunitions : n° du type de munitions (index dans TYPES_MUNITIONS, 1..5) par arme
+    "ArmeMunitions": [TYPES_MUNITIONS.index(ARMES[i][5]) + 1 for i in CODES_ARMES],
+    # consommables : index = code − 6 (7..10 → 1..4)
+    "ConsoDuree": [CONSOMMABLES[i][0] for i in CODES_CONSOMMABLES], "MaxConsommable": [CONSOMMABLES[i][3] for i in CODES_CONSOMMABLES],
     # LTMNoms : FR (index ltm+1) puis EN (index ltm+1+6)
     "LTMNoms": [LTM[i] for i in range(6)] + ["None", "Shotguns only", "Snipers only", "Flash storm", "Infinite ammo", "Low gravity"],
     "ModeNoms": [MODES[i] for i in range(1, 7)] + ["Solo", "Duos", "Trios", "Squads", "Rumble", "Arena"],
@@ -527,7 +568,9 @@ def exporter_json(chemin=None):
         "champs": CHAMPS, "pos": POS, "longueurPaquet": LONGUEUR_PAQUET, "alphabet": ALPHABET,
         "etat": ETAT, "modes": MODES, "ltm": LTM, "ecrans": ECRANS, "onglets": ONGLETS, "taille": TAILLE,
         "coffres": COFFRES, "balises": BALISES, "lieux": LIEUX, "touches": TOUCHES, "presetAzerty": PRESET_AZERTY,
-        "objets": OBJETS, "phasesTempete": PHASES_TEMPETE, "durees": {"prepartie": DUREE_PREPARTIE, "bus": DUREE_BUS,
+        "objets": OBJETS, "armes": ARMES, "consommables": CONSOMMABLES, "raretes": RARETES,
+        "phasesLargage": PHASES_LARGAGE, "coupsLama": COUPS_LAMA,
+        "phasesTempete": PHASES_TEMPETE, "durees": {"prepartie": DUREE_PREPARTIE, "bus": DUREE_BUS,
                                                                      "manche": DUREE_MANCHE, "resultats": DUREE_RESULTATS},
         "partiePos": PARTIE_POS, "globales": list(GLOBALES.keys()), "listes": list(LISTES.keys()),
         "evenements": EVENEMENTS, "sons": SONS, "chatRapide": CHAT_RAPIDE, "emotes": EMOTES,

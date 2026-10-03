@@ -17,7 +17,9 @@ async function charger(chemin, options = {}) {
   const erreurs = [];
   const origErr = console.error;
   console.error = (...a) => { const s = a.join(' '); if (!/No storage module|Translation for/.test(s)) erreurs.push(s); };
-  process.on('unhandledRejection', e => erreurs.push('rejection: ' + e));
+  process.setMaxListeners(Math.max(process.getMaxListeners(), 64));   // un écouteur par scénario chargé (> 10 scénarios)
+  const surRejet = e => erreurs.push('rejection: ' + e);
+  process.on('unhandledRejection', surRejet);
   await vm.loadProject(fs.readFileSync(chemin));
   vm.runtime.currentStepTime = 1000 / 30;
   vm.setTurboMode(!!options.turbo);
@@ -60,7 +62,7 @@ async function charger(chemin, options = {}) {
       return [...inconnus];
     },
     nbBlocs() { return vm.runtime.targets.filter(t => t.isOriginal).reduce((n, t) => n + Object.keys(t.blocks._blocks).length, 0); },
-    fin() { console.error = origErr; },
+    fin() { console.error = origErr; process.off('unhandledRejection', surRejet); },
   };
   return T;
 }

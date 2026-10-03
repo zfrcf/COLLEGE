@@ -89,17 +89,24 @@ def _objet_defaut(code):
         3: '<rect x="1" y="15" width="30" height="4" rx="1" fill="#374151" stroke="#111" stroke-width="1"/>'
            '<rect x="2" y="18" width="9" height="6" rx="2" fill="#3f6212" stroke="#111" stroke-width="1"/>'
            '<rect x="11" y="9" width="10" height="4" rx="2" fill="#111"/><circle cx="12" cy="11" r="2" fill="#67e8f9"/>',
-        4: '<rect x="6" y="10" width="20" height="12" rx="6" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1.5"/>'
+        7: '<rect x="6" y="10" width="20" height="12" rx="6" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1.5"/>'
            '<path d="M8 16 H24" stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="2 2"/>',
-        5: '<rect x="5" y="8" width="22" height="18" rx="3" fill="#f9fafb" stroke="#9ca3af" stroke-width="1.5"/>'
+        8: '<rect x="5" y="8" width="22" height="18" rx="3" fill="#f9fafb" stroke="#9ca3af" stroke-width="1.5"/>'
            '<rect x="14" y="11" width="4" height="12" fill="#ef4444"/><rect x="10" y="15" width="12" height="4" fill="#ef4444"/>',
-        6: '<rect x="13" y="6" width="6" height="5" fill="#93c5fd"/>'
+        9: '<rect x="13" y="6" width="6" height="5" fill="#93c5fd"/>'
            '<path d="M11 11 h10 v4 l4 8 a3 3 0 0 1 -3 4 h-12 a3 3 0 0 1 -3 -4 l4 -8 z" fill="#3b82f6" stroke="#1e3a8a" stroke-width="1.5"/>',
-        7: '<rect x="12" y="3" width="8" height="6" fill="#93c5fd"/>'
+        10: '<rect x="12" y="3" width="8" height="6" fill="#93c5fd"/>'
            '<rect x="8" y="9" width="16" height="20" rx="4" fill="#2563eb" stroke="#1e3a8a" stroke-width="1.5"/>'
            '<rect x="11" y="14" width="10" height="8" rx="1" fill="#60a5fa"/>',
-        8: '<rect x="14" y="8" width="4" height="22" rx="1" fill="#92400e" transform="rotate(-30 16 19)"/>'
+        11: '<rect x="14" y="8" width="4" height="22" rx="1" fill="#92400e" transform="rotate(-30 16 19)"/>'
            '<path d="M4 12 Q16 2 28 12 L26 15 Q16 8 6 15 Z" fill="#9ca3af" stroke="#374151" stroke-width="1.2"/>',
+        # 4 fusil d'assaut, 5 pistolet-mitrailleur, 6 lance-grenades
+        4: '<rect x="2" y="12" width="26" height="6" rx="2" fill="#374151" stroke="#111" stroke-width="1.2"/>'
+           '<rect x="12" y="17" width="6" height="9" rx="1" fill="#111"/><rect x="26" y="13" width="5" height="3" fill="#4b5563"/>',
+        5: '<rect x="5" y="13" width="18" height="7" rx="2" fill="#374151" stroke="#111" stroke-width="1.2"/>'
+           '<rect x="11" y="19" width="4" height="10" fill="#111"/><rect x="22" y="15" width="7" height="3" fill="#4b5563"/>',
+        6: '<rect x="4" y="12" width="22" height="9" rx="4" fill="#c2410c" stroke="#111" stroke-width="1.2"/>'
+           '<circle cx="12" cy="16.5" r="3" fill="#7c2d12"/><rect x="25" y="13" width="5" height="7" rx="1" fill="#7c2d12"/>',
     }
     return _s32(d[code])
 
@@ -175,6 +182,13 @@ FONDS = [
     ("hud_panneau", S.svg(150, 46, '<rect x="0.5" y="0.5" width="149" height="45" rx="5" fill="#0f172a" fill-opacity="0.7" '
                                   'stroke="#64748b" stroke-opacity="0.6" stroke-width="1"/>'), 75, 23),
 ]
+# cases d'inventaire par rareté (hud_case<r> / hud_case_active<r>, r = 1..5) : bordure et fond teintés
+_COULEURS_RARETE = ["#9ca3af", "#4ade80", "#38bdf8", "#c084fc", "#fb923c"]
+for _r, _c in enumerate(_COULEURS_RARETE, 1):
+    FONDS.append(("hud_case%d" % _r, S.svg(32, 32, '<rect x="1" y="1" width="30" height="30" rx="5" fill="%s" fill-opacity="0.28" '
+                                                 'stroke="%s" stroke-opacity="0.85" stroke-width="1.8"/>' % (_c, _c)), 16, 16))
+    FONDS.append(("hud_case_active%d" % _r, S.svg(32, 32, '<rect x="1" y="1" width="30" height="30" rx="5" fill="%s" fill-opacity="0.45" '
+                                                        'stroke="#facc15" stroke-width="2.5"/>' % _c), 16, 16))
 
 
 def _normaliser(svg_txt, taille=ICONE):
@@ -205,10 +219,12 @@ def _normaliser(svg_txt, taille=ICONE):
 def _icones():
     """Liste (nom, svg 32×32) de toutes les icônes du HUD."""
     out = []
-    for code in range(1, 9):
+    for code in range(1, len(C.OBJETS)):
         out.append(("hud_obj%d" % code, _svg_ui("icone_objet", code) or _objet_defaut(code)))
-    for n, t in [(1, "legeres"), (2, "cartouches"), (3, "lourdes")]:
-        out.append(("hud_mun%d" % n, _svg_ui("icone_munitions", t) or _munitions_defaut(t)))
+    # icônes de munitions par type (hud_mun<n>, n = index dans TYPES_MUNITIONS ; moyennes/roquettes réutilisent légères/lourdes)
+    for n, t in enumerate(C.TYPES_MUNITIONS, 1):
+        t_icone = {"moyennes": "legeres", "roquettes": "lourdes"}.get(t, t)
+        out.append(("hud_mun%d" % n, _svg_ui("icone_munitions", t_icone) or _munitions_defaut(t_icone)))
     for code in range(1, 4):
         out.append(("hud_mat%d" % code, _svg_ui("icone_materiau", code) or _materiau_defaut(code)))
     out.append(("hud_planeur", _svg_ui("planeur", 1) or _planeur_defaut()))
@@ -314,7 +330,7 @@ def construire(P):
     H.liste("hud_jt", [""] * 6)      # journal : texte source par ligne
     H.liste("hud_jw", [""] * 6)      # journal : texte tronqué correspondant
     for v in ["s", "k", "i", "n", "m", "x", "y", "w", "h", "p", "a", "rel", "dist", "dx", "dy", "x1", "x2", "yb", "hw",
-              "t", "e", "c", "lig", "rows", "fin", "rest", "mmss", "txt", "cMin", "q", "reserve",
+              "t", "e", "c", "lig", "rows", "fin", "rest", "mmss", "txt", "cMin", "q", "reserve", "cRar",
               "angleDeg", "degatsFin", "sousTitre", "sousTitreFin", "fpsN", "fpsT", "dernierDessin",
               "tVie", "tBouclier", "tSur", "tEndu", "tEquipe", "tEnnemi", "cEquipe", "cEnnemi", "cVie", "teinteZone", "yTop"]:
         H.var(v, 0)
@@ -443,15 +459,18 @@ def construire(P):
     # =============================================================================================
     H.proc("inventaire", [], [
         # pioche à gauche de la barre, surlignée si équipée
-        si(eq(V("armeNum"), 8), [
+        si(eq(V("armeNum"), C.PIOCHE), [
             couleur_hsbt(15, 90, 100, 20), taille_stylo(sc(22)), ligne(ax(-235, 133), ay(-178, 24), ax(-235, 133), ay(-178, 24)),
         ]),
-        icone("hud_obj8", ax(-235, 133), ay(-178, 24), 17),
+        icone("hud_obj%d" % C.PIOCHE, ax(-235, 133), ay(-178, 24), 17),
         setv("k", 1),
         repeter(5, [
             setv("x", add(ax(-235, 166), mul(mul(sub(V("k"), 1), 34), s))),
             setv("y", ay(-178, 24)),
-            si(eq(V("slotActif"), V("k")), [costume("hud_case_active")], [costume("hud_case")]),
+            # case : bordure colorée par la rareté de l'objet (liste Raretes), neutre si la case est vide
+            setv("q", item("Raretes", V("k"))),
+            si(ou3(eq(item("Inventaire", V("k")), 0), lt(V("q"), 1), gt(V("q"), len(C.RARETES))), [setv("q", "")]),
+            si(eq(V("slotActif"), V("k")), [costume(join("hud_case_active", V("q")))], [costume(join("hud_case", V("q")))]),
             taille(mul(94, s)), aller(V("x"), V("y")), tampon(),
             si(gt(item("Inventaire", V("k")), 0), [
                 costume(join("hud_obj", item("Inventaire", V("k")))), taille(mul(64, s)),
@@ -469,33 +488,35 @@ def construire(P):
     # =============================================================================================
     YD = -72
     H.proc("munitions", [], [
-        si(et(gt(V("armeNum"), 0), lt(V("armeNum"), 4)), [
-            si(eq(V("armeNum"), 1), [setv("reserve", V("munitions_legeres"))]),
-            si(eq(V("armeNum"), 2), [setv("reserve", V("munitions_cartouches"))]),
-            si(eq(V("armeNum"), 3), [setv("reserve", V("munitions_lourdes"))]),
+        # couleur du nom de l'objet tenu selon sa rareté (RareteCouleurs ; gris si rareté inconnue)
+        setv("cRar", item("RareteCouleurs", item("Raretes", V("slotActif")))),
+        si(eq(longueur(V("cRar")), 0), [setv("cRar", "gris")]),
+        si(et(gt(V("armeNum"), 0), lt(V("armeNum"), C.ARME_MAX + 1)), [
+            # réserve selon le type de munitions de l'arme (ArmeMunitions → munitions_<type>)
+        ] + [si(eq(item("ArmeMunitions", V("armeNum")), i + 1), [setv("reserve", V("munitions_" + t))]) for i, t in enumerate(C.TYPES_MUNITIONS)] + [
             si(eq(V("ltm"), 4), [setv("txt", join(item("Quantites", V("slotActif")), " | "))],
                [setv("txt", join(item("Quantites", V("slotActif")), join(" | ", V("reserve"))))]),
             M(V("txt"), 16),
             fond(sub(ax(235, -4), add(V("w"), sc(26))), ay(YD, 10), ax(235, -4), sc(19)),
             D(ax(235, -4), ay(YD, 5), 16, "blanc", 2),
             si(eq(V("ltm"), 4), [icone("hud_infini", ax(235, -11), ay(YD, 10), 14)]),
-            costume(join("hud_mun", V("armeNum"))), taille(mul(50, s)),
+            costume(join("hud_mun", item("ArmeMunitions", V("armeNum")))), taille(mul(50, s)),
             aller(sub(ax(235, -4), add(V("w"), sc(14))), ay(YD, 10)), tampon(),
-            # libellé : nom de l'arme, ou rechargement avec barre (sous la pilule : l'arme est alors baissée)
+            # libellé : nom de l'arme (couleur de rareté), ou rechargement avec barre (sous la pilule : l'arme est alors baissée)
             si(gt(V("rechargeFin"), 0), [
                 O(T(tr("RECHARGEMENT", "RELOADING"), ax(235, -4), ay(YD, 24), 11, "orange", 2)),
                 barre(ax(235, -82), ay(YD, -7), sc(78), sc(4),
                       div(sub(chr_, V("rechargeDebut")), maximum(sub(V("rechargeFin"), V("rechargeDebut")), 0.1)), 9, 90, 100),
             ], [
-                O(T(item("ObjetNoms", V("armeNum")), ax(235, -4), ay(YD, 24), 11, "gris", 2)),
+                O(T(item("ObjetNoms", V("armeNum")), ax(235, -4), ay(YD, 24), 11, V("cRar"), 2)),
             ]),
         ], [
-            si(et(gt(V("armeNum"), 3), lt(V("armeNum"), 8)), [
+            si(et(gt(V("armeNum"), C.ARME_MAX), lt(V("armeNum"), C.PIOCHE)), [
                 setv("txt", join("×", item("Quantites", V("slotActif")))),
                 O(T(V("txt"), ax(235, -4), ay(YD, 5), 16, "blanc", 2),
-                  T(item("ObjetNoms", V("armeNum")), ax(235, -4), ay(YD, 24), 11, "gris", 2)),
+                  T(item("ObjetNoms", V("armeNum")), ax(235, -4), ay(YD, 24), 11, V("cRar"), 2)),
             ], [
-                si(eq(V("armeNum"), 8), O(T(tr("Pioche", "Pickaxe"), ax(235, -4), ay(YD, 24), 11, "gris", 2)),
+                si(eq(V("armeNum"), C.PIOCHE), O(T(tr("Pioche", "Pickaxe"), ax(235, -4), ay(YD, 24), 11, "gris", 2)),
                    O(T(tr("Mains nues", "Unarmed"), ax(235, -4), ay(YD, 24), 11, "gris", 2))),
             ]),
         ]),
@@ -801,6 +822,7 @@ def construire(P):
             si(eq(V("interactionType"), 1), [setv("txt", tr("Ouvrir le coffre", "Open the chest"))]),
             si(eq(V("interactionType"), 2), [setv("txt", join(tr("Réanimer ", "Revive "), item("E_nom", V("interactionCible"))))]),
             si(eq(V("interactionType"), 3), [setv("txt", join(tr("Redéployer ", "Reboot "), item("E_nom", V("interactionCible"))))]),
+            si(eq(V("interactionType"), 4), [setv("txt", tr("Ouvrir le largage", "Open the supply drop"))]),
             fond(sc(-72), ay(-40, 2), sc(72), sc(30), 5, 35),
             T(V("txt"), 0, ay(-40, 4), 12, "blanc", 1),
             barre(sc(-62), ay(-40, -7), sc(124), sc(6), V("p"), 15, 85, 100),

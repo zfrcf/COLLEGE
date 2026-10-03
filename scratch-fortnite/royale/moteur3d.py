@@ -65,8 +65,17 @@ def construire_moteur(P):
     for v in ["i", "camX", "rayX", "rayY", "mapX", "mapY", "deltaX", "deltaY", "stepX", "stepY", "sideX", "sideY",
               "hit", "side", "perp", "h", "sx", "pas", "a", "b", "c", "disc", "t", "s", "cosD", "sinD",
               "planeX", "planeY", "lum", "ang", "bx", "by", "k", "largeurCol", "teinteZone", "teinteCiel",
-              "ex", "ey", "n"]:
+              "ex", "ey", "n",
+              # rendu « spectaculaire » : horizon secoué, heure de la manche, lumière, couleurs des 3 bandes du ciel,
+              # texture des murs, soleil / nuages, tempête
+              "hz", "u", "t2", "lumG", "nuit", "cH1", "cS1", "cB1", "cH2", "cS2", "cB2", "cH3", "cS3", "cB3",
+              "wallX", "tex", "j", "rel", "amp", "secX", "secY", "solX", "solAlt", "hc", "hx", "hy", "y1", "y2"]:
         M.var(v, 0)
+    # Globales privées lues par les panneaux 3D et les superpositions (overlays.py)
+    for g, val in [("m3d_secX", 0), ("m3d_secY", 0),          # décalage de secousse d'écran (px) de l'image courante
+                   ("m3d_lumiere", 1), ("m3d_heure", 0), ("m3d_nuit", 0),   # facteur de lumière (0,4..1,3), heure (0..1), nuit (0..1)
+                   ("m3d_flashFin", 0), ("m3d_eclairFin", 0), ("m3d_prochainEclair", 0), ("m3d_eclairX", 0)]:
+        P.stage.var(g, val)
 
     # Couleurs selon daltonisme : teinte de la zone (0-100) — normal violet, proto/deutér. cyan, trit. orange
     M.proc("palette", [], [
@@ -75,23 +84,141 @@ def construire_moteur(P):
         si(eq(V("param_daltonisme"), 3), [setv("teinteZone", 12)]),
     ])
 
+    # ---- cycle jour / nuit sur la manche ---------------------------------------------------------
+    # u = tempsManche / DUREE_MANCHE (0..1) : aube → jour → crépuscule orangé → nuit bleutée (dernière zone).
+    # Chaque étape fixe les 3 bandes du ciel (teinte, saturation, luminosité) et le facteur de lumière lumG.
+    # Les teintes sont écrites hors 0..100 quand il faut passer par le violet (le stylo replie modulo 100).
+    AUBE = dict(H1=64, S1=55, B1=60, H2=92, S2=35, B2=85, H3=10, S3=55, B3=98, L=0.8)
+    JOUR_A = dict(H1=62, S1=65, B1=85, H2=58, S2=50, B2=95, H3=-45, S3=25, B3=100, L=1.0)   # H3 = 55 (via le violet)
+    JOUR = dict(JOUR_A, H3=55)
+    CREP = dict(H1=70, S1=60, B1=55, H2=95, S2=55, B2=85, H3=108, S3=85, B3=98, L=0.72)       # H3 = 8 (orange)
+    CREP_D = dict(CREP, H3=8)
+    NUIT = dict(H1=66, S1=70, B1=14, H2=64, S2=65, B2=24, H3=-38, S3=50, B3=38, L=0.4)       # H3 = 62
+
+    def lerp(a, b, t):
+        return a if a == b else add(a, mul(b - a, t))
+
+    def segment(u0, u1, debut, fin):
+        corps = [setv("t2", div(sub(V("u"), u0), u1 - u0))]
+        for cle in ["H1", "S1", "B1", "H2", "S2", "B2", "H3", "S3", "B3"]:
+            corps.append(setv("c" + cle, lerp(debut[cle], fin[cle], V("t2"))))
+        corps.append(setv("lumG", lerp(debut["L"], fin["L"], V("t2"))))
+        return corps
+
+    M.proc("lumiere", [], [
+        setv("u", div(V("tempsManche"), C.DUREE_MANCHE)),
+        si(lt(V("u"), 0), [setv("u", 0)]), si(gt(V("u"), 1), [setv("u", 1)]),
+        si(et(ge(V("phase"), 6), lt(V("phase"), 8)), [setv("u", 1)]),          # dernière zone : nuit
+        si(lt(V("u"), 0.2), segment(0, 0.2, AUBE, JOUR_A), [
+            si(lt(V("u"), 0.6), segment(0.2, 0.6, JOUR, JOUR), [
+                si(lt(V("u"), 0.8), segment(0.6, 0.8, JOUR, CREP), segment(0.8, 1, CREP_D, NUIT)),
+            ]),
+        ]),
+        setv("nuit", 0), si(gt(V("u"), 0.8), [setv("nuit", div(sub(V("u"), 0.8), 0.2))]),
+        # hors zone : ciel violet sombre, lumière réduite
+        si(eq(V("horsZone"), 1), [
+            setv("cH1", V("teinteZone")), setv("cS1", 65), setv("cB1", 26),
+            setv("cH2", V("teinteZone")), setv("cS2", 55), setv("cB2", 38),
+            setv("cH3", V("teinteZone")), setv("cS3", 40), setv("cB3", 52),
+            setv("lumG", mul(V("lumG"), 0.7)),
+        ]),
+        # éclair : une image de ciel blanc, murs sur-éclairés
+        si(gt(V("m3d_flashFin"), chrono()), [
+            setv("cS1", 5), setv("cS2", 5), setv("cS3", 5), setv("cB1", 100), setv("cB2", 100), setv("cB3", 100),
+            setv("lumG", 1.3),
+        ]),
+        setv("m3d_lumiere", V("lumG")), setv("m3d_heure", V("u")), setv("m3d_nuit", V("nuit")),
+    ])
+
+    # ---- secousse d'écran : bruit aléatoire d'amplitude secousseForce × (secousse − chrono) / 0,3 ---------------
+    M.proc("secousse", [], [
+        setv("secX", 0), setv("secY", 0),
+        si(gt(V("secousse"), chrono()), [
+            setv("amp", mul(V("secousseForce"), div(sub(V("secousse"), chrono()), 0.3))),
+            si(gt(V("amp"), V("secousseForce")), [setv("amp", V("secousseForce"))]),
+            setv("secX", hasard(mul(V("amp"), -1), V("amp"))), setv("secY", hasard(mul(V("amp"), -1), V("amp"))),
+        ]),
+        setv("m3d_secX", V("secX")), setv("m3d_secY", V("secY")),
+        setv("hz", add(V("horizon"), V("secY"))),
+    ])
+
+    # ---- éclairs de tempête (phase ≥ 4) : toutes les 4 à 9 s, un flash blanc (1 image) puis un éclair 0,35 s ------
+    M.proc("eclairs", [], [
+        si(et3(ge(V("phase"), 4), lt(V("phase"), 8), eq(V("param_performance"), 0)), [
+            si(gt(chrono(), V("m3d_prochainEclair")), [
+                setv("m3d_prochainEclair", add(chrono(), hasard(4, 9))),
+                setv("m3d_flashFin", add(chrono(), 0.05)), setv("m3d_eclairFin", add(chrono(), 0.35)),
+                setv("m3d_eclairX", hasard(-200, 200)),
+            ]),
+        ]),
+    ])
+
+    def point(x, y):
+        return ligne(x, y, x, y)
+
+    def bande_h(y, epaisseur):
+        return [taille_stylo(epaisseur), ligne(-250, y, 250, y)]
+
+    # soleil / lune (position selon dir et l'heure) et 3 nuages qui défilent (parallaxe : vitesses différentes)
+    M.proc("soleil et nuages", [], [
+        setv("rel", sub(mod(add(sub(add(20, mul(V("u"), 140)), V("dir")), 540), 360), 180)),
+        si(lt(absv(V("rel")), 70), [
+            setv("solX", add(mul(-240, div(mathop("tan", V("rel")), V("plan"))), V("secX"))),
+            si(lt(V("nuit"), 0.5), [
+                setv("solAlt", add(V("hz"), add(10, mul(160, mul(sin(mul(V("u"), 180)), sin(mul(V("u"), 180))))))),
+                setv("t2", add(5, mul(10, sin(mul(V("u"), 180))))),
+                couleur_hsbt(V("t2"), 85, 100, 84), taille_stylo(120), point(V("solX"), V("solAlt")),
+                couleur_hsbt(V("t2"), 70, 100, 55), taille_stylo(62), point(V("solX"), V("solAlt")),
+                couleur_hsbt(V("t2"), 40, 100, 0), taille_stylo(34), point(V("solX"), V("solAlt")),
+            ], [
+                setv("solAlt", add(V("hz"), 110)),
+                couleur_hsbt(60, 20, 95, 72), taille_stylo(48), point(V("solX"), V("solAlt")),
+                couleur_hsbt(60, 8, 98, 0), taille_stylo(24), point(V("solX"), V("solAlt")),
+            ]),
+        ]),
+    ] + sum([[
+        setv("rel", sub(mod(add(sub(add(k * 115, mul(chrono(), 1.0 + 0.6 * k)), V("dir")), 540), 360), 180)),
+        si(lt(absv(V("rel")), 65), [
+            setv("solX", add(mul(-240, div(mathop("tan", V("rel")), V("plan"))), V("secX"))),
+            setv("solAlt", add(V("hz"), 40 + 26 * k)),
+            couleur_hsbt(60, 12, mul(100, V("lumG")), 42), taille_stylo(22 + 4 * k),
+            ligne(sub(V("solX"), 20 + 4 * k), V("solAlt"), add(V("solX"), 20 + 4 * k), V("solAlt")),
+            taille_stylo(15 + 3 * k),
+            ligne(sub(V("solX"), 2), add(V("solAlt"), 9), add(V("solX"), 30 + 3 * k), add(V("solAlt"), 9)),
+        ]),
+    ] for k in (1, 2, 3)], []))
+
     M.proc("ciel et sol", [], [
         effacer(),
-        # ciel : bleu, violet hors zone, doré en pré-partie (invulnérable)
-        si(eq(V("horsZone"), 1), couleur_hsbt(V("teinteZone"), 55, 45), [
-            si(eq(V("invulnerable"), 1), couleur_hsbt(12, 35, 95), couleur_hsbt(60, 45, 92)),
+        # ciel : 3 bandes (haute 45 %, moyenne 30 %, basse 25 %) aux couleurs de l'heure
+        setv("hc", sub(180, V("hz"))),
+        couleur_hsbt(V("cH1"), V("cS1"), V("cB1")), bande_h(sub(180, mul(V("hc"), 0.225)), add(mul(V("hc"), 0.45), 2)),
+        couleur_hsbt(V("cH2"), V("cS2"), V("cB2")), bande_h(sub(180, mul(V("hc"), 0.6)), add(mul(V("hc"), 0.30), 2)),
+        couleur_hsbt(V("cH3"), V("cS3"), V("cB3")), bande_h(add(V("hz"), mul(V("hc"), 0.125)), add(mul(V("hc"), 0.25), 2)),
+        si(eq(V("param_performance"), 0), [appel("soleil et nuages")]),
+        # éclair : ligne brisée blanche du haut de l'écran vers l'horizon (nouveau tracé à chaque image → scintille)
+        si(gt(V("m3d_eclairFin"), chrono()), [
+            setv("bx", V("m3d_eclairX")), setv("by", 180), setv("t", div(sub(170, V("hz")), 6)),
+            couleur_hsbt(62, 30, 100, 55), taille_stylo(16), stylo_haut(), aller(V("bx"), V("by")), stylo_bas(),
+            repeter(3, [changev("bx", hasard(-22, 22)), changev("by", mul(V("t"), -2)), aller(V("bx"), V("by"))]),
+            stylo_haut(), setv("bx", V("m3d_eclairX")), setv("by", 180),
+            couleur_hsbt(62, 5, 100, 0), taille_stylo(3.5), aller(V("bx"), V("by")), stylo_bas(),
+            repeter(6, [changev("bx", hasard(-16, 16)), changev("by", mul(V("t"), -1)), aller(V("bx"), V("by"))]),
+            stylo_haut(),
+            # petite branche latérale
+            ligne(V("bx"), add(V("by"), mul(V("t"), 2.5)), add(V("bx"), hasard(-40, 40)), add(V("by"), mul(V("t"), 1.2))),
         ]),
-        taille_stylo(sub(180, V("horizon"))),
-        ligne(-250, div(add(180, V("horizon")), 2), 250, div(add(180, V("horizon")), 2)),
-        # sol lointain puis proche (dégradé en 2 bandes ; 1 bande en mode performance)
-        couleur_hsbt(30, 45, 38),
-        taille_stylo(add(V("horizon"), 180)),
-        ligne(-250, div(sub(V("horizon"), 180), 2), 250, div(sub(V("horizon"), 180), 2)),
+        # sol : 3 bandes (lointain sombre → proche clair) éclairées par lumG
+        setv("hc", add(V("hz"), 180)),
+        couleur_hsbt(31, 42, mul(34, V("lumG"))), bande_h(sub(V("hz"), mul(V("hc"), 0.1)), add(mul(V("hc"), 0.2), 2)),
+        couleur_hsbt(31, 48, mul(46, V("lumG"))), bande_h(sub(V("hz"), mul(V("hc"), 0.375)), add(mul(V("hc"), 0.35), 2)),
+        couleur_hsbt(31, 52, mul(58, V("lumG"))), bande_h(sub(V("hz"), mul(V("hc"), 0.775)), add(mul(V("hc"), 0.45), 2)),
         si(eq(V("param_performance"), 0), [
-            couleur_hsbt(30, 50, 55),
-            taille_stylo(div(add(V("horizon"), 180), 2)),
-            ligne(-250, sub(V("horizon"), mul(add(V("horizon"), 180), 0.75)), 250,
-                  sub(V("horizon"), mul(add(V("horizon"), 180), 0.75))),
+            # brume à l'horizon : bande très claire semi-transparente
+            couleur_hsbt(V("cH3"), 20, 96, 55), bande_h(sub(V("hz"), 3), 12),
+            # qualité épique : fines lignes de gazon en perspective
+            si(eq(V("param_qualite"), 3), [couleur_hsbt(33, 45, mul(28, V("lumG")), 35), taille_stylo(1.5)] + sum(
+                [ligne(-250, sub(V("hz"), mul(V("hc"), f)), 250, sub(V("hz"), mul(V("hc"), f))) for f in (0.07, 0.12, 0.19, 0.29, 0.43, 0.63)], [])),
         ]),
     ])
 
@@ -124,16 +251,26 @@ def construire_moteur(P):
         setv("lum", sub(100, mul(V("perp"), 2.6))),
         si(lt(V("lum"), 28), [setv("lum", 28)]),
         si(eq(V("side"), 1), [setv("lum", mul(V("lum"), 0.72))]),
-        si(eq(V("hit"), 2), couleur_hsbt(8, 70, V("lum")), [
-            si(eq(V("hit"), 3), couleur_hsbt(2, 60, V("lum")), [
-                si(eq(V("hit"), 4), couleur_hsbt(58, 45, V("lum")), couleur_hsbt(0, 0, V("lum"))),
+        setv("lum", mul(V("lum"), V("lumG"))),
+        setv("sx", add(add(-240, mul(add(V("i"), 0.5), V("largeurCol"))), V("secX"))),
+        si(lt(V("perp"), 59), [
+            # texture : de près seulement, en qualité ≥ 2 et hors mode performance (sinon une seule ligne)
+            setv("tex", 0),
+            si(et4(lt(V("perp"), 14), gt(V("h"), 16), gt(V("param_qualite"), 1), eq(V("param_performance"), 0)), [setv("tex", 1)]),
+            setv("y1", add(V("hz"), div(V("h"), 2))), setv("y2", sub(V("hz"), div(V("h"), 2))),
+            si(eq(V("tex"), 1), [
+                # coordonnée de texture : fraction de la position d'impact le long du mur
+                si(eq(V("side"), 0), [setv("wallX", add(V("py"), mul(V("perp"), V("rayY"))))],
+                   [setv("wallX", add(V("px"), mul(V("perp"), V("rayX"))))]),
+                setv("wallX", sub(V("wallX"), floor(V("wallX")))),
+            ]),
+            si(eq(V("hit"), 2), [appel("mur bois")], [
+                si(eq(V("hit"), 3), [appel("mur brique")], [
+                    si(eq(V("hit"), 4), [appel("mur metal")], [appel("mur beton")]),
+                ]),
             ]),
         ]),
-        setv("sx", add(-240, mul(add(V("i"), 0.5), V("largeurCol")))),
-        si(lt(V("perp"), 59), [
-            ligne(V("sx"), add(V("horizon"), div(V("h"), 2)), V("sx"), sub(V("horizon"), div(V("h"), 2))),
-        ]),
-        # mur de tempête (désactivé en mode performance)
+        # mur de tempête (désactivé en mode performance) : transparence qui pulse, stries verticales qui défilent
         si(eq(V("param_performance"), 0), [
             setv("bx", sub(V("px"), V("zoneX"))), setv("by", sub(V("py"), V("zoneY"))),
             setv("a", add(mul(V("rayX"), V("rayX")), mul(V("rayY"), V("rayY")))),
@@ -146,12 +283,81 @@ def construire_moteur(P):
                 si(le(V("t"), 0.1), [setv("t", div(add(mul(V("b"), -1), V("s")), mul(2, V("a"))))]),
                 si(et(gt(V("t"), 0.1), lt(V("t"), V("perp"))), [
                     setv("h", div(320, V("t"))), si(gt(V("h"), 900), [setv("h", 900)]),
-                    couleur_hsbt(V("teinteZone"), 75, 85, 55),
-                    ligne(V("sx"), add(V("horizon"), div(V("h"), 2)), V("sx"), sub(V("horizon"), div(V("h"), 2))),
+                    setv("hx", add(add(V("px"), mul(V("t"), V("rayX"))), add(V("py"), mul(V("t"), V("rayY"))))),
+                    setv("j", add(mul(V("hx"), 1.5), mul(chrono(), 0.7))), setv("j", sub(V("j"), floor(V("j")))),
+                    setv("b", 68), si(lt(V("j"), 0.5), [setv("b", 90)]),
+                    couleur_hsbt(V("teinteZone"), 75, V("b"), add(48, mul(12, sin(add(mul(chrono(), 200), mul(V("i"), 11)))))),
+                    ligne(V("sx"), add(V("hz"), div(V("h"), 2)), V("sx"), sub(V("hz"), div(V("h"), 2))),
                 ]),
             ]),
         ]),
     ])
+
+    # ---- murs texturés (≤ 3 lignes par colonne ; 1 seule si tex = 0) ----------------------------------------
+    # béton : joints horizontaux sombres tous les quarts de hauteur (traits fins)
+    M.proc("mur beton", [], [
+        couleur_hsbt(0, 0, V("lum")), ligne(V("sx"), V("y1"), V("sx"), V("y2")),
+        si(eq(V("tex"), 1), [
+            couleur_hsbt(0, 0, mul(V("lum"), 0.7)), taille_stylo(2),
+            ligne(sub(V("sx"), div(V("largeurCol"), 2)), add(V("hz"), div(V("h"), 4)), add(V("sx"), div(V("largeurCol"), 2)), add(V("hz"), div(V("h"), 4))),
+            ligne(sub(V("sx"), div(V("largeurCol"), 2)), sub(V("hz"), div(V("h"), 4)), add(V("sx"), div(V("largeurCol"), 2)), sub(V("hz"), div(V("h"), 4))),
+            taille_stylo(add(V("largeurCol"), 1)),
+        ]),
+    ])
+    # bois : planches verticales (teinte alternée selon wallX, rainure sombre entre deux planches)
+    M.proc("mur bois", [], [
+        si(eq(V("tex"), 1), [
+            setv("j", mul(V("wallX"), 5)),
+            si(eq(mod(floor(V("j")), 2), 0), [setv("lum", mul(V("lum"), 0.84))]),
+            si(lt(sub(V("j"), floor(V("j"))), 0.1), [setv("lum", mul(V("lum"), 0.62))]),
+        ]),
+        couleur_hsbt(8, 70, V("lum")), ligne(V("sx"), V("y1"), V("sx"), V("y2")),
+    ])
+    # brique : 4 rangées ; joints verticaux clairs décalés d'une demi-brique une rangée sur deux
+    M.proc("mur brique", [], [
+        couleur_hsbt(2, 60, V("lum")), ligne(V("sx"), V("y1"), V("sx"), V("y2")),
+        si(eq(V("tex"), 1), [
+            setv("j", mul(V("wallX"), 4)), setv("j", sub(V("j"), floor(V("j")))),
+            si(lt(V("j"), 0.13), [
+                couleur_hsbt(4, 12, add(V("lum"), 12)),
+                ligne(V("sx"), V("y1"), V("sx"), sub(V("y1"), div(V("h"), 4))),
+                ligne(V("sx"), V("hz"), V("sx"), sub(V("hz"), div(V("h"), 4))),
+            ], [
+                si(et(gt(V("j"), 0.5), lt(V("j"), 0.63)), couleur_hsbt(4, 12, add(V("lum"), 12)), couleur_hsbt(2, 65, mul(V("lum"), 0.86))),
+                ligne(V("sx"), sub(V("y1"), div(V("h"), 4)), V("sx"), V("hz")),
+                ligne(V("sx"), sub(V("hz"), div(V("h"), 4)), V("sx"), V("y2")),
+            ]),
+        ]),
+    ])
+    # métal : panneaux alternés et reflet clair en diagonale
+    M.proc("mur metal", [], [
+        si(et(eq(V("tex"), 1), eq(mod(floor(mul(V("wallX"), 2)), 2), 1)), [setv("lum", mul(V("lum"), 0.88))]),
+        couleur_hsbt(58, 45, V("lum")), ligne(V("sx"), V("y1"), V("sx"), V("y2")),
+        si(eq(V("tex"), 1), [
+            setv("j", add(V("hz"), mul(V("h"), sub(0.3, mul(0.6, V("wallX")))))),
+            couleur_hsbt(58, 20, add(V("lum"), 30), 35),
+            ligne(V("sx"), add(V("j"), mul(V("h"), 0.07)), V("sx"), sub(V("j"), mul(V("h"), 0.07))),
+        ]),
+    ])
+
+    # ---- traceur de tir : trait jaune-blanc du canon vers le point d'impact + étincelles ---------------------------
+    M.proc("traceur", [], [
+        couleur_hsbt(14, 35, 100, 65), taille_stylo(6),
+        ligne(add(150, V("secX")), add(-120, V("secY")), add(V("traceX"), V("secX")), add(V("traceY"), V("secY"))),
+        couleur_hsbt(14, 55, 100, 0), taille_stylo(1.8),
+        ligne(add(150, V("secX")), add(-120, V("secY")), add(V("traceX"), V("secX")), add(V("traceY"), V("secY"))),
+        couleur_hsbt(9, 85, 100, 0), taille_stylo(1.5),
+        repeter(4, [ligne(add(V("traceX"), V("secX")), add(V("traceY"), V("secY")),
+                          add(add(V("traceX"), V("secX")), hasard(-11, 11)), add(add(V("traceY"), V("secY")), hasard(-8, 11)))]),
+    ])
+
+    # ---- vignette hors zone : bords assombris (2 passes translucides) -------------------------------------------
+    def cadre():
+        return [ligne(-250, 180, 250, 180), ligne(-250, -180, 250, -180), ligne(-240, -200, -240, 200), ligne(240, -200, 240, 200)]
+
+    M.proc("vignette", [], [
+        couleur_hsbt(V("teinteZone"), 70, 8, 72), taille_stylo(110)] + cadre() + [
+        couleur_hsbt(V("teinteZone"), 70, 8, 50), taille_stylo(44)] + cadre())
 
     def point_mm(x, y, teinte, sat, lum, taille_pt):
         return [couleur_hsbt(teinte, sat, lum, 0), taille_stylo(taille_pt), ligne(mm_x(x), mm_y(y), mm_x(x), mm_y(y))]
@@ -171,8 +377,10 @@ def construire_moteur(P):
         couleur_hsbt(60, 30, 10, 30), taille_stylo(2 * MM_R + 4),
         ligne(MM_CX, MM_CY, MM_CX, MM_CY),
         # murs principaux (points discrets, 1 point sur 2 pour le coût) — seulement si pas en mode performance
-        # zone actuelle (teinte selon daltonisme) et prochaine zone (blanche)
-        si(lt(V("zoneR"), C.TAILLE), cercle_mm(V("zoneX"), V("zoneY"), V("zoneR"), V("teinteZone"), 80, 95, 2)),
+        # zone actuelle (teinte selon daltonisme) avec halo pulsant, et prochaine zone (blanche)
+        si(lt(V("zoneR"), C.TAILLE), cercle_mm(V("zoneX"), V("zoneY"), V("zoneR"), V("teinteZone"), 70, 95, 7,
+                                                add(62, mul(22, sin(mul(chrono(), 240)))))
+           + cercle_mm(V("zoneX"), V("zoneY"), V("zoneR"), V("teinteZone"), 80, 95, 2)),
         si(et(lt(V("prochaineZoneR"), V("zoneR")), gt(V("tempsAvantZone"), 0)),
            cercle_mm(V("prochaineZoneX"), V("prochaineZoneY"), V("prochaineZoneR"), 0, 0, 100, 1.5, 20)),
         # balises de redéploiement (modes équipe)
@@ -203,14 +411,19 @@ def construire_moteur(P):
             ]),
             changev("k", 1),
         ]),
-        # moi + direction
+        # moi : cône de vision translucide (7 rayons sur ± 30°), point et direction
+        couleur_hsbt(0, 0, 100, 68), taille_stylo(2.5), setv("ang", sub(V("dir"), 30)),
+        repeter(7, [
+            ligne(mm_x(V("px")), mm_y(V("py")), add(mm_x(V("px")), mul(cos(V("ang")), 15)), add(mm_y(V("py")), mul(sin(V("ang")), 15))),
+            changev("ang", 10),
+        ]),
         point_mm(V("px"), V("py"), 0, 0, 100, 5),
         taille_stylo(2),
         ligne(mm_x(V("px")), mm_y(V("py")), add(mm_x(V("px")), mul(cos(V("dir")), 9)), add(mm_y(V("py")), mul(sin(V("dir")), 9))),
     ])
 
     M.proc("rendu", [], [
-        appel("palette"),
+        appel("palette"), appel("eclairs"), appel("lumiere"), appel("secousse"),
         setv("largeurCol", div(480, V("colonnes"))),
         setv("cosD", cos(V("dir"))), setv("sinD", sin(V("dir"))),
         setv("planeX", mul(V("sinD"), V("plan"))), setv("planeY", mul(V("cosD"), mul(V("plan"), -1))),
@@ -218,6 +431,8 @@ def construire_moteur(P):
         taille_stylo(add(V("largeurCol"), 1)),
         setv("i", 0),
         repeter(V("colonnes"), [appel("colonne"), changev("i", 1)]),
+        si(gt(V("traceFin"), chrono()), [appel("traceur")]),
+        si(et(eq(V("horsZone"), 1), eq(V("param_performance"), 0)), [appel("vignette")]),
         si(eq(V("param_performance"), 0), [appel("minicarte")], [
             # minicarte réduite : moi + zone uniquement
             couleur_hsbt(60, 30, 10, 30), taille_stylo(2 * MM_R + 4), ligne(MM_CX, MM_CY, MM_CX, MM_CY),
@@ -264,7 +479,8 @@ def installer_billboard(cible, ex, ey, taille_num, decal_y, condition, avant=Non
                 si(lt(V("col"), 1), [setv("col", 1)]), si(gt(V("col"), V("colonnes")), [setv("col", V("colonnes"))]),
                 si(et(lt(absv(V("sx")), 300), gt(item("Profondeur", V("col")), sub(V("f"), 0.15))), [
                     taille(div(taille_num, V("f"))),
-                    aller(V("sx"), sub(V("horizon"), div(decal_y, V("f")))),
+                    # la secousse d'écran du moteur (m3d_secX/Y) s'applique aussi aux panneaux
+                    aller(add(V("sx"), V("m3d_secX")), add(sub(V("horizon"), div(decal_y, V("f"))), V("m3d_secY"))),
                     montrer(),
                 ] + (avant or []), [cacher()] + (apres_cache or [])),
             ], [cacher()] + (apres_cache or [])),
@@ -291,6 +507,8 @@ def construire_panneaux(P):
     E.var("monIndex", 0)
     E.var("pose", "debout")
     E.var("etiquette", "")
+    for v in ["vu", "mortAnim", "dsx", "dsy", "dt", "k"]:     # effet de disparition à la mort (dernière position vue)
+        E.var(v, 0)
     a_skins = any(c["name"].startswith("skin") for c in E.costumes)
     installer_billboard(
         E, item("E_x", V("monIndex")), item("E_y", V("monIndex")), 224, 48,
@@ -302,7 +520,14 @@ def construire_panneaux(P):
             si(eq(item("E_etat", V("monIndex")), 3), [setv("pose", "aterre")]),
             si(et(eq(item("E_etat", V("monIndex")), 1), gt(item("E_emoteFin", V("monIndex")), chrono())), [setv("pose", "emote")]),
             (costume(join(join("skin", item("E_skin", V("monIndex"))), join("_", V("pose")))) if a_skins else costume(V("pose"))),
-            si(eq(V("pose"), "aterre"), [taille(div(160, V("f"))), aller(V("sx"), sub(V("horizon"), div(110, V("f"))))]),
+            si(eq(V("pose"), "aterre"), [taille(div(160, V("f"))),
+                                         aller(add(V("sx"), V("m3d_secX")), add(sub(V("horizon"), div(110, V("f"))), V("m3d_secY")))]),
+            # touché par moi (cible = monIndex) : éclat blanc 0,15 s ; sinon luminosité selon l'heure (nuit : plus sombre)
+            si(et(gt(V("toucheFin"), add(chrono(), 0.1)), eq(V("cible"), V("monIndex"))), [effet("BRIGHTNESS", 60)],
+               [effet("BRIGHTNESS", mul(sub(V("m3d_lumiere"), 1), 60))]),
+            # mémoire de la dernière position affichée (pour la disparition à la mort)
+            setv("vu", 1), setv("dsx", sub(position_x(), V("m3d_secX"))), setv("dsy", sub(position_y(), V("m3d_secY"))),
+            setv("dt", taille_actuelle()),
             # étiquette : nom ♥pv (★ pour un coéquipier) ; rien en mode performance
             si(eq(V("param_performance"), 0), [
                 setv("etiquette", join(item("E_nom", V("monIndex")), join(" ♥", item("E_pv", V("monIndex"))))),
@@ -312,7 +537,7 @@ def construire_panneaux(P):
                 dire(V("etiquette")),
             ], [dire("")]),
         ],
-        apres_cache=[dire("")])
+        apres_cache=[dire(""), setv("vu", 0)])
     E.script(quand_drapeau(), [cacher()])
     E.script(quand_message("demarrer"), [
         si(gt(V("monIndex"), 0), [supprimer_clone()]),      # un clone existant disparaît, l'original recrée la série
@@ -320,7 +545,21 @@ def construire_panneaux(P):
         repeter(C.NB_JOUEURS, [changev("monIndex", 1), cloner_moi()]),
     ])
     E.script(quand_clone(), ([] if a_skins else [effet("COLOR", mul(V("monIndex"), 35))]) + [
-        toujours([arriere_plan(), appel("afficher")]),
+        setv("vu", 0), setv("mortAnim", 0),
+        toujours([
+            arriere_plan(),
+            # mort d'un adversaire visible à l'image précédente : disparition de 0,6 s (rétrécit, monte, s'efface)
+            si(et(eq(V("vu"), 1), eq(item("E_etat", V("monIndex")), 2)), [setv("mortAnim", add(chrono(), 0.6)), setv("vu", 0)]),
+            appel("afficher"),
+            si(gt(V("mortAnim"), chrono()), [
+                setv("k", div(sub(V("mortAnim"), chrono()), 0.6)),
+                taille(mul(V("dt"), add(0.35, mul(0.65, V("k"))))),
+                aller(add(V("dsx"), V("m3d_secX")), add(add(V("dsy"), mul(sub(1, V("k")), 50)), V("m3d_secY"))),
+                effet("GHOST", mul(sub(1, V("k")), 90)), effet("BRIGHTNESS", 50), montrer(),
+            ], [
+                si(gt(V("mortAnim"), 0), [setv("mortAnim", 0), effet("GHOST", 0), effet("BRIGHTNESS", 0), cacher()]),
+            ]),
+        ]),
     ])
 
     # ---- Coffre ----------------------------------------------------------------

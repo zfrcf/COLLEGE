@@ -86,6 +86,7 @@ def svg_lunette():
 
 
 def svg_arme(type_arme):
+    """Arme en vue subjective 280×150 : "pistolet", "pompe", "sniper", "assaut", "pm", "lance" (défaut : sniper)."""
     if type_arme == "pistolet":
         corps = """
 <rect x="60" y="40" width="110" height="34" rx="8" fill="#2f2f38" stroke="#111" stroke-width="3"/>
@@ -100,6 +101,38 @@ def svg_arme(type_arme):
 <rect x="140" y="76" width="60" height="22" rx="6" fill="#8a5c33" stroke="#111" stroke-width="3"/>
 <rect x="200" y="50" width="40" height="18" rx="4" fill="#44444f" stroke="#111" stroke-width="3"/>
 <rect x="110" y="96" width="16" height="22" rx="3" fill="#222"/>"""
+    elif type_arme == "assaut":
+        # fusil d'assaut : crosse, boîtier, chargeur courbe, garde-main, canon, poignée
+        corps = """
+<rect x="16" y="56" width="70" height="30" rx="8" fill="#3b3b44" stroke="#111" stroke-width="3"/>
+<rect x="80" y="44" width="110" height="32" rx="6" fill="#2f2f38" stroke="#111" stroke-width="3"/>
+<rect x="150" y="50" width="70" height="20" rx="5" fill="#4a3b2a" stroke="#111" stroke-width="3"/>
+<rect x="218" y="54" width="34" height="12" rx="3" fill="#44444f" stroke="#111" stroke-width="3"/>
+<path d="M118 76 L146 76 L140 118 L112 118 Z" fill="#222" stroke="#111" stroke-width="3"/>
+<rect x="92" y="76" width="16" height="26" rx="4" transform="rotate(14 100 89)" fill="#1a1a1a" stroke="#111" stroke-width="3"/>
+<rect x="110" y="34" width="40" height="12" rx="4" fill="#222" stroke="#111" stroke-width="3"/>
+<rect x="86" y="48" width="60" height="4" fill="#5a5a66"/>"""
+    elif type_arme == "pm":
+        # pistolet-mitrailleur : corps compact, long chargeur droit, crosse repliée
+        corps = """
+<rect x="40" y="52" width="60" height="18" rx="4" fill="#44444f" stroke="#111" stroke-width="3"/>
+<rect x="90" y="44" width="100" height="32" rx="8" fill="#2f2f38" stroke="#111" stroke-width="3"/>
+<rect x="186" y="52" width="40" height="14" rx="4" fill="#3b3b44" stroke="#111" stroke-width="3"/>
+<rect x="128" y="74" width="20" height="56" rx="4" fill="#1a1a1a" stroke="#111" stroke-width="3"/>
+<rect x="100" y="74" width="16" height="26" rx="4" transform="rotate(10 108 87)" fill="#5a4632" stroke="#111" stroke-width="3"/>
+<rect x="96" y="48" width="70" height="4" fill="#5a5a66"/>
+<circle cx="214" cy="59" r="4" fill="#111"/>"""
+    elif type_arme == "lance":
+        # lance-grenades : gros tube orange, barillet, crosse épaisse, poignée avant
+        corps = """
+<rect x="14" y="58" width="80" height="40" rx="10" fill="#4a3b2a" stroke="#111" stroke-width="3"/>
+<rect x="84" y="40" width="150" height="44" rx="14" fill="#c2410c" stroke="#111" stroke-width="3"/>
+<rect x="226" y="46" width="40" height="32" rx="8" fill="#7c2d12" stroke="#111" stroke-width="3"/>
+<circle cx="130" cy="62" r="20" fill="#9a3412" stroke="#111" stroke-width="3"/>
+<circle cx="130" cy="62" r="7" fill="#222"/>
+<rect x="110" y="84" width="22" height="28" rx="5" fill="#222" stroke="#111" stroke-width="3"/>
+<rect x="180" y="84" width="14" height="22" rx="4" fill="#222" stroke="#111" stroke-width="3"/>
+<rect x="94" y="46" width="90" height="5" rx="2" fill="#fb923c" fill-opacity="0.8"/>"""
     else:
         corps = """
 <rect x="10" y="66" width="100" height="36" rx="10" fill="#3a5a2a" stroke="#111" stroke-width="3"/>
