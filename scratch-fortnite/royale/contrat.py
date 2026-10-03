@@ -261,6 +261,15 @@ GLOBALES = {
     "mortX": 0, "mortY": 0,          # position figée à la mort (carte de redéploiement, encodée à la place de px/py)
     "redeploiement": 0,              # 1 = un coéquipier vient de me redéployer (Partie me renvoie en parachute)
     "rec_elims": 0, "rec_victoires": 0,   # proposition de record (diffusion "record proposer")
+    # --- sensations (lues par Moteur3D/overlays, écrites par Joueur) ---
+    "secousse": 0,                   # fin (chrono) de la secousse d'écran courante
+    "secousseForce": 0,              # amplitude en px
+    "traceFin": 0, "traceX": 0, "traceY": 0,   # traceur de tir : fin (chrono) et point d'impact à l'écran (coordonnées Scratch)
+    "recul": 0,                      # recul vertical (px) décroissant
+    "serie": 0, "serieFin": 0,       # série d'éliminations en cours (compteur, expiration)
+    # --- bots de remplissage (module mod_bots) ---
+    "param_bots": 1,                 # 1 = des bots occupent les emplacements libres quand on joue
+    "nbBots": 0,
     # --- partie / zone (Partie) ---
     "debut": 0, "tempsManche": 0, "phase": 0,        # phase : 0 prépartie,1 bus,2 parachute/combat,3..7 tempête,8 fin
     "zoneX": 16.5, "zoneY": 16.5, "zoneR": 30, "zoneDegats": 1, "horsZone": 0,
@@ -406,6 +415,8 @@ LISTES = {
     "Boutique": [],                           # 6 entrées du jour "type|id|prix"
     "EmotesEquipees": [1, 2, 3, 4, 5, 6],     # roue d'émotes (6 cases)
     "RecapLignes": [],                        # lignes du récapitulatif de fin de partie ("Éliminations ×3 : +150 XP")
+    # --- bots : paquets locaux substitués aux emplacements cloud libres (Reseau les lit comme de vrais joueurs) ---
+    "BotsActifs": [0] * NB_JOUEURS, "BotsPaquets": [0] * NB_JOUEURS,
     "Textes": [],                             # rempli par tr() : index 2k+1 = FR, 2k+2 = EN
     "ChatRapide": [f for f, _ in CHAT_RAPIDE] + [e for _, e in CHAT_RAPIDE],
     "Emotes": [f for f, _ in EMOTES] + [e for _, e in EMOTES],

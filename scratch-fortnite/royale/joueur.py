@@ -58,7 +58,9 @@ def construire_reseau(P):
 
     # --- accès aux emplacements cloud -------------------------------------------
     R.proc("lire paquet", [("n", "n")],
-           [si(eq(A("n"), k), [setv("paquet", V("☁ J%d" % k))]) for k in range(1, C.NB_JOUEURS + 1)])
+           [si(eq(A("n"), k), [setv("paquet", V("☁ J%d" % k))]) for k in range(1, C.NB_JOUEURS + 1)] +
+           # bot de remplissage sur un emplacement libre : son paquet local remplace la variable cloud
+           [si(et(eq(item("BotsActifs", A("n")), 1), non(eq(A("n"), V("monSlot")))), [setv("paquet", item("BotsPaquets", A("n")))])])
     R.proc("ecrire paquet", [("n", "n"), ("valeur", "s")],
            [si(eq(A("n"), k), [setv("☁ J%d" % k, A("valeur"))]) for k in range(1, C.NB_JOUEURS + 1)])
     R.proc("extraire", [("debut", "n"), ("longueur", "n")], [
@@ -204,6 +206,7 @@ def construire_reseau(P):
                 si(eq(item("E_tueur", n), V("monSlot")), [
                     journal(join(tr_txt("Tu as éliminé ", "You eliminated "), nom_de(n))),
                     changev("💀 Éliminations", 1), changev("stat_elims", 1),
+                    si(gt(V("serieFin"), chrono()), [changev("serie", 1)], [setv("serie", 1)]), setv("serieFin", add(chrono(), 8)),
                     setv("evt_cible", n), diffuser("evt elimination"),
                     setv("message", "elimination"), setv("son_pan", 0), setv("son_volume", 100), diffuser("son elimination"),
                 ], [
@@ -631,8 +634,11 @@ def construire_joueur(P):
     J.proc("tirer", [], [
         si(non(eq(V("ltm"), 4)), [remplacer("Quantites", V("slotActif"), sub(item("Quantites", V("slotActif")), 1))]),
         setv("prochainTir", add(chrono(), item("ArmeCadence", V("armeNum")))),
-        setv("tirAnim", 4), changev("stat_tirs", 1),
+        setv("tirAnim", 4), changev("stat_tirs", 1), setv("recul", add(V("recul"), item("ArmeDegats", V("armeNum")))),
+        si(gt(V("recul"), 40), [setv("recul", 40)]),
         setv("evt_valeur", V("armeNum")), diffuser("evt tir"),
+        # traceur : du canon vers le point visé (impact sur le mur au centre de l'écran par défaut)
+        setv("traceFin", add(chrono(), 0.08)), setv("traceX", hasard(-6, 6)), setv("traceY", add(V("horizon"), hasard(-6, 6))),
         si(eq(V("armeNum"), 1), jouer_son("tir_pistolet")), si(eq(V("armeNum"), 2), jouer_son("tir_pompe")),
         si(eq(V("armeNum"), 3), jouer_son("tir_sniper")),
         setv("tolerance", item("ArmeTolerance", V("armeNum"))),
@@ -660,6 +666,7 @@ def construire_joueur(P):
                 si(lt(V("degats"), 10), [setv("degats", 10)]),
             ]),
             setv("toucheFin", add(chrono(), 0.25)),
+            setv("traceX", mul(div(div(V("meilleurR"), V("meilleurDist")), V("plan")), 240)), setv("traceY", sub(V("horizon"), div(40, V("meilleurDist")))),
             changev("stat_touches", 1), changev("stat_degats", V("degats")),
             setv("evt_cible", V("meilleur")), setv("evt_valeur", V("degats")), diffuser("evt touche"),
             jouer_son("touche"),
@@ -887,6 +894,7 @@ def construire_joueur(P):
             si(eq(V("ok"), 1), [
                 setv("n", A("quantite")),
                 setv("flash", add(chrono(), 0.35)), changev("stat_degatsRecus", V("n")), setv("dernierDegatsT", chrono()),
+                setv("secousse", add(chrono(), 0.3)), setv("secousseForce", minimum(add(3, div(V("n"), 8)), 12)),
                 setv("evt_source", A("source")), setv("evt_valeur", V("n")),
                 si(gt(A("source"), 0), [
                     setv("dx", sub(item("E_x", A("source")), V("px"))), setv("dy", sub(item("E_y", A("source")), V("py"))),
@@ -1012,7 +1020,9 @@ def construire_joueur(P):
                                          notification(join(tr_txt("Matériau : ", "Material: "), item("MateriauNoms", V("materiauActif"))))]),
         ], [setv("materiauRelache", 0)]),
         appel("mettre a jour affichage"),
-        si(et(tc("viser"), eq(V("armeNum"), 3)), [setv("plan", 0.22)], [setv("plan", 0.66)]),
+        si(et(tc("viser"), eq(V("armeNum"), 3)), [setv("plan", 0.22)], [
+            si(eq(V("sprint"), 1), [setv("plan", 0.74)], [setv("plan", 0.66)]),   # zoom arrière en sprint
+        ]),
         # rechargement
         si(et(tc("recharger"), lt(V("armeNum"), 4)), [si(gt(V("armeNum"), 0), [appel("recharger")])]),
         si(et(gt(V("rechargeFin"), 0), gt(chrono(), V("rechargeFin"))), [appel("finir recharge")]),
@@ -1070,7 +1080,8 @@ def construire_joueur(P):
             si(eq(V("ltm"), 5), [changev("velY", -0.4)], [changev("velY", -0.8)]),
             si(lt(V("hauteur"), 0), [setv("hauteur", 0), setv("velY", 0)]),
         ]),
-        setv("horizon", mul(V("hauteur"), -1)),
+        si(gt(V("recul"), 0), [setv("recul", mul(V("recul"), 0.75)), si(lt(V("recul"), 0.5), [setv("recul", 0)])]),
+        setv("horizon", add(mul(V("hauteur"), -1), mul(V("recul"), 0.4))),
         si(gt(V("tirAnim"), 0), [changev("tirAnim", -1)]),
         # surbouclier : +5/s après 6 s sans dégâts, max 50 (en combat seulement)
         si(et3(eq(V("etat"), 1), gt(sub(chrono(), V("dernierDegatsT")), 6), lt(V("surbouclier"), 50)), [
