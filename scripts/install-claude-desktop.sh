@@ -4,7 +4,9 @@
 #  — installation SANS sudo / SANS droits root —
 # -----------------------------------------------------------------------------
 #  Usage :
-#     bash install-claude-desktop.sh              # installe / met à jour
+#     bash install-claude-desktop.sh              # installe / met à jour + icône sur le bureau
+#     bash install-claude-desktop.sh --bureau     # (re)crée seulement l'icône sur le bureau
+#     bash install-claude-desktop.sh --sans-bureau  # installe sans icône sur le bureau
 #     bash install-claude-desktop.sh --uninstall  # désinstalle proprement
 #     bash install-claude-desktop.sh --help
 #
@@ -33,20 +35,66 @@ DESKTOP_FILE="$DESKTOP_DIR/claude-desktop.desktop"
 ICON_DIR="$PREFIX/share/icons/hicolor"
 
 ACTION="install"
+BUREAU=1
 for arg in "$@"; do
   case "$arg" in
-    --uninstall) ACTION="uninstall" ;;
-    -h|--help) sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    --uninstall)   ACTION="uninstall" ;;
+    --bureau)      ACTION="bureau" ;;
+    --sans-bureau) BUREAU=0 ;;
+    -h|--help) sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) err "Option inconnue : $arg (voir --help)"; exit 1 ;;
   esac
 done
+
+# -----------------------------------------------------------------------------
+# Raccourci sur le bureau (GNOME / KDE / XFCE…)
+# -----------------------------------------------------------------------------
+dossier_bureau() {
+  local d=""
+  command -v xdg-user-dir >/dev/null 2>&1 && d="$(xdg-user-dir DESKTOP 2>/dev/null || true)"
+  if [ -z "$d" ] || [ "$d" = "$HOME" ]; then
+    for c in "$HOME/Bureau" "$HOME/Desktop"; do [ -d "$c" ] && { d="$c"; break; }; done
+  fi
+  [ -z "$d" ] && d="$HOME/Bureau"
+  echo "$d"
+}
+
+creer_raccourci_bureau() {
+  if [ ! -f "$DESKTOP_FILE" ]; then
+    err "Claude Desktop n'est pas installé : lancez d'abord  bash $0"
+    return 1
+  fi
+  local bureau raccourci
+  bureau="$(dossier_bureau)"
+  mkdir -p "$bureau"
+  raccourci="$bureau/claude-desktop.desktop"
+  cp "$DESKTOP_FILE" "$raccourci"
+  # Chemin absolu de l'icône : fiable même si le thème d'icônes n'est pas rechargé
+  sed -i "s|^Icon=.*|Icon=$ICON_DIR/256x256/apps/claude-desktop.png|" "$raccourci"
+  chmod +x "$raccourci"
+  # GNOME (Ubuntu) exige que le lanceur soit marqué « de confiance », sinon
+  # l'icône reste barrée et demande « Autoriser le lancement » au clic droit.
+  if command -v gio >/dev/null 2>&1; then
+    gio set "$raccourci" metadata::trusted true 2>/dev/null || true
+  fi
+  if command -v dbus-launch >/dev/null 2>&1 && [ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ]; then
+    dbus-launch gio set "$raccourci" metadata::trusted true 2>/dev/null || true
+  fi
+  ok "Icône « Claude » ajoutée sur le bureau : $raccourci"
+  info "Si l'icône apparaît barrée : clic droit → « Autoriser le lancement »."
+}
+
+if [ "$ACTION" = "bureau" ]; then
+  creer_raccourci_bureau
+  exit $?
+fi
 
 # -----------------------------------------------------------------------------
 # Désinstallation
 # -----------------------------------------------------------------------------
 if [ "$ACTION" = "uninstall" ]; then
   rm -rf "$APP_DIR"
-  rm -f "$LAUNCHER" "$DESKTOP_FILE"
+  rm -f "$LAUNCHER" "$DESKTOP_FILE" "$(dossier_bureau)/claude-desktop.desktop"
   find "$ICON_DIR" -name 'claude-desktop.png' -delete 2>/dev/null || true
   command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$DESKTOP_DIR" 2>/dev/null || true
   ok "Claude Desktop désinstallé (vos données dans ~/.config/Claude sont conservées)."
@@ -97,6 +145,7 @@ VERSION="$(basename "$DEB_PATH" | sed -E 's/^claude-desktop_([^_]+)_.*/\1/')"
 
 if [ -f "$APP_DIR/VERSION" ] && [ "$(cat "$APP_DIR/VERSION")" = "$VERSION" ]; then
   ok "Claude Desktop $VERSION est déjà installé dans $APP_DIR."
+  [ "$BUREAU" -eq 1 ] && creer_raccourci_bureau
   info "Relancez avec --uninstall puis réinstallez si vous voulez forcer."
   exit 0
 fi
@@ -179,6 +228,8 @@ command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$
 command -v gtk-update-icon-cache  >/dev/null 2>&1 && gtk-update-icon-cache -q -t "$ICON_DIR" 2>/dev/null || true
 command -v xdg-mime >/dev/null 2>&1 && xdg-mime default claude-desktop.desktop x-scheme-handler/claude 2>/dev/null || true
 
+[ "$BUREAU" -eq 1 ] && creer_raccourci_bureau
+
 # -----------------------------------------------------------------------------
 # 5. PATH + bibliothèques système
 # -----------------------------------------------------------------------------
@@ -206,9 +257,11 @@ else
 fi
 echo
 echo -e "${VERT}Pour lancer l'interface :${FIN}"
+echo "  • Double-clic sur l'icône « Claude » du bureau"
 echo "  • Menu des applications  →  « Claude »  (déconnexion/reconnexion si absent)"
 echo "  • ou dans un terminal :     claude-desktop"
 echo
 echo "  Mise à jour      : relancez ce script"
+echo "  Icône du bureau  : bash $0 --bureau"
 echo "  Désinstallation  : bash $0 --uninstall"
 echo "  Connexion        : compte claude.ai (Pro/Max/Team) ou SSO — pas de clé API"

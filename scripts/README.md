@@ -15,7 +15,7 @@ Deux scripts, tout est installé dans votre dossier personnel. Aucun droit admin
 bash scripts/install-claude-desktop.sh
 ```
 
-Puis ouvrez **« Claude »** depuis le menu des applications, ou tapez `claude-desktop` dans un terminal.
+Puis double-cliquez sur l'icône **« Claude »** posée sur votre bureau, ouvrez-la depuis le menu des applications, ou tapez `claude-desktop` dans un terminal.
 Connexion avec votre compte claude.ai (Pro, Max, Team) ou le SSO de votre organisation.
 
 ### Ce que fait le script
@@ -23,14 +23,17 @@ Connexion avec votre compte claude.ai (Pro, Max, Team) ou le SSO de votre organi
 1. Détecte l'architecture (amd64 / arm64) et télécharge le dernier paquet `.deb` officiel d'Anthropic.
 2. L'extrait dans `~/.local/opt/claude-desktop` au lieu de l'installer avec apt (donc sans root).
 3. Crée le lanceur `~/.local/bin/claude-desktop`, l'entrée de menu et les icônes dans `~/.local/share`.
-4. Enregistre le gestionnaire des liens `claude://`.
-5. Vérifie les bibliothèques système et liste celles qui manqueraient.
+4. Pose une icône « Claude » sur le bureau (dossier `~/Bureau` ou `~/Desktop`) et la marque comme fiable pour GNOME.
+5. Enregistre le gestionnaire des liens `claude://`.
+6. Vérifie les bibliothèques système et liste celles qui manqueraient.
 
 ### Options
 
 | Commande | Effet |
 |---|---|
-| `bash install-claude-desktop.sh` | Installe, ou met à jour si une nouvelle version existe |
+| `bash install-claude-desktop.sh` | Installe, ou met à jour si une nouvelle version existe, et pose l'icône sur le bureau |
+| `bash install-claude-desktop.sh --bureau` | Recrée seulement l'icône sur le bureau |
+| `bash install-claude-desktop.sh --sans-bureau` | Installe sans toucher au bureau |
 | `bash install-claude-desktop.sh --uninstall` | Supprime l'application (vos données dans `~/.config/Claude` sont gardées) |
 | `bash install-claude-desktop.sh --help` | Aide |
 
@@ -38,6 +41,7 @@ Connexion avec votre compte claude.ai (Pro, Max, Team) ou le SSO de votre organi
 
 - **Prérequis** : Ubuntu 22.04+ ou Debian 12+, session graphique, environ 600 Mo d'espace disque.
 - **Ubuntu 24.04 et plus** : sans root, le bac à sable Chromium ne peut pas s'activer. Le lanceur ajoute automatiquement `--no-sandbox` dans ce cas. C'est le même compromis que pour toute application Electron lancée depuis un dossier utilisateur.
+- **Icône barrée sur le bureau** : clic droit → « Autoriser le lancement ». Cela arrive si GNOME n'a pas pu marquer le fichier comme fiable.
 - **Mises à jour** : pas automatiques. Relancez le script de temps en temps.
 - **Cowork** (agents en machine virtuelle) nécessite KVM et le groupe `kvm`, donc un administrateur. Le Chat et Claude Code fonctionnent sans.
 - **Bibliothèques manquantes** : sur un Ubuntu Desktop standard, tout est déjà présent. Sinon le script affiche la commande `apt` à transmettre à un administrateur.
