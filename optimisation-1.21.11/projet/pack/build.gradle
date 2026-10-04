@@ -1,0 +1,7 @@
+version = '1.0.0'
+base.archivesName = 'optimisation-pack'
+dependencies {
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    modImplementation "me.shedaniel.cloth:cloth-config-fabric:${project.cloth_version}"
+    modImplementation "com.terraformersmc:modmenu:${project.modmenu_version}"
+}

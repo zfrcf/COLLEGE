@@ -1,0 +1,4 @@
+projet/build/
+projet/*/build/
+projet/.gradle/
+mods/

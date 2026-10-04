@@ -1,0 +1,830 @@
+{
+  "version_pack": "1.0.0",
+  "minecraft": "1.21.11",
+  "categories": {
+    "bibliotheque": "Bibliothèques (requises par d'autres mods)",
+    "rendu": "Rendu et FPS",
+    "moteur": "Moteur de jeu et chargement",
+    "reseau": "Réseau et multijoueur",
+    "confort": "Confort et interface",
+    "perso": "Mods personnels (zip)",
+    "outil": "Outils (optionnels)"
+  },
+  "mods": [
+    {
+      "id": "fabric-api",
+      "fichier": "fabric-api-0.141.6+1.21.11.jar",
+      "nom": "Fabric API",
+      "version": "0.141.6+1.21.11",
+      "categorie": "bibliotheque",
+      "description": "Bibliothèque centrale de Fabric, requise par la majorité des mods.",
+      "bibliotheque": true,
+      "par_defaut": true,
+      "verrouille": true,
+      "raison_verrou": "requis par Mod Menu et le gestionnaire",
+      "depends": {},
+      "breaks": {},
+      "fournit": {
+        "fabric-api": "0.141.6+1.21.11",
+        "fabric": "0.141.6+1.21.11",
+        "fabric-api-base": "1.0.5+4ebb5c083e",
+        "fabric-api-lookup-api-v1": "1.6.114+20dc27073e",
+        "fabric-biome-api-v1": "17.1.1+4fc5413f3e",
+        "fabric-block-api-v1": "1.1.10+4ebb5c083e",
+        "fabric-block-view-api-v2": "1.0.39+4ebb5c083e",
+        "fabric-command-api-v2": "2.4.7+6b42a6003e",
+        "fabric-content-registries-v0": "10.2.14+4fc5413f3e",
+        "fabric-convention-tags-v1": "2.1.55+7f945d5b3e",
+        "fabric-convention-tags-v2": "2.17.3+8ef948ba3e",
+        "fabric-crash-report-info-v1": "0.3.23+4ebb5c083e",
+        "fabric-data-attachment-api-v1": "1.8.48+eed0806f3e",
+        "fabric-data-generation-api-v1": "23.5.0+88d7da613e",
+        "fabric-dimensions-v1": "4.0.28+4fc5413f3e",
+        "fabric-entity-events-v1": "3.1.1+1d0ab4303e",
+        "fabric-events-interaction-v0": "4.1.1+3b89ecf63e",
+        "fabric-game-rule-api-v1": "2.0.3+4fc5413f3e",
+        "fabric-item-api-v1": "11.6.0+67f17bb43e",
+        "fabric-item-group-api-v1": "4.2.36+4fc5413f3e",
+        "fabric-key-binding-api-v1": "1.1.7+4fc5413f3e",
+        "fabric-lifecycle-events-v1": "2.6.15+4ebb5c083e",
+        "fabric-loot-api-v2": "3.0.73+3f89f5a53e",
+        "fabric-loot-api-v3": "2.0.20+78c8b4663e",
+        "fabric-message-api-v1": "6.1.12+4ebb5c083e",
+        "fabric-model-loading-api-v1": "6.0.15+4fc5413f3e",
+        "fabric-networking-api-v1": "5.1.6+6b6d71a53e",
+        "fabric-object-builder-api-v1": "21.1.40+4fc5413f3e",
+        "fabric-particles-v1": "4.2.12+4fc5413f3e",
+        "fabric-recipe-api-v1": "8.2.4+4ebb5c083e",
+        "fabric-registry-sync-v0": "6.2.6+1718722b3e",
+        "fabric-renderer-api-v1": "8.0.3+f4ffd2e53e",
+        "fabric-renderer-indigo": "5.0.3+f4ffd2e53e",
+        "fabric-rendering-fluids-v1": "3.1.43+4ebb5c083e",
+        "fabric-rendering-v1": "16.2.10+0290ad933e",
+        "fabric-resource-conditions-api-v1": "5.0.35+4fc5413f3e",
+        "fabric-resource-loader-v0": "3.3.4+4fc5413f3e",
+        "fabric-resource-loader-v1": "1.0.10+78c8b4663e",
+        "fabric-screen-api-v1": "3.1.7+4ebb5c083e",
+        "fabric-screen-handler-api-v1": "1.3.162+4fc5413f3e",
+        "fabric-serialization-api-v1": "1.0.5+4ebb5c083e",
+        "fabric-sound-api-v1": "1.0.51+4fc5413f3e",
+        "fabric-tag-api-v1": "1.3.0+88d7da613e",
+        "fabric-client-tags-api-v1": "1.3.0+88d7da613e",
+        "fabric-transfer-api-v1": "6.0.25+4fc5413f3e",
+        "fabric-transitive-access-wideners-v1": "7.1.0+014c8cec3e"
+      },
+      "fichiers": []
+    },
+    {
+      "id": "fabric-language-kotlin",
+      "fichier": "fabric-language-kotlin-1.14.1+kotlin.2.4.20.jar",
+      "nom": "Fabric Language Kotlin",
+      "version": "1.14.1+kotlin.2.4.20",
+      "categorie": "bibliotheque",
+      "description": "Support Kotlin, requis par Resourcify et Particle Core.",
+      "bibliotheque": true,
+      "par_defaut": true,
+      "verrouille": false,
+      "raison_verrou": "",
+      "depends": {},
+      "breaks": {},
+      "fournit": {
+        "fabric-language-kotlin": "1.14.1+kotlin.2.4.20",
+        "org_jetbrains_kotlinx_atomicfu-jvm": "0.33.0",
+        "org_jetbrains_kotlin_kotlin-reflect": "2.4.20",
+        "org_jetbrains_kotlin_kotlin-stdlib": "2.4.20",
+        "org_jetbrains_kotlin_kotlin-stdlib-jdk7": "2.4.20",
+        "org_jetbrains_kotlin_kotlin-stdlib-jdk8": "2.4.20",
+        "org_jetbrains_kotlinx_kotlinx-coroutines-core-jvm": "1.11.0",
+        "org_jetbrains_kotlinx_kotlinx-coroutines-jdk8": "1.11.0",
+        "org_jetbrains_kotlinx_kotlinx-datetime-jvm": "0.8.0",
+        "org_jetbrains_kotlinx_kotlinx-io-bytestring-jvm": "0.9.1",
+        "org_jetbrains_kotlinx_kotlinx-io-core-jvm": "0.9.1",
+        "org_jetbrains_kotlinx_kotlinx-serialization-cbor-jvm": "1.11.0",
+        "org_jetbrains_kotlinx_kotlinx-serialization-core-jvm": "1.11.0",
+        "org_jetbrains_kotlinx_kotlinx-serialization-json-jvm": "1.11.0"
+      },
+      "fichiers": []
+    },
+    {
+      "id": "cloth-config",
+      "fichier": "cloth-config-21.11.153-fabric.jar",
+      "nom": "Cloth Config",
+      "version": "21.11.153",
+      "categorie": "bibliotheque",
+      "description": "Écrans de configuration, requis par RenderScale, More Culling et FastQuit.",
+      "bibliotheque": true,
+      "par_defaut": true,
+      "verrouille": true,
+      "raison_verrou": "affiche cet écran",
+      "depends": {},
+      "breaks": {},
+      "fournit": {
+        "cloth-config": "21.11.153",
+        "cloth-config2": "21.11.153",
+        "cloth-basic-math": "0.6.1"
+      },
+      "fichiers": []
+    },
+    {
+      "id": "fzzy_config",
+      "fichier": "fzzy_config-0.7.7+1.21.11.jar",
+      "nom": "Fzzy Config",
+      "version": "0.7.7+1.21.11",
+      "categorie": "bibliotheque",
+      "description": "Bibliothèque de configuration requise par Particle Core.",
+      "bibliotheque": true,
+      "par_defaut": true,
+      "verrouille": false,
+      "raison_verrou": "",
+      "depends": {
+        "fabric": "*",
+        "fabric-language-kotlin": ">=1.12.1+kotlin.2.0.20"
+      },
+      "breaks": {},
+      "fournit": {
+        "fzzy_config": "0.7.7+1.21.11",
+        "fabric-permissions-api-v0": "0.6.1",
+        "blue_endless_jankson": "1.2.3",
+        "net_peanuuutz_tomlkt_tomlkt-jvm": "0.3.7"
+      },
+      "fichiers": []
+    },
+    {
+      "id": "sodium",
+      "fichier": "sodium-fabric-0.8.14+mc1.21.11.jar",
+      "nom": "Sodium",
+      "version": "0.8.14+mc1.21.11",
+      "categorie": "rendu",
+      "description": "Moteur de rendu moderne : le plus gros gain de FPS du pack.",
+      "bibliotheque": false,
+      "par_defaut": true,
+      "verrouille": false,
+      "raison_verrou": "",
+      "depends": {
+        "fabric-block-view-api-v2": "*",
+        "fabric-rendering-fluids-v1": ">=2.0.0",
+        "fabric-resource-loader-v0": "*"
+      },
+      "breaks": {
+        "embeddium": "*",
+        "optifabric": "*",
+        "canvas": "*",
+        "vulkanmod": "*",
+        "optimalaim": "<2.0.0",
+        "sodium-blendingregistry": "*",
+        "ocrenderfix_sodium": "*",
+        "betterfpsdist": "<=1.21-4.5",
+        "bobby": "<5.2.4",
+        "chunksfadein": "<2.0.2-1.21.2",
+        "cull-less-leaves": "<=1.3.0",
+        "cullleaves": "<=3.4.0-fabric",
+        "custom_hud": "<3.4.2",
+        "farsight": "<=1.21-4.3",
+        "iceberg": "<1.2.7",
+        "iris": "<=1.10.7",
+        "movingelevators": "<=1.4.7",
+        "notenoughcrashes": "<4.4.8",
+        "noxesium": "<2.3.3",
+        "reeses-sodium-options": "<2.0.2",
+        "fabric-api": "<0.140.0",
+        "sodium-extra": "<0.8.0",
+        "audio_engine_tweaks": "<1.2.12",
+        "sspb": "<6.0.0",
+        "moreculling": "<1.6.0-beta.2",
+        "simply-no-shading": "<7.6.2",
+        "betterend": "<=21.0.11",
+        "enchanteds_sodium_options": "<1.0.1"
+      },
+      "fournit": {
+        "sodium": "0.8.14+mc1.21.11",
+        "indium": "0.8.14+mc1.21.11",
+        "fabric-api-base": "1.0.5+4ebb5c083e",
+        "fabric-block-view-api-v2": "1.0.39+4ebb5c083e",
+        "fabric-lifecycle-events-v1": "2.6.15+4ebb5c083e",
+        "fabric-renderer-api-v1": "8.0.0+f4ffd2e53e",
+        "fabric-rendering-fluids-v1": "3.1.43+4ebb5c083e",
+        "fabric-rendering-v1": "16.2.7+f4ffd2e53e",
+        "fabric-resource-loader-v0": "3.3.4+4fc5413f3e",
+        "fabric-resource-loader-v1": "1.0.10+78c8b4663e",
+        "fabric-transitive-access-wideners-v1": "7.0.8+0107c3da3e"
+      },
+      "fichiers": []
+    },
+    {
+      "id": "iris",
+      "fichier": "iris-fabric-1.10.8+mc1.21.11.jar",
+      "nom": "Iris Shaders",
+      "version": "1.10.8+mc1.21.11",
+      "categorie": "rendu",
+      "description": "Shaders compatibles Sodium (dossier shaderpacks).",
+      "bibliotheque": false,
+      "par_defaut": true,
+      "verrouille": false,
+      "raison_verrou": "",
+      "depends": {
+        "sodium": "0.8.x"
+      },
+      "breaks": {
+        "embeddium": "*",
+        "iris-explorer": "*",
+        "originsenhanced": "<=1.3.2",
+        "colormatic": "<=3.0.0",
+        "bedrockwaters": "<=1.6.0",
+        "batchedentityrendering": "*",
+        "canvas": "*",
+        "optifabric": "*",
+        "worldeditcui": "<1.18.1",
+        "physicsmod": "<=3.0.13",
+        "distanthorizons": "<=2.1.99",
+        "immersive_portals": "<=1.4.2"
+      },
+      "fournit": {
+        "iris": "1.10.8+mc1.21.11",
+        "org_antlr_antlr4-runtime": "4.13.1",
+        "fabric-api-base": "1.0.5+4ebb5c083e",
+        "fabric-key-binding-api-v1": "1.1.7+4fc5413f3e",
+        "io_github_douira_glsl-transformer": "3.0.0-pre3",
+        "org_anarres_jcpp": "1.4.14"
+      },
+      "fichiers": [
+        "shaderpacks",
+        "config/iris.properties"
+      ]
+    },
+    {
+      "id": "sodium-extra",
+      "fichier": "sodium-extra-fabric-0.9.4+mc1.21.11.jar",
+      "nom": "Sodium Extra",
+      "version": "0.9.4+mc1.21.11",
+      "categorie": "rendu",
+      "description": "Options supplémentaires pour Sodium (particules, animations, brouillard...).",
+      "bibliotheque": false,
+      "par_defaut": true,
+      "verrouille": false,
+      "raison_verrou": "",
+      "depends": {
+        "sodium": ">=0.8.14+mc1.21.11"
+      },
+      "breaks": {
+        "iris": "<1.7.0",
+        "reeses-sodium-options": "<1.8.4"
+      },
+      "fournit": {
+        "sodium-extra": "0.9.4+mc1.21.11"
+      },
+      "fichiers": []
+    },
+    {
+      "id": "reeses-sodium-options",
+      "fichier": "reeses-sodium-options-fabric-2.2.4+mc1.21.11.jar",
+      "nom": "Reese's Sodium Options",
+      "version": "2.2.4+mc1.21.11",
+      "categorie": "rendu",
+      "description": "Menu d'options Sodium plus lisible.",
+      "bibliotheque": false,
+      "par_defaut": true,
+      "verrouille": false,
+      "raison_verrou": "",
+      "depends": {
+        "sodium": "=0.8.14+mc1.21.11"
+      },
+      "breaks": {
+        "iris": "<1.1.4",
+        "sodium-extra": "<0.5.3",
+        "sodium": "<0.5.8"
+      },
+      "fournit": {
+        "reeses-sodium-options": "2.2.4+mc1.21.11"
+      },
+      "fichiers": []
+    },
+    {
+      "id": "entityculling",
+      "fichier": "entityculling-fabric-1.11.2-mc1.21.11.jar",
+      "nom": "Entity Culling",
+      "version": "1.11.2",
+      "categorie": "rendu",
+      "description": "Ne rend plus les entités cachées derrière les murs.",
+      "bibliotheque": false,
+      "par_defaut": true,
+      "verrouille": false,
+      "raison_verrou": "",
+      "depends": {
+        "fabric-api": "*"
+      },
+      "breaks": {
+        "tlskincape": "*"
+      },
+      "fournit": {
+        "entityculling": "1.11.2",
+        "transition": "1.0.25",
+        "trender": "1.0.17"
+      },
+      "fichiers": []
+    },
+    {
+      "id": "moreculling",
+      "fichier": "moreculling-fabric-1.21.11-1.6.2.jar",
+      "nom": "More Culling",
+      "version": "1.6.2",
+      "categorie": "rendu",
+      "description": "Culling supplémentaire des feuilles, blocs et objets invisibles.",
+      "bibliotheque": false,
+      "par_defaut": true,
+      "verrouille": false,
+      "raison_verrou": "",
+      "depends": {
+        "cloth-config": ">=16.0.0"
+      },
+      "breaks": {
+        "sodium": "<=0.6.6"
+      },
+      "fournit": {
+        "moreculling": "1.6.2",
+        "conditional-mixin": "0.6.3",
+        "conditional_mixin": "0.6.3",
+        "mixinsquared": "0.2.0"
+      },
+      "fichiers": []
+    },
+    {
+      "id": "immediatelyfast",
+      "fichier": "ImmediatelyFast-Fabric-1.14.3+1.21.11.jar",
+      "nom": "ImmediatelyFast",
+      "version": "1.14.3+1.21.11",
+      "categorie": "rendu",
+      "description": "Accélère le rendu immédiat (interface, texte, entités).",
+      "bibliotheque": false,
+      "par_defaut": true,
+      "verrouille": false,
+      "raison_verrou": "",
+      "depends": {},
+      "breaks": {},
+      "fournit": {
+        "immediatelyfast": "1.14.3+1.21.11",
+        "net_lenni0451_reflect": "1.6.2"
+      },
+      "fichiers": []
+    },
+    {
+      "id": "badoptimizations",
+      "fichier": "BadOptimizations-2.4.1-1.21.11.jar",
+      "nom": "BadOptimizations",
+      "version": "2.4.1",
+      "categorie": "rendu",
+      "description": "Optimisations diverses du rendu et des calculs d'éclairage.",
+      "bibliotheque": false,
+      "par_defaut": true,
+      "verrouille": false,
+      "raison_verrou": "",
+      "depends": {},
+      "breaks": {},
+      "fournit": {
+        "badoptimizations": "2.4.1",
+        "com_github_llamalad7_mixinextras": "0.2.2"
+      },
+      "fichiers": []
+    },
+    {
+      "id": "particle_core",
+      "fichier": "particle_core-0.3.2+1.21.11.jar",
+      "nom": "Particle Core",
+      "version": "0.3.2+1.21.11",
+      "categorie": "rendu",
+      "description": "Optimise le rendu et le culling des particules.",
+      "bibliotheque": false,
+      "par_defaut": true,
+      "verrouille": false,
+      "raison_verrou": "",
+      "depends": {
+        "fabric-language-kotlin": ">=1.13.2+kotlin.2.1.20",
+        "fzzy_config": ">=0.7.5"
+      },
+      "breaks": {},
+      "fournit": {
+        "particle_core": "0.3.2+1.21.11",
+        "conditional-mixin": "0.5.1"
+      },
+      "fichiers": []
+    },
+    {
+      "id": "entity-view-distance",
+      "fichier": "entity-view-distance-1.7.1+1.21.11.jar",
+      "nom": "Entity View Distance",
+      "version": "1.7.1+1.21.11",
+      "categorie": "rendu",
+      "description": "Limite la distance d'affichage des entités côté client.",
+      "bibliotheque": false,
+      "par_defaut": true,
+      "verrouille": false,
+      "raison_verrou": "",
+      "depends": {
+        "fabric-api": "*"
+      },
+      "breaks": {},
+      "fournit": {
+        "entity-view-distance": "1.7.1+1.21.11",
+        "fabric-permissions-api-v0": "0.6.0-patbox"
+      },
+      "fichiers": []
+    },
+    {
+      "id": "dynamic_fps",
+      "fichier": "dynamic-fps-3.11.6+minecraft-1.21.11-fabric.jar",
+      "nom": "Dynamic FPS",
+      "version": "3.11.6",
+      "categorie": "rendu",
+      "description": "Réduit la charge quand la fenêtre n'est pas au premier plan.",
+      "bibliotheque": false,
+      "par_defaut": true,
+      "verrouille": false,
+      "raison_verrou": "",
+      "depends": {
+        "mixinextras": ">=0.3.2",
+        "fabric-resource-loader-v0": "*",
+        "fabric-lifecycle-events-v1": "*"
+      },
+      "breaks": {},
+      "fournit": {
+        "dynamic_fps": "3.11.6",
+        "net_lostluma_battery": "2.0.0"
+      },
+      "fichiers": []
+    },
+    {
+      "id": "lithium",
+      "fichier": "lithium-fabric-0.21.4+mc1.21.11.jar",
+      "nom": "Lithium",
+      "version": "0.21.4+mc1.21.11",
+      "categorie": "moteur",
+      "description": "Optimise la logique du jeu (IA, physique, redstone, ticks) sans changer le comportement.",
+      "bibliotheque": false,
+      "par_defaut": true,
+      "verrouille": false,
+      "raison_verrou": "",
+      "depends": {},
+      "breaks": {
+        "optifabric": "*"
+      },
+      "fournit": {
+        "lithium": "0.21.4+mc1.21.11"
+      },
+      "fichiers": []
+    },
+    {
+      "id": "ferritecore",
+      "fichier": "ferritecore-8.2.0-fabric.jar",
+      "nom": "FerriteCore",
+      "version": "8.2.0",
+      "categorie": "moteur",
+      "description": "Réduit fortement la consommation de mémoire.",
+      "bibliotheque": false,
+      "par_defaut": true,
+      "verrouille": false,
+      "raison_verrou": "",
+      "depends": {},
+      "breaks": {
+        "hydrogen": "<=0.3"
+      },
+      "fournit": {
+        "ferritecore": "8.2.0"
+      },
+      "fichiers": []
+    },
+    {
+      "id": "scalablelux",
+      "fichier": "ScalableLux-fabric-0.3.0-alpha.0.3-all.jar",
+      "nom": "ScalableLux",
+      "version": "0.3.0-alpha.0.3+1.21.11",
+      "categorie": "moteur",
+      "description": "Moteur d'éclairage plus rapide (successeur de Starlight).",
+      "bibliotheque": false,
+      "par_defaut": true,
+      "verrouille": false,
+      "raison_verrou": "",
+      "depends": {},
+      "breaks": {
+        "phosphor": "*"
+      },
+      "fournit": {
+        "scalablelux": "0.3.0-alpha.0.3+1.21.11",
+        "starlight": "0.3.0-alpha.0.3+1.21.11"
+      },
+      "fichiers": []
+    },
+    {
+      "id": "alternate-current",
+      "fichier": "alternate-current-mc1.21.11-1.9.0.jar",
+      "nom": "Alternate Current",
+      "version": "1.9.0",
+      "categorie": "moteur",
+      "description": "Redstone jusqu'à 20x plus rapide à calculer.",
+      "bibliotheque": false,
+      "par_defaut": true,
+      "verrouille": false,
+      "raison_verrou": "",
+      "depends": {},
+      "breaks": {
+        "alternate-current-plus": "*"
+      },
+      "fournit": {
+        "alternate-current": "1.9.0"
+      },
+      "fichiers": []
+    },
+    {
+      "id": "ksyxis",
+      "fichier": "Ksyxis-1.4.5.jar",
+      "nom": "Ksyxis",
+      "version": "1.4.5",
+      "categorie": "moteur",
+      "description": "Accélère le chargement des mondes (pas de pré-chargement du spawn).",
+      "bibliotheque": false,
+      "par_defaut": true,
+      "verrouille": false,
+      "raison_verrou": "",
+      "depends": {},
+      "breaks": {},
+      "fournit": {
+        "ksyxis": "1.4.5"
+      },
+      "fichiers": []
+    },
+    {
+      "id": "fastquit",
+      "fichier": "fastquit-3.1.3+mc1.21.11.jar",
+      "nom": "FastQuit",
+      "version": "3.1.3+mc1.21.11",
+      "categorie": "moteur",
+      "description": "Retour au menu immédiat, la sauvegarde se termine en arrière-plan.",
+      "bibliotheque": false,
+      "par_defaut": true,
+      "verrouille": false,
+      "raison_verrou": "",
+      "depends": {
+        "fabric-resource-loader-v0": "*",
+        "cloth-config": "*"
+      },
+      "breaks": {},
+      "fournit": {
+        "fastquit": "3.1.3+mc1.21.11"
+      },
+      "fichiers": []
+    },
+    {
+      "id": "debugify",
+      "fichier": "debugify-1.21.11+1.2.jar",
+      "nom": "Debugify",
+      "version": "1.21.11+1.2",
+      "categorie": "moteur",
+      "description": "Corrige des centaines de bugs vanilla référencés.",
+      "bibliotheque": false,
+      "par_defaut": true,
+      "verrouille": false,
+      "raison_verrou": "",
+      "depends": {
+        "fabric-resource-loader-v0": "*"
+      },
+      "breaks": {},
+      "fournit": {
+        "debugify": "1.21.11+1.2"
+      },
+      "fichiers": []
+    },
+    {
+      "id": "clumps",
+      "fichier": "Clumps-fabric-1.21.11-29.0.0.1.jar",
+      "nom": "Clumps",
+      "version": "29.0.0.1",
+      "categorie": "moteur",
+      "description": "Regroupe les orbes d'expérience pour éviter le lag.",
+      "bibliotheque": false,
+      "par_defaut": true,
+      "verrouille": false,
+      "raison_verrou": "",
+      "depends": {},
+      "breaks": {},
+      "fournit": {
+        "clumps": "29.0.0.1"
+      },
+      "fichiers": []
+    },
+    {
+      "id": "krypton",
+      "fichier": "krypton-0.2.10.jar",
+      "nom": "Krypton",
+      "version": "0.2.10",
+      "categorie": "reseau",
+      "description": "Optimise la pile réseau de Minecraft.",
+      "bibliotheque": false,
+      "par_defaut": true,
+      "verrouille": false,
+      "raison_verrou": "",
+      "depends": {},
+      "breaks": {},
+      "fournit": {
+        "krypton": "0.2.10",
+        "com_velocitypowered_velocity-native": "3.4.0-SNAPSHOT"
+      },
+      "fichiers": []
+    },
+    {
+      "id": "fastipping",
+      "fichier": "fast-ip-ping-v1.0.12-mc1.21.11-fabric.jar",
+      "nom": "Fast IP Ping",
+      "version": "1.0.12",
+      "categorie": "reseau",
+      "description": "Ping des serveurs beaucoup plus rapide dans la liste multijoueur.",
+      "bibliotheque": false,
+      "par_defaut": true,
+      "verrouille": false,
+      "raison_verrou": "",
+      "depends": {},
+      "breaks": {},
+      "fournit": {
+        "fastipping": "1.0.12"
+      },
+      "fichiers": []
+    },
+    {
+      "id": "languagereload",
+      "fichier": "language-reload-1.7.7+1.21.11.jar",
+      "nom": "Language Reload",
+      "version": "1.7.7+1.21.11",
+      "categorie": "confort",
+      "description": "Changement de langue instantané et chargement des ressources plus rapide.",
+      "bibliotheque": false,
+      "par_defaut": true,
+      "verrouille": false,
+      "raison_verrou": "",
+      "depends": {
+        "fabric-resource-loader-v0": "*",
+        "fabric-key-binding-api-v1": "*"
+      },
+      "breaks": {},
+      "fournit": {
+        "languagereload": "1.7.7+1.21.11"
+      },
+      "fichiers": []
+    },
+    {
+      "id": "modmenu",
+      "fichier": "modmenu-17.0.1.jar",
+      "nom": "Mod Menu",
+      "version": "17.0.1",
+      "categorie": "perso",
+      "description": "Liste des mods et accès à leurs configurations dans le jeu.",
+      "bibliotheque": false,
+      "par_defaut": true,
+      "verrouille": true,
+      "raison_verrou": "donne accès à cet écran",
+      "depends": {
+        "fabric-resource-loader-v1": "*",
+        "fabric-screen-api-v1": "*",
+        "fabric-key-binding-api-v1": "*",
+        "fabric-lifecycle-events-v1": "*"
+      },
+      "breaks": {},
+      "fournit": {
+        "modmenu": "17.0.1",
+        "fabric-api-base": "1.0.5+4ebb5c083e",
+        "fabric-key-binding-api-v1": "1.1.7+4fc5413f3e",
+        "fabric-lifecycle-events-v1": "2.6.15+4ebb5c083e",
+        "fabric-resource-loader-v1": "1.0.10+78c8b4663e",
+        "fabric-screen-api-v1": "3.1.7+4ebb5c083e",
+        "placeholder-api": "2.8.2+1.21.10"
+      },
+      "fichiers": []
+    },
+    {
+      "id": "mousetweaks",
+      "fichier": "MouseTweaks-fabric-mc1.21.11-2.30.jar",
+      "nom": "Mouse Tweaks",
+      "version": "2.30",
+      "categorie": "perso",
+      "description": "Gestion des stacks à la souris dans les inventaires.",
+      "bibliotheque": false,
+      "par_defaut": true,
+      "verrouille": false,
+      "raison_verrou": "",
+      "depends": {
+        "fabric-api": "*"
+      },
+      "breaks": {},
+      "fournit": {
+        "mousetweaks": "2.30"
+      },
+      "fichiers": []
+    },
+    {
+      "id": "renderscale",
+      "fichier": "renderscale-1.4.0-alpha.4-fabric+1.21.11.jar",
+      "nom": "RenderScale",
+      "version": "1.4.0-alpha.4",
+      "categorie": "perso",
+      "description": "Rend le jeu à une résolution différente de la fenêtre (gain de FPS ou netteté).",
+      "bibliotheque": false,
+      "par_defaut": true,
+      "verrouille": false,
+      "raison_verrou": "",
+      "depends": {
+        "cloth-config": ">=21.11.151",
+        "fabric-api": ">=0.139.4+1.21.11"
+      },
+      "breaks": {
+        "resolutioncontrol": "*",
+        "resolutioncontrol-plus": "*",
+        "resolutioncontrol-plus-plus": "*"
+      },
+      "fournit": {
+        "renderscale": "1.4.0-alpha.4"
+      },
+      "fichiers": []
+    },
+    {
+      "id": "resourcefullib",
+      "fichier": "ResourcefulLib-fabric-1.21.11-3.11.1.jar",
+      "nom": "Resourceful Lib",
+      "version": "3.11.1",
+      "categorie": "perso",
+      "description": "Bibliothèque fournie dans ton zip (requise par les mods Team Resourceful).",
+      "bibliotheque": true,
+      "par_defaut": true,
+      "verrouille": false,
+      "raison_verrou": "",
+      "depends": {
+        "fabric-api": "*"
+      },
+      "breaks": {},
+      "fournit": {
+        "resourcefullib": "3.11.1",
+        "com_teamresourceful_bytecodecs": "1.1.3",
+        "com_teamresourceful_yabn": "1.0.3"
+      },
+      "fichiers": []
+    },
+    {
+      "id": "resourcify",
+      "fichier": "Resourcify-1.21.11-fabric-1.8.7.jar",
+      "nom": "Resourcify",
+      "version": "1.8.7",
+      "categorie": "perso",
+      "description": "Navigateur de packs de ressources et shaders dans le jeu.",
+      "bibliotheque": false,
+      "par_defaut": true,
+      "verrouille": false,
+      "raison_verrou": "",
+      "depends": {
+        "fabric-language-kotlin": ">=1.11.0+kotlin.2.0.0",
+        "fabric-resource-loader-v0": "*"
+      },
+      "breaks": {
+        "vulkanmod": "*"
+      },
+      "fournit": {
+        "resourcify": "1.8.7"
+      },
+      "fichiers": [
+        "resourcepacks",
+        "shaderpacks",
+        "config/resourcify"
+      ]
+    },
+    {
+      "id": "smoothswapping",
+      "fichier": "smoothswapping-0.9.8-1.21.11-fabric.jar",
+      "nom": "Smooth Swapping",
+      "version": "0.9.8",
+      "categorie": "perso",
+      "description": "Animations fluides des objets dans l'inventaire.",
+      "bibliotheque": false,
+      "par_defaut": true,
+      "verrouille": false,
+      "raison_verrou": "",
+      "depends": {},
+      "breaks": {},
+      "fournit": {
+        "smoothswapping": "0.9.8"
+      },
+      "fichiers": []
+    },
+    {
+      "id": "ykfps",
+      "fichier": "ykfps-1.0.0+1.21.11.jar",
+      "nom": "YK FPS",
+      "version": "1.0.0",
+      "categorie": "perso",
+      "description": "Mod FPS fourni dans ton zip (non publié sur Modrinth).",
+      "bibliotheque": false,
+      "par_defaut": true,
+      "verrouille": false,
+      "raison_verrou": "",
+      "depends": {},
+      "breaks": {},
+      "fournit": {
+        "ykfps": "1.0.0"
+      },
+      "fichiers": []
+    }
+  ]
+}

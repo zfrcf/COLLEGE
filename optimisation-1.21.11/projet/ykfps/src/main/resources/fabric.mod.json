@@ -1,0 +1,22 @@
+{
+	"schemaVersion": 1,
+	"id": "ykfps",
+	"version": "1.0.0",
+	"name": "YK FPS",
+	"description": "Affiche les FPS réels et les FPS que tu aurais sans la limite (VSync / plafond).",
+	"authors": ["YK Launcher"],
+	"license": "Tous droits réservés",
+	"icon": "assets/ykfps/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": ["fr.yksolo.ykfps.YkFps"]
+	},
+	"mixins": [
+		{ "config": "ykfps.mixins.json", "environment": "client" }
+	],
+	"depends": {
+		"fabricloader": ">=0.16.0",
+		"minecraft": "~1.21.11",
+		"java": ">=21"
+	}
+}

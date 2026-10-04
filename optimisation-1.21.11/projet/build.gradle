@@ -1,0 +1,24 @@
+plugins {
+    id 'fabric-loom' version '1.17.21' apply false
+}
+subprojects {
+    apply plugin: 'fabric-loom'
+    apply plugin: 'java-library'
+    group = 'fr.antoine'
+    repositories {
+        maven { name = 'Shedaniel'; url = 'https://maven.shedaniel.me/' }
+        maven { name = 'TerraformersMC'; url = 'https://maven.terraformersmc.com/releases/' }
+        mavenCentral()
+    }
+    dependencies {
+        minecraft "com.mojang:minecraft:${project.minecraft_version}"
+        mappings loom.officialMojangMappings()
+        modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    }
+    java {
+        toolchain.languageVersion = JavaLanguageVersion.of(21)
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+    }
+    tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8'; options.release = 21 }
+}
