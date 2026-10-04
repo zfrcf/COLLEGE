@@ -1,0 +1,19 @@
+[Unit]
+Description=Watchdog KWin : relance le gestionnaire de fenêtres s'il s'arrête
+Documentation=file://%h/.local/share/kwin-watchdog/README.md
+After=graphical-session.target plasma-core.target
+PartOf=graphical-session.target
+# Pas de limite de redémarrage : le watchdog doit toujours revenir.
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/kwin-watchdog.sh
+Restart=always
+RestartSec=3
+Environment=KWIN_WATCHDOG_INTERVAL=2
+Environment=KWIN_WATCHDOG_COOLDOWN=5
+Slice=background.slice
+
+[Install]
+WantedBy=graphical-session.target
