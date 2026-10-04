@@ -70,6 +70,27 @@ CONF
     fi
 done
 
+# --- Démarrage automatique KDE (ceinture de sécurité) -------------------------
+# Si la session Plasma ne passe pas par systemd, ce fichier .desktop démarre
+# quand même le service à l'ouverture de session.
+AUTOSTART_DIR="$HOME/.config/autostart"
+info "Ajout du déclencheur de secours dans $AUTOSTART_DIR"
+run mkdir -p "$AUTOSTART_DIR"
+if [ "$DRY_RUN" -eq 1 ]; then
+    printf '  [dry-run] écriture de %s/kwin-watchdog.desktop\n' "$AUTOSTART_DIR"
+else
+    cat > "$AUTOSTART_DIR/kwin-watchdog.desktop" <<'DESKTOP'
+[Desktop Entry]
+Type=Application
+Name=KWin Watchdog
+Comment=Relance KWin automatiquement s'il s'arrête
+Exec=systemctl --user start kwin-watchdog.service
+X-KDE-autostart-phase=2
+OnlyShowIn=KDE;
+X-GNOME-Autostart-enabled=true
+DESKTOP
+fi
+
 # --- Activation ---------------------------------------------------------------
 info "Rechargement de systemd --user et activation du service"
 run systemctl --user daemon-reload

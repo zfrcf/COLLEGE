@@ -19,7 +19,9 @@ Le script :
 2. installe le service utilisateur `kwin-watchdog.service` dans `~/.config/systemd/user/` ;
 3. si Plasma gère déjà KWin via systemd (`plasma-kwin_x11.service`, Plasma ≥ 5.25),
    ajoute un override `Restart=always` pour que systemd relance KWin en moins d'une seconde ;
-4. active et démarre le tout. Le service se relance automatiquement à chaque ouverture de session.
+4. ajoute un fichier `~/.config/autostart/kwin-watchdog.desktop` : déclencheur de secours
+   qui démarre le service même si la session Plasma ne passe pas par systemd ;
+5. active et démarre le tout. Le service se relance automatiquement à chaque ouverture de session.
 
 Aperçu sans rien modifier : `./install.sh --dry-run`
 
