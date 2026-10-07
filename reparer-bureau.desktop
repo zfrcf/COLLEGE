@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Réparer le bureau
+GenericName=Réparation du bureau Ubuntu
+Comment=Écran noir, dock disparu, touche Super : réparer ou repartir de zéro (sans sudo)
+Exec=bash -c "for f in \\$HOME/.local/bin/reparer-bureau.sh \\$HOME/Téléchargements/bureau.sh \\$HOME/Downloads/bureau.sh \\$HOME/bureau.sh; do [ -s \\$f ] && exec bash \\$f; done; f=\\$HOME/.local/bin/reparer-bureau.sh; mkdir -p \\$HOME/.local/bin; wget -qO \\$f https://raw.githubusercontent.com/zfrcf/COLLEGE/claude/stoic-knuth-div2um/bureau.sh || curl -fsSLo \\$f https://raw.githubusercontent.com/zfrcf/COLLEGE/claude/stoic-knuth-div2um/bureau.sh; exec bash \\$f"
+Icon=preferences-desktop
+Terminal=false
+Categories=System;
+Keywords=réparer;bureau;dock;écran noir;gnome;
+StartupNotify=true

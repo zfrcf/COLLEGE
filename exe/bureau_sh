@@ -622,7 +622,7 @@ evasion_vers_hote() {
        --setenv=DISPLAY="$D" --setenv=WAYLAND_DISPLAY="$W" --setenv=XAUTHORITY="$X" \
        /bin/bash "$INSTALLE" --hote >>"$LOG" 2>&1; then return 0; fi
 
-  if a busctl && busctl --user -- call org.freedesktop.systemd1 /org/freedesktop/systemd1 \
+  if a busctl && busctl --user call org.freedesktop.systemd1 /org/freedesktop/systemd1 \
        org.freedesktop.systemd1.Manager StartTransientUnit 'ssa(sv)a(sa(sv))' \
        "$nom" replace 2 \
        ExecStart 'a(sasb)' 1 /bin/bash 3 /bin/bash "$INSTALLE" --hote false \
