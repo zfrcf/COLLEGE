@@ -323,18 +323,25 @@ def _candidats_launcher_minecraft() -> list[list[str]]:
         chemin = Path("/Applications/Minecraft.app/Contents/MacOS/launcher")
         return [[str(chemin)]] if chemin.exists() else []
 
-    # Linux (Ubuntu…) : paquet .deb officiel, Flatpak, Snap, puis launchers alternatifs.
+    # Linux (Ubuntu…) : paquet .deb officiel, app Modrinth, Flatpak, Snap, launchers alternatifs.
     candidats: list[list[str]] = []
-    for executable in ("minecraft-launcher", "prismlauncher", "multimc", "hmcl"):
+    for executable in ("minecraft-launcher", "modrinth-app", "ModrinthApp", "prismlauncher", "multimc", "hmcl"):
         chemin = shutil.which(executable)
         if chemin:
             candidats.append([chemin])
     for chemin in ("/opt/minecraft-launcher/minecraft-launcher", "/snap/bin/mc-installer"):
         if Path(chemin).exists():
             candidats.append([chemin])
-    for identifiant in ("com.mojang.Minecraft", "org.prismlauncher.PrismLauncher"):
+    for identifiant in ("com.mojang.Minecraft", "com.modrinth.ModrinthApp", "org.prismlauncher.PrismLauncher"):
         if _flatpak_installe(identifiant):
             candidats.append(["flatpak", "run", identifiant])
+    # AppImage (Modrinth, Prism…) rangée dans les dossiers habituels
+    maison = Path.home()
+    for dossier in (maison / "Applications", maison / "Apps", maison / ".local" / "bin", maison / "Downloads",
+                    maison / "Téléchargements", maison / "Bureau", maison / "Desktop"):
+        for appimage in sorted(dossier.glob("*[Mm]odrinth*.AppImage")) + sorted(dossier.glob("*[Pp]rism*.AppImage")):
+            if os.access(appimage, os.X_OK):
+                candidats.append([str(appimage)])
     return candidats
 
 

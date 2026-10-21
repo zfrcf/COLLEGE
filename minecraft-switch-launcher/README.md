@@ -28,7 +28,8 @@ cd minecraft-switch-launcher
 2. Menu → **5. Ouvrir le pare-feu** : si `ufw` est actif, ajoute les règles
    (`sudo` demandé). S'il est inactif ou absent, rien à faire.
 3. Menu → **2. Jouer** : démarre le serveur et ouvre Minecraft Java
-   (détecte le `.deb` officiel, Flatpak `com.mojang.Minecraft`, Prism, MultiMC).
+   (détecte le `.deb` officiel, l'app Modrinth (`.deb`, Flatpak, AppImage),
+   Flatpak `com.mojang.Minecraft`, Prism, MultiMC).
    Les instructions pour la Switch s'affichent dans la console.
 
 Ligne de commande : `./lancer.sh installer | jouer | plugins | switch | parametres`
@@ -125,6 +126,11 @@ minecraft-switch-launcher/
 - **« Port déjà utilisé »** : un Minecraft Bedrock ouvert sur le PC occupe
   déjà 19132 → le fermer, ou changer `port_bedrock` (la Switch devra alors
   passer par BedrockConnect avec ce port).
+- **Minecraft Java refuse de se connecter (« Outdated client / server »)** :
+  le client doit être dans la **même version** que le serveur (affichée dans
+  l'en-tête du menu, ex. 26.3). Dans l'app Modrinth / le launcher, créer un
+  profil dans cette version. Pour accepter aussi des clients plus anciens,
+  ajouter les plugins `viaversion` **et** `viabackwards` (menu 3).
 - **Erreur au démarrage** : lire `serveur/logs/latest.log`.
 - **Changer de version** : modifier `version_minecraft` puis relancer
   l'installation (menu 1). Sauvegarder `serveur/world*` avant.
