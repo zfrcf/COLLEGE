@@ -134,6 +134,10 @@ def ecrire_fichiers_de_base(config: dict) -> None:
         "online-mode": "true",
         # Évite les déconnexions "chat non signé" côté Bedrock.
         "enforce-secure-profile": "false",
+        # Paper 26.x active la whitelist par défaut : sur un serveur local, tout le
+        # monde doit pouvoir entrer (sinon "You are not whitelisted on this server!").
+        "white-list": "false",
+        "enforce-whitelist": "false",
         "max-players": valeurs.get("max-players", "8"),
         "view-distance": valeurs.get("view-distance", "10"),
         "spawn-protection": valeurs.get("spawn-protection", "0"),

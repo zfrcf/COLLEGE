@@ -117,6 +117,11 @@ minecraft-switch-launcher/
 
 - **La Switch ne voit rien** : même réseau ? pare-feu ouvert (menu 5) ?
   serveur démarré (`Done (…s)!` dans la console) ? Essayer BedrockConnect.
+- **« You are not whitelisted »** : relancer le launcher (il remet
+  `white-list=false` dans `server.properties`), ou taper `whitelist off`
+  dans la console du serveur.
+- **« disconnectionScreen.resourcePack »** : la Switch a refusé le pack de
+  ressources Geyser → se reconnecter et l'accepter.
 - **« Port déjà utilisé »** : un Minecraft Bedrock ouvert sur le PC occupe
   déjà 19132 → le fermer, ou changer `port_bedrock` (la Switch devra alors
   passer par BedrockConnect avec ce port).

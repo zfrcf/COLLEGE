@@ -89,7 +89,9 @@ def instructions_switch(config: dict) -> str:
        Adresse : {ip}      Port : {port_bedrock}
      Cocher "Add to server list" pour le retrouver la prochaine fois.
   4. Première connexion : Minecraft peut demander de faire confiance au
-     serveur (connexion NetherNet par IP) → accepter.
+     serveur (connexion NetherNet par IP) → accepter. Il propose aussi un
+     pack de ressources Geyser → accepter aussi, sinon la connexion est
+     refusée (disconnectionScreen.resourcePack).
 
   Astuce : pour revenir aux serveurs officiels, remettre le DNS en
   "Automatique" sur la Switch.

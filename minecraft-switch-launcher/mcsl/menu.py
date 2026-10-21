@@ -50,7 +50,9 @@ def action_jouer(config: dict) -> None:
 
     def au_demarrage() -> None:
         print(reseau.instructions_switch(config))
-        print("[serveur] Prêt ! Côté PC (Java) : Multijoueur > Connexion directe > localhost\n")
+        print("[serveur] Prêt ! Côté PC (Java) : Multijoueur > Connexion directe > localhost")
+        print("[serveur] Pour WorldEdit depuis la Switch, une fois le joueur connecté, tapez ici :")
+        print("          op .SonPseudo      (le point est ajouté par Floodgate aux joueurs Bedrock)\n")
         if config.get("lancer_minecraft_avec_serveur"):
             serveur.lancer_minecraft(config)
 
