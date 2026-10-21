@@ -1,0 +1,7 @@
+# Généré par le launcher : serveur, monde, Java local, config personnelle
+serveur/
+runtime/
+config.json
+__pycache__/
+*.pyc
+*.part
