@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import os
+import shutil
 import socket
 import subprocess
+import sys
 
 # DNS public du projet BedrockConnect (https://github.com/Pugmatt/BedrockConnect)
 DNS_BEDROCKCONNECT_PRINCIPAL = "104.238.130.180"
@@ -94,25 +96,61 @@ def instructions_switch(config: dict) -> str:
 
   Pare-feu : si la Switch ne voit rien, autoriser sur ce PC
   UDP {port_bedrock}, TCP {port_bedrock}, UDP {port_nethernet} et TCP {port_java}
-  (option "Ouvrir le pare-feu" du menu).
+  (option "Ouvrir le pare-feu" du menu ; sous Ubuntu : sudo ufw allow …).
 =====================================================================
 """
 
 
-def ouvrir_pare_feu_windows(config: dict) -> bool:
-    """Ajoute les règles de pare-feu Windows (nécessite une console administrateur)."""
-    regles = [
+def _regles_pare_feu(config: dict) -> list[tuple[str, str, int]]:
+    return [
         ("MCSL Bedrock RakNet UDP", "UDP", config["port_bedrock"]),
         ("MCSL Bedrock signalisation NetherNet TCP", "TCP", config["port_bedrock"]),
         ("MCSL Bedrock NetherNet UDP", "UDP", config["port_nethernet"]),
         ("MCSL Java TCP", "TCP", config["port_java"]),
     ]
-    if os.name != "nt":
-        print("[réseau] L'ouverture automatique du pare-feu n'est prévue que sous Windows.")
-        print("         Autorisez manuellement : " + ", ".join(f"{p} {port}" for _, p, port in regles))
+
+
+def ouvrir_pare_feu(config: dict) -> bool:
+    """Ouvre les ports nécessaires : netsh sous Windows, ufw sous Linux (Ubuntu…)."""
+    if os.name == "nt":
+        return _ouvrir_pare_feu_windows(config)
+    if sys.platform.startswith("linux"):
+        return _ouvrir_pare_feu_ufw(config)
+    print("[réseau] Ouverture automatique non prévue sur ce système. Autorisez manuellement : "
+          + ", ".join(f"{p} {port}" for _, p, port in _regles_pare_feu(config)))
+    return False
+
+
+def _ouvrir_pare_feu_ufw(config: dict) -> bool:
+    """Ubuntu / Debian : règles ufw (demande le mot de passe sudo)."""
+    if not shutil.which("ufw"):
+        print("[réseau] ufw n'est pas installé : aucun pare-feu à ouvrir (rien à faire).")
+        return True
+    etat = subprocess.run(["sudo", "ufw", "status"], capture_output=True, text=True)
+    if etat.returncode != 0:
+        print(f"[réseau] Impossible de lire l'état d'ufw : {etat.stderr.strip() or etat.stdout.strip()}")
         return False
+    if "inactive" in etat.stdout:
+        print("[réseau] ufw est inactif : les ports sont déjà accessibles (rien à faire).")
+        return True
     ok = True
-    for nom, protocole, port in regles:
+    for nom, protocole, port in _regles_pare_feu(config):
+        resultat = subprocess.run(
+            ["sudo", "ufw", "allow", f"{port}/{protocole.lower()}", "comment", nom],
+            capture_output=True, text=True,
+        )
+        if resultat.returncode == 0:
+            print(f"[réseau] Règle ufw ajoutée : {protocole} {port} ({nom})")
+        else:
+            ok = False
+            print(f"[réseau] Échec pour {protocole} {port} : {resultat.stderr.strip() or resultat.stdout.strip()}")
+    return ok
+
+
+def _ouvrir_pare_feu_windows(config: dict) -> bool:
+    """Ajoute les règles de pare-feu Windows (nécessite une console administrateur)."""
+    ok = True
+    for nom, protocole, port in _regles_pare_feu(config):
         commande = [
             "netsh", "advfirewall", "firewall", "add", "rule",
             f"name={nom}", "dir=in", "action=allow", f"protocol={protocole}", f"localport={port}",

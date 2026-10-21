@@ -146,7 +146,7 @@ def boucle(config: dict) -> None:
         "2": ("Jouer : démarrer le serveur (+ Minecraft Java)", action_jouer),
         "3": ("Gérer les plugins (WorldEdit, etc.)", action_plugins),
         "4": ("Afficher les instructions de connexion Switch", lambda c: print(reseau.instructions_switch(c))),
-        "5": ("Ouvrir le pare-feu Windows (en administrateur)", reseau.ouvrir_pare_feu_windows),
+        "5": ("Ouvrir le pare-feu (ufw sous Ubuntu, netsh sous Windows)", reseau.ouvrir_pare_feu),
         "6": ("Paramètres", action_parametres),
     }
     while True:

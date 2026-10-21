@@ -14,20 +14,28 @@ Switch : Minecraft Bedrock ──UDP/TCP 19132 (+UDP 19133)──▶ Geyser ─�
 > côté Java. Geyser traduit le protocole Bedrock ↔ Java : la Switch rejoint
 > donc un monde Java sans compte Java (Floodgate), et profite des plugins.
 
-## Démarrage rapide (Windows)
+## Démarrage rapide (Ubuntu)
 
-1. Installer **Python 3.10+** : <https://www.python.org/downloads/>
-   (cocher *Add python.exe to PATH*).
-2. Double-cliquer sur **`lancer.bat`**.
-3. Menu → **1. Installer** : télécharge Java (si besoin), Paper, Geyser,
-   Floodgate, WorldEdit, fait un premier démarrage et configure tout.
-4. Menu → **5. Ouvrir le pare-feu** (lancer `lancer.bat` *en administrateur*).
-5. Menu → **2. Jouer** : démarre le serveur et ouvre Minecraft Java.
+```bash
+sudo apt install -y python3          # déjà présent sur Ubuntu en général
+cd minecraft-switch-launcher
+./lancer.sh                          # menu interactif
+```
+
+1. Menu → **1. Installer** : télécharge Java 25 (dans `runtime/`, sans toucher
+   au système), Paper, Geyser, Floodgate, WorldEdit, fait un premier démarrage
+   et configure tout.
+2. Menu → **5. Ouvrir le pare-feu** : si `ufw` est actif, ajoute les règles
+   (`sudo` demandé). S'il est inactif ou absent, rien à faire.
+3. Menu → **2. Jouer** : démarre le serveur et ouvre Minecraft Java
+   (détecte le `.deb` officiel, Flatpak `com.mojang.Minecraft`, Prism, MultiMC).
    Les instructions pour la Switch s'affichent dans la console.
 
-Linux / macOS : `./lancer.sh` (ou `python3 launcher.py`).
+Ligne de commande : `./lancer.sh installer | jouer | plugins | switch | parametres`
 
-Ligne de commande : `python launcher.py installer | jouer | plugins | switch | parametres`
+Windows : installer Python 3.10+ (cocher *Add python.exe to PATH*) puis
+double-cliquer sur `lancer.bat` (en administrateur pour le pare-feu).
+macOS : `./lancer.sh`.
 
 ## Se connecter depuis la Switch
 

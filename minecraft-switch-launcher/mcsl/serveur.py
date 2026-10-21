@@ -6,6 +6,8 @@ import json
 import os
 import re
 from collections import deque
+import shlex
+import shutil
 import subprocess
 import sys
 import threading
@@ -292,32 +294,67 @@ def demarrer(config: dict, au_demarrage=None) -> int:
 # ---------------------------------------------------------------- Launcher Minecraft Java
 
 
-def _candidats_launcher_minecraft() -> list[Path]:
+def _flatpak_installe(identifiant: str) -> bool:
+    if not shutil.which("flatpak"):
+        return False
+    try:
+        resultat = subprocess.run(["flatpak", "info", identifiant], capture_output=True, timeout=15)
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return resultat.returncode == 0
+
+
+def _candidats_launcher_minecraft() -> list[list[str]]:
+    """Commandes possibles pour ouvrir le launcher Minecraft Java, par ordre de préférence."""
     if os.name == "nt":
         local = Path(os.environ.get("LOCALAPPDATA", ""))
         programmes = Path(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)"))
-        return [
+        chemins = [
             local / "Programs" / "Minecraft Launcher" / "MinecraftLauncher.exe",
             programmes / "Minecraft Launcher" / "MinecraftLauncher.exe",
             Path(r"C:\XboxGames\Minecraft Launcher\Content\Minecraft.exe"),
         ]
+        return [[str(c)] for c in chemins if c.exists()]
     if sys.platform == "darwin":
-        return [Path("/Applications/Minecraft.app/Contents/MacOS/launcher")]
-    return [Path(p) for p in ("/usr/bin/minecraft-launcher", "/opt/minecraft-launcher/minecraft-launcher")]
+        chemin = Path("/Applications/Minecraft.app/Contents/MacOS/launcher")
+        return [[str(chemin)]] if chemin.exists() else []
+
+    # Linux (Ubuntu…) : paquet .deb officiel, Flatpak, Snap, puis launchers alternatifs.
+    candidats: list[list[str]] = []
+    for executable in ("minecraft-launcher", "prismlauncher", "multimc", "hmcl"):
+        chemin = shutil.which(executable)
+        if chemin:
+            candidats.append([chemin])
+    for chemin in ("/opt/minecraft-launcher/minecraft-launcher", "/snap/bin/mc-installer"):
+        if Path(chemin).exists():
+            candidats.append([chemin])
+    for identifiant in ("com.mojang.Minecraft", "org.prismlauncher.PrismLauncher"):
+        if _flatpak_installe(identifiant):
+            candidats.append(["flatpak", "run", identifiant])
+    return candidats
 
 
 def lancer_minecraft(config: dict) -> bool:
     """Ouvre le launcher Minecraft Java (sans attendre). Retourne False s'il est introuvable."""
     chemin_config = config.get("launcher_minecraft", "")
-    candidats = [Path(chemin_config)] if chemin_config else _candidats_launcher_minecraft()
-    for candidat in candidats:
-        if candidat.exists():
-            print(f"[minecraft] Ouverture de {candidat}")
-            subprocess.Popen([str(candidat)], stdin=subprocess.DEVNULL,
+    if chemin_config:
+        candidats = [shlex.split(chemin_config)] if " " in chemin_config else [[chemin_config]]
+    else:
+        candidats = _candidats_launcher_minecraft()
+    for commande in candidats:
+        executable = commande[0]
+        if not (Path(executable).exists() or shutil.which(executable)):
+            continue
+        print(f"[minecraft] Ouverture de {' '.join(commande)}")
+        try:
+            subprocess.Popen(commande, stdin=subprocess.DEVNULL,
                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             return True
+        except OSError as exc:
+            print(f"[minecraft] Échec ({exc}), essai suivant…")
     print("[minecraft] Launcher Minecraft Java introuvable : renseignez 'launcher_minecraft' dans config.json "
-          "ou lancez Minecraft à la main (Multijoueur > Ajouter > localhost).")
+          "(ex. \"flatpak run com.mojang.Minecraft\") ou lancez Minecraft à la main "
+          "(Multijoueur > Connexion directe > localhost).")
     return False
 
 
