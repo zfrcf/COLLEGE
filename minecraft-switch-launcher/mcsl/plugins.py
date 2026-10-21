@@ -11,6 +11,10 @@ from .config import dossier_serveur
 # Plugins toujours installés : c'est eux qui permettent à la Switch de se connecter.
 PLUGINS_OBLIGATOIRES = ("geyser", "floodgate")
 
+# Installés quand "accepter_toutes_versions_java" est activé : clients Java plus récents
+# (ViaVersion) ou plus anciens (ViaBackwards) que le serveur.
+PLUGINS_COMPATIBILITE = ("viaversion", "viabackwards")
+
 # Quelques slugs Modrinth utiles, proposés dans le menu.
 PLUGINS_SUGGERES = {
     "worldedit": "WorldEdit – édition de monde (//set, //copy, baguette…)",
@@ -75,7 +79,7 @@ def installer_plugins_modrinth(config: dict, version_minecraft: str) -> None:
     dossier = dossier_plugins(config)
     dossier.mkdir(parents=True, exist_ok=True)
     etat = lire_etat(config)
-    voulus = [slug.strip().lower() for slug in config.get("plugins", []) if slug.strip()]
+    voulus = plugins_voulus(config)
 
     # Retire les plugins qui ne sont plus dans la config
     for cle in list(etat):
@@ -103,6 +107,14 @@ def installer_plugins_modrinth(config: dict, version_minecraft: str) -> None:
         telechargement.telecharger(info["url"], dossier / info["fichier"], label=f"{slug} {info['numero']}")
         etat[slug] = {"id": info["numero"], "fichier": info["fichier"]}
         ecrire_etat(config, etat)
+
+
+def plugins_voulus(config: dict) -> list[str]:
+    """Slugs Modrinth à installer : ceux de la config + la compatibilité de versions si activée."""
+    voulus = [slug.strip().lower() for slug in config.get("plugins", []) if slug.strip()]
+    if config.get("accepter_toutes_versions_java", True):
+        voulus += [slug for slug in PLUGINS_COMPATIBILITE if slug not in voulus]
+    return voulus
 
 
 def lister_installes(config: dict) -> list[tuple[str, str]]:

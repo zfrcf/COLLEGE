@@ -88,6 +88,7 @@ tapent dans le chat.
 | `motd` | `Serveur local Switch` | nom affiché |
 | `mode_jeu` / `difficulte` | `survival` / `normal` | réglages du monde |
 | `plugins` | `["worldedit"]` | plugins Modrinth |
+| `accepter_toutes_versions_java` | `true` | ViaVersion + ViaBackwards (clients Java d'autres versions) |
 | `java` | *(auto)* | chemin vers un `java` précis |
 | `launcher_minecraft` | *(auto)* | chemin du launcher Minecraft Java |
 | `lancer_minecraft_avec_serveur` | `true` | ouvre Minecraft Java avec « Jouer » |
@@ -127,10 +128,14 @@ minecraft-switch-launcher/
   déjà 19132 → le fermer, ou changer `port_bedrock` (la Switch devra alors
   passer par BedrockConnect avec ce port).
 - **Minecraft Java refuse de se connecter (« Outdated client / server »)** :
-  le client doit être dans la **même version** que le serveur (affichée dans
-  l'en-tête du menu, ex. 26.3). Dans l'app Modrinth / le launcher, créer un
-  profil dans cette version. Pour accepter aussi des clients plus anciens,
-  ajouter les plugins `viaversion` **et** `viabackwards` (menu 3).
+  par défaut le launcher installe ViaVersion + ViaBackwards
+  (`accepter_toutes_versions_java`), donc un profil Modrinth en 1.21.x peut
+  rejoindre un serveur 26.3 (relancer l'installation, menu 1, si le serveur
+  a été installé avant cette option). Sinon, créer un profil dans la version
+  du serveur (affichée dans l'en-tête du menu).
+- **« Failed to verify username » / « Invalid session »** : le compte du
+  launcher n'est pas authentifié chez Microsoft (compte hors-ligne). Se
+  reconnecter avec un compte Microsoft possédant Minecraft Java.
 - **Erreur au démarrage** : lire `serveur/logs/latest.log`.
 - **Changer de version** : modifier `version_minecraft` puis relancer
   l'installation (menu 1). Sauvegarder `serveur/world*` avant.

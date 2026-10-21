@@ -27,6 +27,9 @@ CONFIG_DEFAUT: dict = {
     "difficulte": "normal",
     # Plugins Modrinth (slug du projet). Geyser et Floodgate sont toujours installés.
     "plugins": ["worldedit"],
+    # Installe ViaVersion + ViaBackwards : un client Java d'une autre version
+    # (ex. profil Modrinth en 1.21.x) peut rejoindre le serveur quand même.
+    "accepter_toutes_versions_java": True,
     # Chemin vers java (vide = détection automatique / installation locale)
     "java": "",
     # Chemin vers le launcher Minecraft Java (vide = détection automatique)

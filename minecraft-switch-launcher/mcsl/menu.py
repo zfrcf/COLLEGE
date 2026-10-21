@@ -25,7 +25,8 @@ def _entete(config: dict) -> None:
     print(f"  Serveur : {'installé (Paper ' + version + ')' if installe else 'non installé'}")
     print(f"  IP locale : {reseau.ip_locale()}   Bedrock : {config['port_bedrock']} (+{config['port_nethernet']})"
           f"   Java : {config['port_java']}")
-    print(f"  Plugins : {', '.join(config['plugins']) or 'aucun'} (+ Geyser, Floodgate)")
+    print(f"  Plugins : {', '.join(config['plugins']) or 'aucun'} (+ Geyser, Floodgate"
+          f"{', ViaVersion, ViaBackwards' if config.get('accepter_toutes_versions_java', True) else ''})")
     print("-" * 60)
 
 
@@ -124,6 +125,7 @@ def action_parametres(config: dict) -> None:
         ("difficulte", "Difficulté (peaceful / easy / normal / hard)"),
         ("launcher_minecraft", "Chemin du launcher Minecraft Java (vide = auto)"),
         ("lancer_minecraft_avec_serveur", "Lancer Minecraft avec le serveur (true / false)"),
+        ("accepter_toutes_versions_java", "Accepter les clients Java d'autres versions (true / false)"),
     ]
     print("\n--- Paramètres (Entrée pour conserver) ---")
     for cle, libelle in champs:
