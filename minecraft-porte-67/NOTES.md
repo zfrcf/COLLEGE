@@ -51,6 +51,23 @@ Des colonnes de ce module ne peuvent pas se toucher : il faut un pas de 3 en X (
   - panneaux alternés en profondeur ;
   - lampes en face avant ou arrière.
 
+## Piste « colonnes jointives synchrones » (solve15)
+- Idée :
+  - colonnes de 1 bloc de large, collées les unes aux autres ;
+  - matériaux slime/miel inversés d'une colonne à l'autre ;
+  - toutes déclenchées au même tick ;
+  - chaque voisin latéral est une copie exacte, donc aucun contact collant ;
+  - la porte serait étanche par construction.
+- Résultat (`outils/solve15.py`) : un module en plan unique est INFAISABLE.
+- Ablation : le verrou est la règle de chaînage en chenille (la lampe du module doit être allumée au repos par un bloc de redstone du voisin).
+  - Sans cette règle : faisable.
+  - Sans les règles de collage (configs) : inconnu.
+- Pistes suivantes :
+  - colonnes décalées verticalement, pour chaîner via le voisin latéral ;
+  - autre élément de retard que la lampe.
+- Contrainte supplémentaire : le synchronisme impose une distribution du déclenchement à délais égaux (arbre en H, segments de poudre ≤ 31 alimentés au centre).
+- Serveur 26.2 : mettre `pause-when-empty-seconds=-1`, sinon `tick step` ne fait rien sans joueur connecté.
+
 ## Pistes restantes
 1. Pas vertical P=2 ou 3, avec panneaux de 3×2 portés par des modules entrelacés. Modèle plus gros, avec voisins j±4.
 2. Moteur à 3 parties : budget de 36 blocs.
