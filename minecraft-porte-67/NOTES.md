@@ -23,7 +23,23 @@ Ouverture de 67 × 67 blocs, en redstone vanilla (Java 1.21.1) : pistons collant
 - Un bloc fixe mobile (piston rentré, bloc de redstone…) collé au trajet d'un slime est arraché.
   - Seuls l'obsidienne et les composants « destroy » (poudre, répéteur, torche) peuvent longer le trajet.
 
-## Blocage actuel : l'étanchéité de la porte
+## Porte complète en peigne (validée mécaniquement)
+- `outils/gen_door.py` génère la porte 67×67 : 67 colonnes de 12 modules, réparties en 3 nappes de profondeur (z = 0, 6, 12), avec ouverture vers le haut dans un logement.
+- Test serveur `outils/t28.py 67 12 2500` : 19 296 blocs de modules, 0 erreur à l'ouverture, 0 erreur à la fermeture.
+- Corrections nécessaires :
+  - **tout bloc fixe voisin du balayage = obsidienne**, façade comprise (sinon le slime arrache la brique) ;
+  - **répéteurs sur la ligne d'alimentation Z** (sinon le signal s'éteint après 15 blocs).
+- **Collage vanilla (`/place template`, bloc de structure) = CASSE la porte.**
+  - Le chargement appelle `updateFromNeighbourShapes`, ce qui déclenche tous les observateurs.
+  - L'astuce `powered=true` est inutile : `onPlace` le remet à false.
+  - → Livraison principale = **datapack** (`outils/gen_datapack.py`) : il pose les blocs dans l'ordre validé (cadre, modules, observateurs en dernier, tours, puis répéteurs d'alimentation 15 s plus tard).
+- Collage **WorldEdit** 7.3.8 (serveur Fabric + bot mineflayer, `outils/t34.py`) :
+  - réglages par défaut = casse la porte ;
+  - avec `//perf neighbors off` + `//perf update off` = OK (0 erreur).
+- Datapack testé en taille réelle (`outils/t32.py`, `t33.py`) : passage 67×67 entièrement libre une fois ouvert, 3 cycles OK, ouverture en ~49 s.
+- Limite connue : la porte n'est PAS étanche (voir ci-dessous). Elle est opaque de face, mais un joueur peut se faufiler en diagonale par les couloirs tampons.
+
+## Blocage restant : l'étanchéité de la porte
 Des colonnes de ce module ne peuvent pas se toucher : il faut un pas de 3 en X (principal, latéral, tampon). Couvrir toute la largeur demande donc 3 nappes en profondeur.
 - `outils/leak.py` prouve qu'un joueur passerait par les tampons et les plans latéraux (FUITE).
 - Recherches CP-SAT prouvées infaisables :

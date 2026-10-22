@@ -7,7 +7,8 @@ FRAME = "minecraft:stone_bricks"
 OBS = "minecraft:obsidian"
 
 class Door:
-    def __init__(s, unit_path="sol2_P6.json", W=67, N=12, P=6, ZP=6):
+    def __init__(s, unit_path="sol2_P6.json", W=67, N=12, P=6, ZP=6, shell=True):
+        s.shell = shell
         s.u = Unit(unit_path, P); s.W, s.N, s.P, s.ZP = W, N, P, ZP
         s.D = P * N                      # course d'ouverture (vers le haut)
         s.H = P * N - 5                  # hauteur d'ouverture couverte (67 pour N=12)
@@ -112,6 +113,9 @@ class Door:
                     inside_open = 0 <= x < s.W and 0 <= y < s.H
                     if inside_open: continue                      # passage libre
                     # au-dessus de l'ouverture / sous le sol / murs latéraux : plein
+                    # coque : sol (y<0), façade (z=-1) et faces extérieures ; intérieur du logement laissé vide
+                    if s.shell and not (y < 0 or z in (-1, zmax) or x in (xmin, xmax) or y == s.ytop):
+                        continue
                     # tout bloc fixe voisin du balayage doit être de l'obsidienne (sinon le slime l'arrache)
                     res[p] = OBS if any(q in sw for q in nb(p)) else FRAME
         # dégager l'accès au panneau de commande et l'espace des tours/liaisons (déjà en special)

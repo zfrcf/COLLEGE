@@ -1,0 +1,15 @@
+const mineflayer = require('mineflayer')
+const [x,y,z,schem] = process.argv.slice(2)
+const bot = mineflayer.createBot({host:'127.0.0.1', port:25566, username:'Testeur', version:'1.21.1', auth:'offline'})
+bot.on('message', m => console.log('MSG', m.toString()))
+bot.once('spawn', async () => {
+  const w = ms => new Promise(r=>setTimeout(r,ms))
+  await w(8000)
+  bot.chat(`/tp Testeur ${x} ${y} ${z}`); await w(2000)
+  bot.chat(`//schem load ${schem}`); await w(4000)
+  for (const c of (process.env.PRE||'').split(';').filter(Boolean)) { bot.chat(c); await w(1500) }
+  bot.chat(`//paste`); await w(15000)
+  console.log('DONE'); bot.quit(); process.exit(0)
+})
+bot.on('kicked', r => {console.log('KICK', r); process.exit(1)})
+bot.on('error', e => {console.log('ERR', e); process.exit(1)})

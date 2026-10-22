@@ -1,6 +1,7 @@
 import time
 from rcon import Rcon
-r=Rcon()
+import os
+r=Rcon(port=int(os.environ.get("RCON_PORT","25575")))
 RATE=100
 r.cmd(f'tick rate {RATE}')
 import re as _re
