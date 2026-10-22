@@ -11,7 +11,13 @@ x0,x1,y0,y1,z0,z1=min(xs),max(xs),min(ys),max(ys),min(zs),max(zs)
 def sb(p,b): return "setblock ~%d ~%d ~%d %s" % (p[0],p[1],p[2],b)
 fn=os.path.join(out,"data","porte","function")
 shutil.rmtree(out, ignore_errors=True); os.makedirs(fn)
-json.dump({"pack":{"pack_format":48,"description":"Porte géante %dx%d à machines volantes"%(W,d.H)}}, open(os.path.join(out,"pack.mcmeta"),"w"), ensure_ascii=False)
+json.dump({"pack":{"description":"Porte géante %dx%d à machines volantes"%(W,d.H),
+    "pack_format":48, "supported_formats":{"min_inclusive":48,"max_inclusive":999},
+    "min_format":48, "max_format":999}}, open(os.path.join(out,"pack.mcmeta"),"w"), ensure_ascii=False, indent=1)
+# message au chargement, pour vérifier que le pack est bien actif
+tg=os.path.join(out,"data","minecraft","tags","function"); os.makedirs(tg)
+json.dump({"values":["porte:charge"]}, open(os.path.join(tg,"load.json"),"w"))
+open(os.path.join(fn,"charge.mcfunction"),"w").write('tellraw @a {"text":"[Porte] Datapack chargé. Place-toi au coin bas-gauche de l\'ouverture et tape /function porte:construire","color":"aqua"}\n')
 L=["# Lancer debout au coin bas-gauche de l'ouverture (côté façade). La porte s'étend vers l'est (+X) et le sud (+Z).",
    "kill @e[type=marker,tag=porte_origine]",
    "summon marker ~ ~ ~ {Tags:[\"porte_origine\"]}"]

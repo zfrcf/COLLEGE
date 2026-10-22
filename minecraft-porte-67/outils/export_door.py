@@ -19,3 +19,13 @@ for p,s in B.items():
 print(b.stats()["dimensions"], len(B))
 print(b.bounds())
 print(b.save_all(out, formats=fmts))
+# Version de données du jeu visé (26.2 = 4903), pour éviter une conversion depuis une ancienne version
+import nbtlib, os
+DV=int(os.environ.get("DATAVERSION","4903"))
+for path in [out+".schem", out+".litematic"]:
+    if not os.path.exists(path): continue
+    f=nbtlib.load(path)
+    root=f.get("Schematic", f)
+    key="MinecraftDataVersion" if path.endswith(".litematic") else "DataVersion"
+    root[key]=nbtlib.tag.Int(DV); f.save()
+    print(path, key, DV)
